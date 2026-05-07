@@ -1,0 +1,54 @@
+name: nack-latency-budget
+description: |
+  H4 experiment — does enforcing an operational latency budget reverse
+  NACK's apparent benefit?
+
+  8-arm 2×2×2 over (CC algorithm) × (NACK on/off) × (latency budget
+  0 ms / 100 ms), all on the same constant network: 5 Mbps + 20 ms
+  + 2% uniform loss for the full 20 s. Constant rate and constant
+  loss isolate the recovery × budget interaction.
+
+  Predictions:
+  1. Without budget enforcement, NACK arms deliver ≥ 5% more frames
+     than no-recovery arms (NACK's textbook wire-level benefit).
+  2. With a 100 ms budget, NACK arms deliver fewer frames inside
+     the budget than no-recovery arms — NACK's added latency
+     (RTX timer + jitter buffer) pushes more frames past the
+     deadline than NACK rescues.
+
+  Holding constant: video (ball-720p30), pipeline structure, encoder
+  knobs, CC bitrate bounds, network. Varying: CC algorithm, NACK
+  on/off, latency budget. CC algorithm is included so we can see
+  whether NACK's reversal under the budget is mechanism-specific
+  (SCReAM vs GCC).
+reps: 10
+varies:
+  - congestion_control.algorithm
+  - recovery.nack
+  - recovery.rtx_buffer_ms
+  - latency_budget_ms
+configurations:
+  - id: 29
+    label: SCReAM no-NACK budget=0
+    color: "#fcae91"
+  - id: 30
+    label: SCReAM NACK budget=0
+    color: "#de2d26"
+  - id: 31
+    label: SCReAM no-NACK budget=100
+    color: "#a50f15"
+  - id: 32
+    label: SCReAM NACK budget=100
+    color: "#67000d"
+  - id: 33
+    label: GCC no-NACK budget=0
+    color: "#bdd7e7"
+  - id: 34
+    label: GCC NACK budget=0
+    color: "#3182bd"
+  - id: 35
+    label: GCC no-NACK budget=100
+    color: "#08519c"
+  - id: 36
+    label: GCC NACK budget=100
+    color: "#08306b"

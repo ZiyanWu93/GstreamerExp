@@ -1,0 +1,53 @@
+gstscream EOS panic fix
+=======================
+
+Without this patch, screamtx panics with "Screamtx callback srcpad.push
+failed: Eos" when the upstream source emits its final buffer (e.g.
+videotestsrc num-buffers=300 → EOS event). The push() returns the
+benign FlowError::Eos which the original `.expect(..)` turns into a
+SIGABRT, so the worker process dies before writing its result file.
+
+This is a race window between screamtx's PadFlags::EOS check and the
+actual srcpad.push() call. GStreamer 1.24's slightly different EOS
+ordering (vs 1.16) makes the window reliably hit.
+
+Apply with: patch -p1 < scream-eos-fix.patch  (run from project root)
+
+--- a/scream/gstscream/src/screamtx/imp.rs
++++ b/scream/gstscream/src/screamtx/imp.rs
+@@ -383,10 +383,31 @@
+                         "gstscream Handling rtp buffer ssrc {ssrc}, seq {seq}, payload_type {payload_type}, timestamp {timestamp}, marker {marker} ");
+                 }
+                 drop(rtp_buffer);
+-                (*stx)
+-                    .srcpad
+-                    .push(buffer)
+-                    .expect("Screamtx callback srcpad.push failed");
++                // Downstream may have transitioned to EOS/Flushing between
++                // our PadFlags check above and this push (race window is
++                // unavoidable from a C callback). Treat those flow errors
++                // as benign and drop the buffer; only log on unexpected
++                // errors. The original `.expect(..)` panicked the worker
++                // process, which under GStreamer 1.24's slightly different
++                // EOS ordering became reliably reproducible.
++                match (*stx).srcpad.push(buffer) {
++                    Ok(_) => {}
++                    Err(gst::FlowError::Eos) | Err(gst::FlowError::Flushing) => {
++                        gst::info!(
++                            CAT,
++                            obj = (*stx).srcpad,
++                            "srcpad.push returned eos/flushing — dropping buffer"
++                        );
++                    }
++                    Err(err) => {
++                        gst::warning!(
++                            CAT,
++                            obj = (*stx).srcpad,
++                            "srcpad.push failed: {:?}",
++                            err
++                        );
++                    }
++                }
+             }
+         }
+     } else {

@@ -1,0 +1,43 @@
+meta:
+  name: distributed_scream_norecovery_budget50
+  description: "Distributed (aum\u2192veda) SCReAM at 720p30 over\n`clean-5mbps-50ms-3pct-uniform`.\
+    \ Recovery: none.\nLatency budget: 50 ms (tighter than the 100 ms RTT, so any\n\
+    NACK retransmission round-trip exceeds the budget).\nFollow-up arm to the H4 experiment\
+    \ `nack-latency-budget`,\ntesting whether the H4 prediction holds at a budget\
+    \ tighter\nthan the network's RTT.\n"
+  flags:
+  - sudo
+  - scream
+video: ball-720p30
+network: clean-5mbps-50ms-3pct-uniform
+scenario:
+  actors:
+    camera: {}
+    viewer: {}
+  setup_delay_seconds: 3.0
+  drain_delay_seconds: 1.0
+  metrics:
+  - frame_count
+  - encoder_target_kbps
+  - frame_latency
+  - wire_bytes
+  - encoded_bitrate
+  - decoder_errors
+  - late_drops
+codec: vp8
+encoder:
+  bitrate_kbps: 1500
+  keyframe_interval_frames: 60
+congestion_control:
+  algorithm: scream
+  init_bitrate_kbps: 1500
+  min_bitrate_kbps: 200
+  max_bitrate_kbps: 4000
+sink:
+  backend: fake
+  sync: false
+recovery:
+  nack: false
+  pli: false
+  fec: false
+latency_budget_ms: 50

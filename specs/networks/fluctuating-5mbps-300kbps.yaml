@@ -1,0 +1,27 @@
+name: fluctuating-5mbps-300kbps
+description: "Three-step impairment via tc on $NIC at the sender:\n  t=0..7s   : 5\
+  \ Mbps,   20 ms                              (good)\n  t=7..13s  : 300 kbps, 100\
+  \ ms, 2% uniform iid loss        (severe)\n  t=13..20s : 5 Mbps,   20 ms       \
+  \                       (recovery)\nThe configuration must set the interface name\
+  \ via\n`network_env: { NIC: <ifname> }`.\n"
+camera_steps:
+- duration: 7
+  rate_kbps: 5000
+  delay_ms: 20
+  loss:
+    model: none
+  label: "5 Mbps \xB7 20 ms \xB7 clean"
+- duration: 6
+  rate_kbps: 300
+  delay_ms: 100
+  loss:
+    model: uniform
+    pct: 2
+  label: "300 kbps \xB7 100 ms \xB7 2% uniform"
+- duration: 7
+  rate_kbps: 5000
+  delay_ms: 20
+  loss:
+    model: none
+  label: "5 Mbps \xB7 20 ms \xB7 clean"
+viewer_steps: []

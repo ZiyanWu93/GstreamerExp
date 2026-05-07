@@ -1,0 +1,5 @@
+name: loopback
+description: No impairment. For local sanity tests or hosts where external network
+  shaping is not needed.
+camera_steps: []
+viewer_steps: []

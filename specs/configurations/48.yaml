@@ -1,0 +1,44 @@
+meta:
+  name: distributed_gcc_nack_budget50_fluc
+  description: "Distributed (aum\u2192veda) GCC at 720p30 over\n`fluctuating-5mbps-300kbps`.\
+    \ Recovery: NACK + RTX (retransmission of lost packets).\nLatency budget: 50 ms\
+    \ enforced. One arm of the H4 fluctuating-network\nexperiment \u2014 same 2\xD7\
+    2\xD72 (CC \xD7 retransmission \xD7 budget) as the\nconstant-network version,\
+    \ but on a more realistic\ncapacity-step network.\n"
+  flags:
+  - sudo
+  - gcc
+video: ball-720p30
+network: fluctuating-5mbps-300kbps
+scenario:
+  actors:
+    camera: {}
+    viewer: {}
+  setup_delay_seconds: 3.0
+  drain_delay_seconds: 1.0
+  metrics:
+  - frame_count
+  - encoder_target_kbps
+  - frame_latency
+  - wire_bytes
+  - encoded_bitrate
+  - decoder_errors
+  - late_drops
+codec: vp8
+encoder:
+  bitrate_kbps: 1500
+  keyframe_interval_frames: 60
+congestion_control:
+  algorithm: gcc
+  init_bitrate_kbps: 1500
+  min_bitrate_kbps: 200
+  max_bitrate_kbps: 4000
+sink:
+  backend: fake
+  sync: false
+recovery:
+  nack: true
+  pli: false
+  fec: false
+  rtx_buffer_ms: 500
+latency_budget_ms: 50

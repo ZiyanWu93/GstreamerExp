@@ -1,0 +1,36 @@
+meta:
+  name: bare
+  description: Bare GStreamer VP8/RTP/UDP pipeline over loopback. Headless plumbing
+    baseline.
+scenario:
+  actors:
+    camera:
+      host: 127.0.0.1
+    viewer:
+      host: 127.0.0.1
+  setup_delay_seconds: 2.0
+  drain_delay_seconds: 1.0
+  metrics:
+  - frame_count
+  - encoder_target_kbps
+codec: vp8
+source:
+  backend: synthetic
+  width: 640
+  height: 480
+  fps: 15
+  num_frames: 150
+  clock_overlay: false
+  synthetic:
+    pattern: smpte
+encoder:
+  bitrate_kbps: 1000
+  keyframe_interval_frames: 150
+sink:
+  backend: fake
+  sync: false
+recovery:
+  nack: false
+  pli: false
+  fec: false
+latency_budget_ms: 0

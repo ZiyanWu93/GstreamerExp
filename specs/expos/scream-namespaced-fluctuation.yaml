@@ -1,0 +1,10 @@
+name: scream-namespaced-fluctuation
+description: |
+  Watch SCReAM react to a three-step impairment between two Linux network
+  namespaces. The receiver runs in ns_rx; for the autovideosink branch
+  to reach the host's X server, ns_rx needs the X UNIX socket reachable
+  (typically via `xhost +SI:localuser:root` plus a socket-listening X
+  server, or via an X-forward). If the display can't be reached the
+  measurement still completes — the rendering branch fails alone.
+configuration: 6
+display: :0

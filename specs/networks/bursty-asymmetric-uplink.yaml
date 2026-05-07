@@ -1,0 +1,43 @@
+name: bursty-asymmetric-uplink
+description: |
+  Cellular-realistic asymmetric impairment: the camera→viewer (forward)
+  path sees clean fluctuation typical of a downlink, while the
+  viewer→camera (return) path sees bursty 5% loss typical of a
+  congested cellular uplink.
+
+  Tests the case where media arrives fine but RTCP feedback (NACK
+  requests, PLI requests) is unreliable on the way back. NACK and PLI
+  should degrade here while FEC stays unaffected — feedback never
+  factors into FEC's recovery path.
+camera_steps:
+  - duration: 7
+    rate_kbps: 5000
+    delay_ms: 20
+    loss: { model: none }
+    label: "5 Mbps · 20 ms · clean (forward)"
+  - duration: 6
+    rate_kbps: 300
+    delay_ms: 100
+    loss: { model: uniform, pct: 2 }
+    label: "300 kbps · 100 ms · 2% uniform (forward)"
+  - duration: 7
+    rate_kbps: 5000
+    delay_ms: 20
+    loss: { model: none }
+    label: "5 Mbps · 20 ms · clean (forward)"
+viewer_steps:
+  - duration: 7
+    rate_kbps: 1500
+    delay_ms: 50
+    loss: { model: none }
+    label: "1.5 Mbps · 50 ms · clean (return)"
+  - duration: 6
+    rate_kbps: 1500
+    delay_ms: 50
+    loss: { model: bursty, pct: 5, burst: 10 }
+    label: "1.5 Mbps · 50 ms · 5% bursty B=10 (return)"
+  - duration: 7
+    rate_kbps: 1500
+    delay_ms: 50
+    loss: { model: none }
+    label: "1.5 Mbps · 50 ms · clean (return)"

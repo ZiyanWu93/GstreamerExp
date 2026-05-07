@@ -1,0 +1,44 @@
+meta:
+  name: distributed_scream_nack_budget0
+  description: "Distributed (aum\u2192veda) SCReAM at 720p30 over\n`clean-5mbps-50ms-3pct-uniform`.\
+    \ Recovery: NACK + RTX.\nLatency budget: 0 ms (no enforcement; all frames delivered\
+    \ regardless of age). One arm of the H4 experiment\n`nack-latency-budget` \u2014\
+    \ 8-arm 2\xD72\xD72 over (CC algorithm) \xD7\n(NACK on/off) \xD7 (budget 0 / 100\
+    \ ms).\n"
+  flags:
+  - sudo
+  - scream
+video: ball-720p30
+network: clean-5mbps-50ms-3pct-uniform
+scenario:
+  actors:
+    camera: {}
+    viewer: {}
+  setup_delay_seconds: 3.0
+  drain_delay_seconds: 1.0
+  metrics:
+  - frame_count
+  - encoder_target_kbps
+  - frame_latency
+  - wire_bytes
+  - encoded_bitrate
+  - decoder_errors
+  - late_drops
+codec: vp8
+encoder:
+  bitrate_kbps: 1500
+  keyframe_interval_frames: 60
+congestion_control:
+  algorithm: scream
+  init_bitrate_kbps: 1500
+  min_bitrate_kbps: 200
+  max_bitrate_kbps: 4000
+sink:
+  backend: fake
+  sync: false
+recovery:
+  nack: true
+  pli: false
+  fec: false
+  rtx_buffer_ms: 500
+latency_budget_ms: 0

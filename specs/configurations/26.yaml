@@ -1,0 +1,45 @@
+meta:
+  name: distributed_scream_nack_budget100
+  description: "Smoke for the latency-budget enforcement. SCReAM + NACK at 720p30\n\
+    under fluctuating-5mbps-300kbps with the viewer's frame-age cap\nset to 100ms.\
+    \ The 200ms jitter buffer that NACK installs on the\nviewer should now drop frames\
+    \ once they age past 100ms \u2014 the\noperational truth that a frame waiting\
+    \ 250ms for retransmission\nis useless even if it eventually arrives clean. Pair\
+    \ with config\n13 (NACK, no budget) to see the trade-off.\n"
+  flags:
+  - sudo
+  - scream
+video: ball-720p30
+network: fluctuating-5mbps-300kbps
+scenario:
+  actors:
+    camera: {}
+    viewer: {}
+  setup_delay_seconds: 3.0
+  drain_delay_seconds: 1.0
+  metrics:
+  - frame_count
+  - encoder_target_kbps
+  - frame_latency
+  - wire_bytes
+  - encoded_bitrate
+  - decoder_errors
+  - late_drops
+codec: vp8
+encoder:
+  bitrate_kbps: 1500
+  keyframe_interval_frames: 60
+congestion_control:
+  algorithm: scream
+  init_bitrate_kbps: 1500
+  min_bitrate_kbps: 200
+  max_bitrate_kbps: 4000
+sink:
+  backend: fake
+  sync: false
+recovery:
+  nack: true
+  pli: false
+  fec: false
+  rtx_buffer_ms: 500
+latency_budget_ms: 20

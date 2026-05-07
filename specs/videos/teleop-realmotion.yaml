@@ -1,0 +1,33 @@
+name: teleop-realmotion
+description: |
+  Motion-varied clip via the FileSource backend. The path below points
+  at the camera actor's local filesystem; the file is NOT rsync'd with
+  the project tree (large) and must exist before any config that
+  references this video spec runs.
+
+  To populate the smoke fixture, run `bash tools/fetch_test_video.sh`
+  on the camera host. The script generates a 30-second `snow`-pattern
+  clip — high-entropy noise that changes every pixel every frame, which
+  drives high P-frame variance through vp8enc's CBR controller. That
+  variance is the property real content brings vs synthetic patterns
+  like `ball` (near-constant compression). To use your own clip, drop
+  a 30+ second VP8/WebM file at the path below or edit this spec.
+
+  loop: false because experiment configurations target 20-second runs
+  and the fixture is 30 seconds; we never need to seek-on-EOS, which
+  avoids interactions between the seek flush event and SCReAM's RTP
+  queue accounting that complicate longer-running tests.
+
+  Pair with bursty network specs to stress recovery primitives — the
+  per-frame encoded-bitrate variance from real content is the regime
+  where NACK/PLI/FEC's real-world differences surface.
+source:
+  backend: file
+  width: 1280
+  height: 720
+  fps: 30
+  num_frames: 600
+  clock_overlay: false
+  file:
+    path: assets/teleop/realmotion.webm
+    loop: false

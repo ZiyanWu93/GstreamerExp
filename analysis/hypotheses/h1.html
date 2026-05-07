@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>H1 — does SCReAM under-use bandwidth vs GCC?</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+         Helvetica, Arial, sans-serif; max-width: 1100px;
+         margin: 24px auto; padding: 0 16px; color: #222; line-height: 1.55; }
+  h1 { margin-bottom: 4px; }
+  h2 { margin: 0 0 6px 0; font-size: 18px; }
+  .lede { color: #444; }
+  .lede strong { color: #000; }
+  .glossary { background: #f4f7fb; border-left: 4px solid #5b9bd5;
+              padding: 12px 18px; border-radius: 0 6px 6px 0;
+              margin: 18px 0; }
+  .glossary h3 { margin: 0 0 8px 0; font-size: 14px;
+                 text-transform: uppercase; letter-spacing: 0.5px;
+                 color: #5b6f87; }
+  .glossary dl { display: grid; grid-template-columns: 160px 1fr;
+                 gap: 4px 18px; margin: 0; }
+  .glossary dt { font-weight: 600; }
+  .glossary dd { margin: 0; color: #333; }
+  ol.lede { margin: 8px 0 12px 24px; color: #444; }
+  ol.lede li { margin-bottom: 4px; }
+  .panel .claim { font-size: 13.5px; color: #333; margin: 10px 0 0 0; }
+  .panel .howto { font-size: 13px; color: #444; background: #eef4ff;
+                  padding: 10px 14px; border-radius: 4px;
+                  border-left: 3px solid #5b9bd5;
+                  margin: 12px 0 10px 0; }
+  .panel .howto ul.howto-list { margin: 6px 0 0 0; padding-left: 18px; }
+  .panel .howto ul.howto-list li { margin-bottom: 4px; line-height: 1.45; }
+  .panel .howto .howto-aside { margin: 8px 0 0 0; padding-top: 6px;
+                                border-top: 1px dashed #b9d0ec; color: #2e466e; }
+  .panel .result-label { font-size: 13px; color: #555;
+                         margin: 8px 0 4px 0; }
+  /* "Headline" callout: the main proposition of a section. Sits at the
+     top of the page, the top of each panel, and the top of each
+     side-by-side plot. Color encodes the answer (green = matches
+     Zhang et al. / orange = diverges from Zhang et al.). */
+  .headline { padding: 14px 18px; border-radius: 6px;
+              border-left: 6px solid; margin: 12px 0; }
+  .headline .tag { font-size: 12px; text-transform: uppercase;
+                   letter-spacing: 0.7px; font-weight: 700; }
+  .headline p { margin: 6px 0 0 0; font-size: 15px; line-height: 1.5; }
+  .headline ul.findings { margin: 8px 0 0 0; padding-left: 22px;
+                          font-size: 15px; line-height: 1.5; }
+  .headline ul.findings li { margin-bottom: 6px; }
+  .headline ul.findings li:last-child { margin-bottom: 0; }
+  .headline ul.findings em { color: #555; font-style: italic; }
+  .headline .thesis { margin: 8px 0 10px 0; font-size: 16px;
+                      font-weight: 600; line-height: 1.5; }
+  .headline.match    { background: #ecf7ec; border-color: #4ca84c;
+                       color: #1d4d1d; }
+  .headline.match    .tag { color: #1d6f1d; }
+  .headline.diverge  { background: #fdf3e7; border-color: #d97706;
+                       color: #6b3a02; }
+  .headline.diverge  .tag { color: #a14a02; }
+  .headline.summary  { background: #f0f4fa; border-color: #2563eb;
+                       color: #1e3a73; }
+  .headline.summary  .tag { color: #1e3a73; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .panel { border: 1px solid #ddd; border-radius: 6px; padding: 12px;
+           background: #fafafa; }
+  .panel .meta { font-size: 12px; color: #666; margin-bottom: 8px; }
+  .checks { font-size: 14px; line-height: 1.7; margin-top: 8px; }
+  .checks .row { display: flex; gap: 8px; align-items: baseline; }
+  .checks .icon { font-size: 16px; line-height: 1; width: 18px; flex-shrink: 0; }
+  .checks .ok  { color: #1d6f1d; }
+  .checks .bad { color: #9b1c1c; }
+  .checks .num { font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+                 font-size: 13px; color: #555; }
+  details { background: #fafafa; padding: 8px 12px; border: 1px solid #ddd;
+            border-radius: 6px; margin-top: 16px; }
+  summary { cursor: pointer; font-weight: 600; }
+  details .caption { font-size: 13px; color: #444; margin: 8px 0 0 0;
+                     background: #eef4ff; padding: 10px 14px;
+                     border-radius: 4px; border-left: 3px solid #5b9bd5; }
+  details .caption ul.howto-list { margin: 6px 0 0 0; padding-left: 18px; }
+  details .caption ul.howto-list li { margin-bottom: 4px; line-height: 1.45; }
+  details .caption .howto-aside { margin-top: 8px; padding-top: 6px;
+                                   border-top: 1px dashed #b9d0ec;
+                                   color: #2e466e; }
+  .reading { background: #fffbe6; padding: 14px 18px;
+             border-left: 4px solid #d4af37;
+             margin-top: 24px; border-radius: 0 6px 6px 0; }
+  .reading h3 { margin: 0 0 6px 0; font-size: 14px;
+                text-transform: uppercase; letter-spacing: 0.5px;
+                color: #856404; }
+  .reading p { margin: 0 0 10px 0; }
+  .reading p:last-child { margin-bottom: 0; }
+  .plot-host { width: 100%; }
+</style>
+</head>
+<body>
+
+<p style="margin: 0 0 12px 0; font-size: 13px;">
+  <a href="../../index.html" style="color: #2563eb; text-decoration: none;">← Back to GstreamerExp hub</a>
+</p>
+
+<h1>SCReAM vs GCC — what arrives at the viewer, and what the algorithm sent</h1>
+
+<div class="headline summary">
+  <span class="tag">main finding</span>
+  <p class="thesis">
+    At the viewer, the SCReAM-vs-GCC ranking depends on the network's
+    pace: GCC delivers more frames on slow-changing networks; SCReAM
+    delivers more on fast-changing networks. At the sender, SCReAM
+    pushes more bytes onto the wire on both networks — but more bytes
+    sent does not mean more frames received.
+  </p>
+</div>
+
+<p class="lede">
+  Two video congestion-control algorithms, <strong>SCReAM</strong> and
+  <strong>GCC</strong>, sense the network differently and pace the
+  encoder differently. Zhang et al. (<em>Congestion Control for RTP
+  Media: A Comparison on Simulated Environment</em>, SIMUtools 2019)
+  reported on sender-side behavior — what each algorithm tells the
+  encoder to produce. This page reports both: what the algorithm
+  sent (sender side) and what arrived at the viewer (receiver side).
+  The two answer different questions, and they rank the algorithms
+  in opposite directions on the slow-changing network.
+</p>
+
+<h2 style="margin-top: 28px;">RECEIVER · what arrives at the viewer</h2>
+<p style="color: #555; margin-top: 0;">
+  Bytes-per-second arriving at the viewer over the full 20-second
+  run. This is the operationally important view: data that actually
+  reaches the receiver. Each algorithm shown as a bold median line
+  (across runs) with a lighter band covering the 10th–90th percentile
+  spread. Pink shading marks the 300 kbps bottleneck phase.
+</p>
+<div class="grid2">
+  <div class="panel">
+    <h3>Slow-changing network</h3>
+    <div id="ts-recv-sparse" class="plot-host" style="height: 320px;"></div>
+  </div>
+  <div class="panel">
+    <h3>Fast-changing network</h3>
+    <div id="ts-recv-fast" class="plot-host" style="height: 320px;"></div>
+  </div>
+</div>
+
+<div class="headline match" style="margin: 16px 0;">
+  <span class="tag">receiver result</span>
+  <ul class="findings">
+    <li><strong>Slow-changing network (left):</strong> during the
+        bottleneck, SCReAM and GCC both arrive at ~300 kbps (the
+        cap). After the bottleneck, GCC recovers cleanly; SCReAM's
+        overflow during the squeeze leaves missing frames.</li>
+    <li><strong>Fast-changing network (right):</strong> SCReAM
+        tracks the rapid flips and delivers steadily; GCC's rate
+        progressively decays after each bottleneck, never recovers
+        to the high-capacity level.</li>
+  </ul>
+</div>
+
+<h2 style="margin-top: 28px;">SENDER · what the algorithm pushed onto the wire</h2>
+<p style="color: #555; margin-top: 0;">
+  The same view, but on the sender side: encoder target rate over
+  time. This is what each algorithm <em>tried</em> to send — many of
+  these bytes don't survive to the receiver above.
+</p>
+<div class="grid2">
+  <div class="panel">
+    <h3>Slow-changing network</h3>
+    <div id="ts-send-sparse" class="plot-host" style="height: 320px;"></div>
+  </div>
+  <div class="panel">
+    <h3>Fast-changing network</h3>
+    <div id="ts-send-fast" class="plot-host" style="height: 320px;"></div>
+  </div>
+</div>
+
+<div class="headline diverge" style="margin: 16px 0;">
+  <span class="tag">sender result · why sender ≠ receiver</span>
+  <p>
+    SCReAM tells the encoder to push at a much higher rate than GCC
+    on both networks — far above the 300 kbps bottleneck during the
+    squeeze. Most of those over-cap bytes get dropped at the
+    bottleneck queue and never reach the viewer. Compare the same
+    time window in the receiver plots above: the rate caps at
+    300 kbps regardless of what the sender attempted.
+  </p>
+</div>
+
+
+<div class="glossary" style="margin-top: 32px;">
+  <h3>Glossary of terms used on this page</h3>
+  <dl>
+    <dt>Network capacity</dt>
+    <dd>How many bits the network can carry per second. We test against
+        a synthetic network whose capacity is known exactly.</dd>
+    <dt>Capacity-step</dt>
+    <dd>A network whose capacity drops abruptly (e.g. 5 Mbps → 300 kbps),
+        holds, then jumps back. A stair, not a ramp.</dd>
+    <dt>Bottleneck phase</dt>
+    <dd>The window where capacity is at its lowest (300 kbps in our
+        tests) — the part where the algorithm's choices matter.</dd>
+    <dt>Slow-changing network</dt>
+    <dd>Capacity holds each level for several seconds before flipping.
+        Both algorithms have time to react and settle into a steady
+        rate.</dd>
+    <dt>Fast-changing network</dt>
+    <dd>Capacity flips every 2 seconds. Neither algorithm gets time
+        to settle.</dd>
+    <dt>Sender rate</dt>
+    <dd>How many bits per second the algorithm tells the video encoder
+        to produce. This is what the algorithm controls; the plots
+        show it over time.</dd>
+    <dt>Utilization</dt>
+    <dd>Sender rate ÷ network capacity. <code>1.0</code> = sender
+        exactly fills the pipe. <code>&gt;1.0</code> = sender is
+        over-pushing, packets pile up or drop. <code>&lt;1.0</code> =
+        sender is leaving bandwidth unused.</dd>
+    <dt>Sawtooth</dt>
+    <dd>A pattern of climbing fast, hitting a wall, crashing down,
+        and climbing again.</dd>
+  </dl>
+</div>
+
+<script>
+const SOURCES = [
+  { panel: "sparse", url: "h1_data_scream-vs-gcc-720p.json"      },
+  { panel: "fast",   url: "h1_data_scream-vs-gcc-720p-fast.json" },
+];
+// Soft amber/yellow — distinct from SCReAM red and GCC blue so the
+// bottleneck shading doesn't read as "the same color as one of the
+// arms."
+const BOTTLENECK_FILL = "rgba(255, 193, 7, 0.16)";
+
+function num(x, d) { return (x == null) ? "—" : x.toFixed(d ?? 2); }
+function pct(x)    { return (x == null) ? "—" : (100 * x).toFixed(1) + "%"; }
+
+function bottleneckBands(envelope) {
+  // Find the minimum cap; return [start, end] pairs for every phase
+  // at that cap. These are the windows we shade and stat-aggregate over.
+  const minCap = Math.min(...envelope.map(p => p.cap_kbps));
+  return envelope
+    .filter(p => p.cap_kbps === minCap)
+    .map(p => ({ x0: p.start_s, x1: p.end_s }));
+}
+
+// Hex color + alpha (0..1) -> rgba string for fill bands.
+function rgba(hex, a) {
+  const h = hex.replace("#", "");
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${a})`;
+}
+
+// Step-interpolate one rep's samples onto a fixed time grid.
+// Each sample is [t_seconds, kbps]; encoder rate stays at the last
+// reported value until the next sample arrives.
+function interpToGrid(samples, grid) {
+  const out = new Array(grid.length).fill(null);
+  let i = 0;
+  for (let g = 0; g < grid.length; g++) {
+    const t = grid[g];
+    while (i + 1 < samples.length && samples[i + 1][0] <= t) i++;
+    out[g] = (samples.length && samples[0][0] <= t) ? samples[i][1] : null;
+  }
+  return out;
+}
+
+function percentile(sorted, p) {
+  if (sorted.length === 0) return null;
+  const idx = Math.min(sorted.length - 1,
+                       Math.floor(p * (sorted.length - 1)));
+  return sorted[idx];
+}
+
+// For an arm: resample every rep onto `grid`, then per time-bin
+// compute median, p10, p90 across reps. `sampleField` selects which
+// per-rep series to read ("samples" for sender encoder rate;
+// "viewer_wire_samples" for receiver bytes-per-second).
+function aggregateAcrossReps(reps, grid, sampleField) {
+  const matrix = reps.map(r => interpToGrid(r[sampleField] || [], grid));
+  const median = [], p10 = [], p90 = [];
+  for (let g = 0; g < grid.length; g++) {
+    const col = matrix.map(row => row[g])
+                      .filter(v => v != null)
+                      .sort((a, b) => a - b);
+    median.push(percentile(col, 0.50));
+    p10.push(percentile(col, 0.10));
+    p90.push(percentile(col, 0.90));
+  }
+  return { median, p10, p90 };
+}
+
+function renderTimeSeries(divId, data, opts) {
+  opts = opts || {};
+  const sampleField = opts.sampleField || "samples";
+  const yTitle = opts.yTitle || "sender rate (kbps)";
+  const showCapacity = opts.showCapacity !== false;
+  const showDeliveredSummary = opts.showDeliveredSummary === true;
+
+  function repsMedian(reps, key) {
+    const xs = reps.map(r => r[key]).filter(v => v != null).sort((a,b) => a-b);
+    if (!xs.length) return null;
+    const n = xs.length;
+    return n % 2 ? xs[(n-1)/2] : Math.round((xs[n/2 - 1] + xs[n/2]) / 2);
+  }
+  const traces = [];
+
+  // Capacity envelope as a thin step plot — useful on the sender
+  // plot (lets you see how far above/below the cap the encoder
+  // ran) but misleading on the receiver plot (the receiver is
+  // bounded by what arrived, not by sender capacity, so a 5 Mbps
+  // line dominates the y-axis when actual data is ~500 kbps).
+  if (showCapacity) {
+    const envX = [], envY = [];
+    for (const ph of data.envelope) {
+      envX.push(ph.start_s, ph.end_s);
+      envY.push(ph.cap_kbps, ph.cap_kbps);
+    }
+    traces.push({
+      x: envX, y: envY, mode: "lines", name: "network capacity",
+      line: { color: "#444", width: 1.5, dash: "dot", shape: "linear" },
+      hoverinfo: "skip",
+    });
+  }
+
+  // Build a 0.2 s grid spanning the envelope. Fine enough to show
+  // sub-second movements, coarse enough that interpolation isn't
+  // visually noisy.
+  const tMax = Math.max(...data.envelope.map(p => p.end_s));
+  const grid = [];
+  for (let t = 0; t <= tMax + 0.001; t += 0.2) grid.push(+t.toFixed(2));
+
+  for (const arm of data.arms) {
+    if (arm.reps.length === 0) continue;
+    const agg = aggregateAcrossReps(arm.reps, grid, sampleField);
+
+    // p10..p90 band: lower bound trace (no fill) + upper bound (fills
+    // to the previous trace). Hide both from the legend; the legend
+    // entry is the median line.
+    traces.push({
+      x: grid, y: agg.p10, mode: "lines",
+      line: { width: 0, color: arm.color },
+      showlegend: false, hoverinfo: "skip",
+    });
+    traces.push({
+      x: grid, y: agg.p90, mode: "lines",
+      line: { width: 0, color: arm.color },
+      fill: "tonexty", fillcolor: rgba(arm.color, 0.18),
+      showlegend: false, hoverinfo: "skip",
+    });
+    traces.push({
+      x: grid, y: agg.median, mode: "lines",
+      name: `${arm.label}  (median across ${arm.reps.length} runs)`,
+      legendgroup: arm.algorithm,
+      line: { width: 3, color: arm.color, shape: "spline", smoothing: 0.3 },
+      hovertemplate: `${arm.label}<br>t=%{x:.1f}s, median=%{y:.0f} kbps<extra></extra>`,
+    });
+  }
+
+  const shapes = bottleneckBands(data.envelope).map(b => ({
+    type: "rect", xref: "x", yref: "paper",
+    x0: b.x0, x1: b.x1, y0: 0, y1: 1,
+    fillcolor: BOTTLENECK_FILL, line: { width: 0 }, layer: "below",
+  }));
+
+  const annotations = [];
+  if (shapes.length) {
+    annotations.push({
+      x: shapes[0].x0 + 0.1, y: 1.05, xref: "x", yref: "paper",
+      text: "↓ bottleneck (300 kbps)",
+      showarrow: false, font: { size: 11, color: "#8a6800" },
+      xanchor: "left",
+    });
+  }
+  if (showDeliveredSummary) {
+    // Per-arm median frames delivered to the viewer. Surfaces the
+    // comparison directly inside the plot so the reader doesn't have
+    // to compute it from the time-series shape.
+    const parts = [];
+    let scream = null, gcc = null;
+    for (const arm of data.arms) {
+      const m = repsMedian(arm.reps, "viewer_frames");
+      if (m == null) continue;
+      parts.push(`${arm.label}: ${m}`);
+      if (arm.algorithm === "scream") scream = m;
+      if (arm.algorithm === "gcc")    gcc    = m;
+    }
+    let summary = "median frames delivered — " + parts.join(" · ");
+    if (scream != null && gcc != null) {
+      const d = scream - gcc;
+      const sign = d > 0 ? "+" : "";
+      const ahead = d === 0 ? "tied"
+                  : d > 0  ? `SCReAM ahead by ${d}`
+                           : `GCC ahead by ${-d}`;
+      summary += `   →   ${ahead}`;
+    }
+    annotations.push({
+      x: 0.98, y: 0.96, xref: "paper", yref: "paper",
+      text: summary, showarrow: false,
+      font: { size: 12, color: "#222" },
+      xanchor: "right", yanchor: "top",
+      bgcolor: "rgba(255, 255, 255, 0.85)",
+      bordercolor: "#888", borderwidth: 1, borderpad: 4,
+    });
+  }
+
+  Plotly.newPlot(divId, traces, {
+    margin: { t: 20, l: 60, r: 10, b: 40 },
+    xaxis: { title: "time since run start (s)" },
+    yaxis: { title: yTitle, rangemode: "tozero" },
+    legend: { orientation: "h", y: 1.10, x: 0 },
+    shapes: shapes,
+    annotations: annotations,
+  }, { displayModeBar: false, responsive: true });
+}
+
+function fillChecks(divEl, agg) {
+  const utilOk = agg.util_gap  != null && agg.util_gap  >= 0.05;
+  const varOk  = agg.var_ratio != null && agg.var_ratio >= 1.20;
+  const utilGapPp = (agg.util_gap == null) ? null : (100 * agg.util_gap);
+  divEl.innerHTML = `
+    <div class="row">
+      <span class="icon ${utilOk ? "ok" : "bad"}">${utilOk ? "✓" : "✗"}</span>
+      <span>
+        GCC's sender rate is
+        <strong>${num(utilGapPp, 1)} percentage points</strong>
+        ${utilOk ? "above" : (utilGapPp < 0 ? "below" : "above")} SCReAM's
+        during the bottleneck.
+        <span class="num">(SCReAM ${pct(agg.scream_util_mean)} of cap;
+                          GCC ${pct(agg.gcc_util_mean)} of cap.
+                          Need ≥ +5 pp.)</span>
+      </span>
+    </div>
+    <div class="row">
+      <span class="icon ${varOk ? "ok" : "bad"}">${varOk ? "✓" : "✗"}</span>
+      <span>
+        GCC's rate swings <strong>${num(agg.var_ratio, 2)}×</strong>
+        as much as SCReAM's during the bottleneck.
+        <span class="num">(SCReAM σ = ${num(agg.scream_rate_stddev_kbps, 0)} kbps;
+                          GCC σ = ${num(agg.gcc_rate_stddev_kbps, 0)} kbps.
+                          Need ≥ 1.2×.)</span>
+      </span>
+    </div>
+  `;
+}
+
+function renderDistribution(divId, snapshots, key, ytitle) {
+  const traces = [];
+  // Both utilization metrics use 1.0 as the "exactly fills the pipe"
+  // reference; the rate-swing metric has no equivalent reference.
+  const refY = (key === "bottleneck_util_mean" || key === "overall_util")
+               ? 1.0 : null;
+  for (const snap of snapshots) {
+    for (const arm of snap.arms) {
+      const ys = arm.reps.map(r => r[key]).filter(v => v != null);
+      const regimeShort = snap.regime_label.split(" — ")[0];
+      traces.push({
+        type: "box",
+        y: ys,
+        boxpoints: "all", jitter: 0.5, pointpos: 0,
+        name: `${regimeShort} · ${arm.label}`,
+        marker: { color: arm.color, size: 6, opacity: 0.7 },
+        line:   { color: arm.color },
+        fillcolor: arm.color + "33",
+      });
+    }
+  }
+  const shapes = [];
+  if (refY != null) {
+    shapes.push({
+      type: "line", xref: "paper", yref: "y",
+      x0: 0, x1: 1, y0: refY, y1: refY,
+      line: { color: "#666", width: 1, dash: "dash" },
+    });
+  }
+  Plotly.newPlot(divId, traces, {
+    margin: { t: 20, l: 60, r: 10, b: 80 },
+    yaxis: { title: ytitle },
+    showlegend: false,
+    shapes: shapes,
+    annotations: refY != null ? [{
+      x: 1, y: refY, xref: "paper", yref: "y",
+      text: " sender exactly matches cap",
+      showarrow: false, font: { size: 11, color: "#666" },
+      xanchor: "right", yshift: 10,
+    }] : [],
+  }, { displayModeBar: false, responsive: true });
+}
+
+(async function main() {
+  const snapshots = await Promise.all(
+    SOURCES.map(s => fetch(s.url).then(r => r.json())
+                                  .then(d => Object.assign(d, { panel: s.panel }))));
+  for (const snap of snapshots) {
+    renderTimeSeries(`ts-recv-${snap.panel}`, snap, {
+      sampleField: "viewer_wire_samples",
+      yTitle: "bytes per second arriving at viewer (kbps)",
+      showCapacity: false,
+      showDeliveredSummary: true,
+    });
+    renderTimeSeries(`ts-send-${snap.panel}`, snap, {
+      sampleField: "samples",
+      yTitle: "encoder target rate (kbps)",
+    });
+  }
+})();
+</script>
+</body>
+</html>

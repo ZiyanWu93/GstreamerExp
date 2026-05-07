@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>GstreamerExp</title>
+<style>
+  :root {
+    --bg: #fafafa;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #5f6b7a;
+    --rule: #e1e4e8;
+    --accent: #2563eb;
+    --accent-soft: #eef2ff;
+    --good: #1d6f1d;
+    --good-soft: #ecf7ec;
+    --gap: #b14a02;
+    --gap-soft: #fdf3e7;
+    --info: #1e3a73;
+    --info-soft: #f0f4fa;
+    --code: #f4f5f7;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                 Helvetica, Arial, sans-serif;
+    max-width: 880px;
+    margin: 40px auto;
+    padding: 0 20px 80px;
+    color: var(--ink);
+    background: var(--bg);
+    line-height: 1.55;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  header h1 {
+    margin: 0 0 4px 0;
+    font-size: 30px;
+    letter-spacing: -0.01em;
+  }
+  header .tag {
+    color: var(--muted);
+    font-size: 15px;
+    margin-bottom: 28px;
+  }
+
+  /* ---- Section heading ---- */
+  h2.section {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    font-weight: 700;
+    margin: 32px 0 12px;
+  }
+
+  /* ---- Features & Roadmap card (single, prominent) ---- */
+  .feature-link {
+    display: block;
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    padding: 20px 24px;
+    text-decoration: none;
+    color: var(--ink);
+    transition: border-color 0.12s ease, box-shadow 0.12s ease;
+  }
+  .feature-link:hover {
+    border-color: var(--accent);
+    box-shadow: 0 1px 6px rgba(37,99,235,0.08);
+    text-decoration: none;
+  }
+  .feature-link .title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+  .feature-link .desc {
+    font-size: 14px;
+    color: var(--muted);
+    margin: 0;
+  }
+
+  /* ---- Hypothesis cards ---- */
+  .hypo-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  @media (max-width: 760px) {
+    .hypo-grid { grid-template-columns: 1fr; }
+  }
+  .hypo-card {
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    padding: 14px 16px;
+    background: var(--panel);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .hypo-card.linked {
+    transition: border-color 0.12s ease, box-shadow 0.12s ease;
+  }
+  .hypo-card.linked:hover {
+    border-color: var(--accent);
+    box-shadow: 0 1px 4px rgba(37,99,235,0.08);
+    text-decoration: none;
+  }
+  .hypo-card .id {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+  }
+  .hypo-card .claim {
+    font-size: 14.5px;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+  .hypo-card .footer {
+    margin-top: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+  }
+  .badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    letter-spacing: 0.02em;
+  }
+  .badge.supported { background: var(--good-soft); color: var(--good); }
+  .badge.regime    { background: #fff7ed; color: #b45309; }
+  .badge.untested  { background: var(--info-soft); color: var(--info); }
+  .badge.refuted   { background: var(--gap-soft); color: var(--gap); }
+  .hypo-card .target {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px;
+    color: var(--muted);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>GstreamerExp</h1>
+  <p class="tag">Video congestion-control testbed — SCReAM vs GCC on GStreamer 1.24</p>
+</header>
+
+<h2 class="section">Features &amp; Roadmap</h2>
+<a class="feature-link" href="features.html">
+  <div class="title">Features &amp; Roadmap →</div>
+  <p class="desc">
+    Programming model, the three pipeline shapes (Bare / SCReAM / GCC),
+    full SCReAM-vs-GCC configuration space, and the gap list against a
+    real teleoperation video stack.
+  </p>
+</a>
+
+<h2 class="section">Hypotheses</h2>
+<div class="hypo-grid">
+
+  <a class="hypo-card linked" href="analysis/hypotheses/h1.html">
+    <div class="id">H1</div>
+    <div class="claim">On changing-capacity networks, SCReAM pushes more bytes onto the wire; the receiver-frame ranking flips by regime — GCC wins in slow-changing, SCReAM in fast-changing</div>
+    <div class="footer">
+      <span class="badge regime">tested · regime-dependent</span>
+      <span class="target">→ h1.html</span>
+    </div>
+  </a>
+
+  <a class="hypo-card linked" href="analysis/hypotheses/h4.html">
+    <div class="id">H4</div>
+    <div class="claim">On a fluctuating network, GCC delivers more frames than SCReAM in every condition — neither the latency deadline nor retransmission changes the ranking</div>
+    <div class="footer">
+      <span class="badge supported">tested · GCC ahead in every cell</span>
+      <span class="target">→ h4.html</span>
+    </div>
+  </a>
+
+  <div class="hypo-card">
+    <div class="id">H2</div>
+    <div class="claim">GCC's rate control collapses harder than SCReAM's under bursty loss</div>
+    <div class="footer">
+      <span class="badge untested">untested</span>
+      <span class="target">h2_gcc_bursty_collapse.py</span>
+    </div>
+  </div>
+
+  <div class="hypo-card">
+    <div class="id">H3</div>
+    <div class="claim">PLI's quality advantage over NACK widens with content motion</div>
+    <div class="footer">
+      <span class="badge untested">untested</span>
+      <span class="target">h3_pli_real_content.py</span>
+    </div>
+  </div>
+
+  <div class="hypo-card">
+    <div class="id">H5</div>
+    <div class="claim">GCC under-utilizes after a sudden RTT spike; SCReAM doesn't</div>
+    <div class="footer">
+      <span class="badge untested">untested</span>
+      <span class="target">h5_gcc_rtt_step.py</span>
+    </div>
+  </div>
+
+  <div class="hypo-card">
+    <div class="id">H6</div>
+    <div class="claim">GCC backs off on TCP cross-traffic where SCReAM holds rate</div>
+    <div class="footer">
+      <span class="badge untested">untested</span>
+      <span class="target">h6_gcc_tcp_cross_traffic.py</span>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

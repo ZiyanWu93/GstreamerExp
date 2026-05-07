@@ -1,0 +1,29 @@
+name: nack-latency-budget-tight
+description: |
+  Follow-up to `nack-latency-budget`: same network and same workload,
+  but with the latency budget set to 50 ms (tighter than the network's
+  100 ms RTT). Tests whether SCReAM's advantage over GCC, observed at
+  budget=0 and budget=100, persists, shrinks, or reverses when the
+  deadline is tight enough that NACK retransmissions can't fit.
+
+  4 arms × 5 reps = 20 runs. Combined with the budget=0 and budget=100
+  arms from `nack-latency-budget`, the H4 page covers three budget
+  points across all (CC × NACK) combinations.
+reps: 5
+varies:
+  - congestion_control.algorithm
+  - recovery.nack
+  - recovery.rtx_buffer_ms
+configurations:
+  - id: 37
+    label: SCReAM no-NACK budget=50
+    color: "#a50f15"
+  - id: 38
+    label: SCReAM NACK budget=50
+    color: "#67000d"
+  - id: 39
+    label: GCC no-NACK budget=50
+    color: "#08519c"
+  - id: 40
+    label: GCC NACK budget=50
+    color: "#08306b"

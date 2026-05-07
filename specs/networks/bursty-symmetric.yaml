@@ -1,0 +1,46 @@
+name: bursty-symmetric
+description: |
+  Both directions experience bursty loss during the bad window.
+  camera_steps shape the camera→viewer (forward, video) path.
+  viewer_steps shape the viewer→camera (return, RTCP feedback) path.
+
+  This is the regime where NACK and PLI feedback packets are themselves
+  at risk: their requests can be lost on the way back to the camera.
+  FEC's no-feedback property should pay off here in a way the prior
+  bursty-only-on-forward setup couldn't measure.
+
+  Slightly different burst depths on the two directions (B=5 forward,
+  B=8 return) so the two GE chains aren't perfectly correlated — that
+  would be unrealistic and could mask interaction effects.
+camera_steps:
+  - duration: 7
+    rate_kbps: 5000
+    delay_ms: 20
+    loss: { model: none }
+    label: "5 Mbps · 20 ms · clean (forward)"
+  - duration: 6
+    rate_kbps: 300
+    delay_ms: 100
+    loss: { model: bursty, pct: 2, burst: 5 }
+    label: "300 kbps · 100 ms · 2% bursty B=5 (forward)"
+  - duration: 7
+    rate_kbps: 5000
+    delay_ms: 20
+    loss: { model: none }
+    label: "5 Mbps · 20 ms · clean (forward)"
+viewer_steps:
+  - duration: 7
+    rate_kbps: 1500
+    delay_ms: 50
+    loss: { model: none }
+    label: "1.5 Mbps · 50 ms · clean (return)"
+  - duration: 6
+    rate_kbps: 1500
+    delay_ms: 50
+    loss: { model: bursty, pct: 5, burst: 8 }
+    label: "1.5 Mbps · 50 ms · 5% bursty B=8 (return)"
+  - duration: 7
+    rate_kbps: 1500
+    delay_ms: 50
+    loss: { model: none }
+    label: "1.5 Mbps · 50 ms · clean (return)"

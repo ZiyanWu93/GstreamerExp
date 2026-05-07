@@ -1,0 +1,15 @@
+name: snow-720p30
+description: "Random-noise pattern at 1280x720x30fps. Intentional worst case \u2014\
+  \ no inter-frame prediction works, so every frame is essentially intra. Encoder\
+  \ is bandwidth-limited rather than content-limited; output sits near whatever target-bitrate\
+  \ is set. Use for testing controllers near the encoder's true cap rather than at\
+  \ a content floor."
+source:
+  backend: synthetic
+  width: 1280
+  height: 720
+  fps: 30
+  num_frames: 600
+  clock_overlay: false
+  synthetic:
+    pattern: snow

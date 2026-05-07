@@ -1,0 +1,22 @@
+name: scream-nack-recovery
+description: |
+  SCReAM at 720p30 + fluctuating-5mbps-300kbps, with vs without NACK + RTX
+  packet recovery. Both runs share the same rate controller, the same
+  workload, the same network impairment — they differ only in whether
+  the receiver requests retransmissions for missing packets and whether
+  the sender retains a ring buffer to satisfy them.
+
+  Hypothesis: under the impaired phase (300 kbps + 2% loss), the
+  +NACK arm should depayload more frames intact than the -NACK arm.
+  How much more is the empirical question this experiment answers.
+reps: 10
+varies:
+  - recovery.nack
+  - recovery.rtx_buffer_ms
+configurations:
+  - id: 13
+    label: SCReAM + NACK
+    color: "#d62728"
+  - id: 14
+    label: SCReAM only
+    color: "#888888"

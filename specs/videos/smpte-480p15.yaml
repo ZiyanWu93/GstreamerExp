@@ -1,0 +1,13 @@
+name: smpte-480p15
+description: "SMPTE color bars at 640x480x15fps. Static \u2014 once a keyframe lands,\
+  \ P-frames are tiny (~30-50 kbps). Useful for plumbing tests and as a low-bitrate\
+  \ stand-in."
+source:
+  backend: synthetic
+  width: 640
+  height: 480
+  fps: 15
+  num_frames: 300
+  clock_overlay: false
+  synthetic:
+    pattern: smpte

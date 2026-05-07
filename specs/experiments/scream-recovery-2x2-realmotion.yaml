@@ -1,0 +1,34 @@
+name: scream-recovery-2x2-realmotion
+description: |
+  Real-content companion to scream-recovery-2x2. Same NACK × PLI 2x2 over
+  the same network (fluctuating-5mbps-300kbps), but the source is the
+  pinwheel clip via FileSource — motion-varied content that drives
+  measurable per-frame encoder variance, vs the near-constant compression
+  of the synthetic ball pattern.
+
+  Hypothesis worth testing against the synthetic baseline:
+    - PLI's bandwidth cost should be visibly higher: keyframes against
+      motion-varied content are larger, so a forced-keyframe under tight
+      bottleneck rates costs more relative to the budget.
+    - NACK's value should be roughly preserved: per-packet retransmit
+      cost is independent of frame size.
+    - The encoder's rate-controller should be observably busier (target
+      bitrate trajectory more variable) even within the same network.
+reps: 10
+varies:
+  - recovery.nack
+  - recovery.pli
+  - recovery.rtx_buffer_ms
+configurations:
+  - id: 20
+    label: neither
+    color: "#888888"
+  - id: 19
+    label: NACK only
+    color: "#d62728"
+  - id: 21
+    label: PLI only
+    color: "#1f77b4"
+  - id: 22
+    label: NACK + PLI
+    color: "#2ca02c"

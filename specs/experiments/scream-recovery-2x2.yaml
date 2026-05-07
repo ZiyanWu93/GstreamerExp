@@ -1,0 +1,33 @@
+name: scream-recovery-2x2
+description: |
+  SCReAM at 720p30 + fluctuating-5mbps-300kbps, full 2x2 over the two
+  receiver-driven recovery primitives: NACK + RTX (per-packet retransmit
+  out of a sender-side ring buffer) and PLI (full-frame recovery via
+  forced keyframe). All four arms share the same rate controller, the
+  same workload, the same network impairment — they differ only in
+  which recovery primitives are wired in.
+
+  Hypothesis: the prior NACK-only experiment showed two catastrophic
+  no-NACK outliers where the decoder lost reference state and never
+  recovered. PLI alone should bound that worst case (decoder asks for
+  a keyframe, sender complies); NACK alone should improve the typical
+  case (lost packets retransmitted before the jitter buffer gives up);
+  NACK + PLI should pareto-dominate either alone.
+reps: 10
+varies:
+  - recovery.nack
+  - recovery.pli
+  - recovery.rtx_buffer_ms
+configurations:
+  - id: 14
+    label: neither
+    color: "#888888"
+  - id: 13
+    label: NACK only
+    color: "#d62728"
+  - id: 15
+    label: PLI only
+    color: "#1f77b4"
+  - id: 16
+    label: NACK + PLI
+    color: "#2ca02c"

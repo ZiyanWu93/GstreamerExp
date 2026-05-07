@@ -1,0 +1,40 @@
+meta:
+  name: distributed_scream_720p_realmotion_pli
+  description: "Distributed (aum\u2192veda) SCReAM at 720p30 under fluctuating-5mbps-300kbps,\
+    \ with PLI but without NACK + RTX. Pair with configs 13/14/16 for the 2x2 study\
+    \ isolating PLI versus packet retransmission."
+  flags:
+  - sudo
+  - scream
+video: teleop-realmotion
+network: fluctuating-5mbps-300kbps
+scenario:
+  actors:
+    camera: {}
+    viewer: {}
+  setup_delay_seconds: 3.0
+  drain_delay_seconds: 1.0
+  metrics:
+  - frame_count
+  - encoder_target_kbps
+  - frame_latency
+  - wire_bytes
+  - encoded_bitrate
+  - decoder_errors
+codec: vp8
+encoder:
+  bitrate_kbps: 1500
+  keyframe_interval_frames: 60
+congestion_control:
+  algorithm: scream
+  init_bitrate_kbps: 1500
+  min_bitrate_kbps: 200
+  max_bitrate_kbps: 4000
+sink:
+  backend: fake
+  sync: false
+recovery:
+  nack: false
+  pli: true
+  fec: false
+latency_budget_ms: 0

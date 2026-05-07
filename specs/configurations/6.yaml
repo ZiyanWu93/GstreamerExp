@@ -1,0 +1,117 @@
+meta:
+  name: fluctuation
+  description: "SCReAM + time-varying impairment in three steps (good \u2192 severe\
+    \ \u2192 recover) showing live bitrate adaptation in two Linux network namespaces."
+  flags:
+  - sudo
+  - scream
+video: ball-480p15
+scenario:
+  actors:
+    camera:
+      host: 10.0.0.1
+      wrap:
+      - sudo
+      - ip
+      - netns
+      - exec
+      - ns_tx
+    viewer:
+      host: 10.0.0.2
+      wrap:
+      - sudo
+      - ip
+      - netns
+      - exec
+      - ns_rx
+  setup_delay_seconds: 2.0
+  drain_delay_seconds: 1.0
+  metrics:
+  - frame_count
+  - encoder_target_kbps
+codec: vp8
+encoder:
+  bitrate_kbps: 500
+  keyframe_interval_frames: 60
+congestion_control:
+  algorithm: scream
+  init_bitrate_kbps: 500
+  min_bitrate_kbps: 200
+  max_bitrate_kbps: 4000
+sink:
+  backend: fake
+  sync: false
+hooks:
+  pre_run:
+    host: local
+    sudo: true
+    script: |
+      # Two network namespaces (ns_tx, ns_rx) connected by a veth pair, with
+      # initial impairment of 5 Mbps + 20 ms delay. The during_run hook
+      # changes these qdiscs over time.
+      set -e
+
+      NS_TX=ns_tx
+      NS_RX=ns_rx
+      TX_IP=10.0.0.1
+      RX_IP=10.0.0.2
+
+      ip netns del $NS_TX 2>/dev/null || true
+      ip netns del $NS_RX 2>/dev/null || true
+
+      ip netns add $NS_TX
+      ip netns add $NS_RX
+
+      ip link add veth_tx type veth peer name veth_rx
+      ip link set veth_tx netns $NS_TX
+      ip link set veth_rx netns $NS_RX
+
+      ip netns exec $NS_TX ip addr add $TX_IP/24 dev veth_tx
+      ip netns exec $NS_RX ip addr add $RX_IP/24 dev veth_rx
+      ip netns exec $NS_TX ip link set veth_tx up
+      ip netns exec $NS_RX ip link set veth_rx up
+      ip netns exec $NS_TX ip link set lo up
+      ip netns exec $NS_RX ip link set lo up
+
+      for ns_dev in "$NS_TX:veth_tx" "$NS_RX:veth_rx"; do
+          NS=${ns_dev%:*}
+          DEV=${ns_dev#*:}
+          ip netns exec $NS tc qdisc add dev $DEV root handle 1: netem delay 20ms
+          ip netns exec $NS tc qdisc add dev $DEV parent 1:1 handle 2: tbf rate 5mbit burst 32kbit latency 50ms
+      done
+
+      echo "namespaces ready: $NS_TX ($TX_IP) <-> $NS_RX ($RX_IP), initial bw=5mbit, delay=20ms"
+  during_run:
+    host: local
+    sudo: true
+    script: |
+      # Three steps over ~20 s, applied to ns_tx's egress veth:
+      #   t=0..7s   : 5 Mbps,   20 ms              (initial)
+      #   t=7..13s  : 300 kbps, 100 ms, 2% loss    (severe drop)
+      #   t=13..20s : 5 Mbps,   20 ms              (recovery)
+      set -e
+
+      apply() {
+          local rate="$1" burst="$2" netem="$3"
+          ip netns exec ns_tx tc qdisc change dev veth_tx root handle 1: netem $netem
+          ip netns exec ns_tx tc qdisc change dev veth_tx parent 1:1 handle 2: tbf rate $rate burst $burst latency 50ms
+          echo "[fluctuate] $(date +%H:%M:%S) -> rate=$rate netem=$netem"
+      }
+
+      sleep 7
+      apply  300kbit  8kbit  "delay 100ms loss 2%"
+
+      sleep 6
+      apply  5mbit    32kbit "delay 20ms"
+  post_run:
+    host: local
+    sudo: true
+    script: |
+      ip netns del ns_tx 2>/dev/null || true
+      ip netns del ns_rx 2>/dev/null || true
+      echo "namespaces removed"
+recovery:
+  nack: false
+  pli: false
+  fec: false
+latency_budget_ms: 0

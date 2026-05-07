@@ -1,0 +1,63 @@
+name: fluctuating-fast-5mbps-300kbps
+description: |
+  Fast-fluctuating impairment: 10 phases × 2 seconds alternating
+  between 5 Mbps clean and 300 kbps + 2% uniform loss + 100 ms delay.
+  Same total duration (20 s) and same rate range as
+  fluctuating-5mbps-300kbps, but with 9 capacity transitions instead
+  of 2. Designed to characterize CC adaptation under frequent
+  step changes — the "responsiveness" half of the SCReAM-vs-GCC
+  comparison. Pair with fluctuating-5mbps-300kbps to separate "what
+  utilization holds in steady state" from "how quickly each algorithm
+  finds it after a transition."
+camera_steps:
+- duration: 2
+  rate_kbps: 5000
+  delay_ms: 20
+  loss: { model: none }
+  label: "5 Mbps · 20 ms · clean"
+- duration: 2
+  rate_kbps: 300
+  delay_ms: 100
+  loss: { model: uniform, pct: 2 }
+  label: "300 kbps · 100 ms · 2% uniform"
+- duration: 2
+  rate_kbps: 5000
+  delay_ms: 20
+  loss: { model: none }
+  label: "5 Mbps · 20 ms · clean"
+- duration: 2
+  rate_kbps: 300
+  delay_ms: 100
+  loss: { model: uniform, pct: 2 }
+  label: "300 kbps · 100 ms · 2% uniform"
+- duration: 2
+  rate_kbps: 5000
+  delay_ms: 20
+  loss: { model: none }
+  label: "5 Mbps · 20 ms · clean"
+- duration: 2
+  rate_kbps: 300
+  delay_ms: 100
+  loss: { model: uniform, pct: 2 }
+  label: "300 kbps · 100 ms · 2% uniform"
+- duration: 2
+  rate_kbps: 5000
+  delay_ms: 20
+  loss: { model: none }
+  label: "5 Mbps · 20 ms · clean"
+- duration: 2
+  rate_kbps: 300
+  delay_ms: 100
+  loss: { model: uniform, pct: 2 }
+  label: "300 kbps · 100 ms · 2% uniform"
+- duration: 2
+  rate_kbps: 5000
+  delay_ms: 20
+  loss: { model: none }
+  label: "5 Mbps · 20 ms · clean"
+- duration: 2
+  rate_kbps: 300
+  delay_ms: 100
+  loss: { model: uniform, pct: 2 }
+  label: "300 kbps · 100 ms · 2% uniform"
+viewer_steps: []

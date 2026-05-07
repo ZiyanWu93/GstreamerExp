@@ -1,0 +1,162 @@
+"""Per-run summary computation and pretty-printing.
+
+build_summary() merges camera.json + viewer.json into the canonical
+summary.json shape (verdict, camera block, viewer block, optional
+latency block). print_report() formats one summary for the terminal.
+read_result() reads a worker's result file with a tolerable fallback
+when it's missing.
+
+Latency correlation joins camera and viewer frame_latency samples by
+RTP timestamp — the same value on both sides because it travels in the
+packet header, so the join is robust to packet loss.
+"""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+
+def read_result(path: Path) -> dict:
+    if not path.exists():
+        return {"missing": True, "errors": []}
+    return json.loads(path.read_text())
+
+
+def _metric_summary(role_data: dict, name: str) -> dict:
+    return role_data.get("metrics", {}).get(name, {}).get("summary", {})
+
+
+def _correlate_latency(camera: dict, viewer: dict,
+                       camera_skew: float = 0.0,
+                       viewer_skew: float = 0.0) -> dict:
+    """Join camera + viewer frame_latency samples by RTP timestamp.
+
+    Each sample is [rtp_timestamp, host_wall_time]. Each side's wall
+    time is corrected by its host clock skew (host_clock - controller_clock);
+    deltas are then in the controller's timeframe and reflect actual
+    end-to-end latency."""
+    s_samples = camera.get("metrics", {}).get("frame_latency", {}).get("samples", [])
+    r_samples = viewer.get("metrics", {}).get("frame_latency", {}).get("samples", [])
+    if not s_samples or not r_samples:
+        return {}
+    s_by_ts = {ts: t - camera_skew for ts, t in s_samples}
+    r_by_ts = {ts: t - viewer_skew for ts, t in r_samples}
+    deltas = sorted(
+        (r_by_ts[ts] - s_by_ts[ts]) * 1000.0  # ms
+        for ts in r_by_ts if ts in s_by_ts
+    )
+    if not deltas:
+        return {}
+
+    def pct(p):
+        return deltas[min(int(len(deltas) * p / 100), len(deltas) - 1)]
+
+    return {
+        "samples_count": len(deltas),
+        "min_ms":        round(deltas[0], 2),
+        "median_ms":     round(pct(50), 2),
+        "p95_ms":        round(pct(95), 2),
+        "p99_ms":        round(pct(99), 2),
+        "max_ms":        round(deltas[-1], 2),
+    }
+
+
+def build_summary(camera: dict, viewer: dict,
+                  camera_skew: float = 0.0,
+                  viewer_skew: float = 0.0) -> dict:
+    errors = []
+    if camera.get("missing"):
+        errors.append("camera result file missing")
+    if viewer.get("missing"):
+        errors.append("viewer result file missing")
+    if camera.get("errors"):
+        errors.append(f"camera errors: {camera['errors']}")
+    if viewer.get("errors"):
+        errors.append(f"viewer errors: {viewer['errors']}")
+
+    sent = _metric_summary(camera, "frame_count").get("frames", 0)
+    recv = _metric_summary(viewer, "frame_count").get("frames", 0)
+    if recv == 0:
+        errors.append("no frames received")
+    # Frame loss alone is not a failure — under impairment it is expected.
+
+    verdict = "PASS" if not errors else "FAIL"
+    camera_summary = {
+        "frames_sent":      sent,
+        "duration_seconds": camera.get("duration_seconds", 0),
+        "exit_reason":      camera.get("exit_reason", "UNKNOWN"),
+    }
+    encoder_target = _metric_summary(camera, "encoder_target_kbps")
+    if encoder_target:
+        camera_summary["encoder_target"] = encoder_target
+    encoded = _metric_summary(camera, "encoded_bitrate")
+    if encoded:
+        camera_summary["encoded_bitrate"] = encoded
+    camera_wire = _metric_summary(camera, "wire_bytes")
+    if camera_wire:
+        camera_summary["wire_bytes"] = camera_wire
+
+    viewer_summary = {
+        "frames_depayloaded": recv,
+        "duration_seconds":   viewer.get("duration_seconds", 0),
+        "exit_reason":        viewer.get("exit_reason", "UNKNOWN"),
+    }
+    viewer_wire = _metric_summary(viewer, "wire_bytes")
+    if viewer_wire:
+        viewer_summary["wire_bytes"] = viewer_wire
+    decoder = _metric_summary(viewer, "decoder_errors")
+    if decoder:
+        viewer_summary["decoder_errors"] = decoder
+
+    out = {"verdict": verdict, "errors": errors,
+           "camera": camera_summary, "viewer": viewer_summary}
+
+    latency = _correlate_latency(camera, viewer,
+                                 camera_skew=camera_skew,
+                                 viewer_skew=viewer_skew)
+    if latency:
+        out["latency"] = latency
+    return out
+
+
+def print_report(label: str, run_dir: Path, summary: dict) -> None:
+    s = summary["camera"]
+    r = summary["viewer"]
+    print()
+    print(f"=== {label}: {summary['verdict']} ===")
+    print(f"  camera:   {s['frames_sent']:>4d} frames  "
+          f"{s['duration_seconds']:>5.1f}s  exit={s['exit_reason']}")
+    if "encoder_target" in s:
+        b = s["encoder_target"]
+        print(f"            target  {b['first_kbps']} → {b['last_kbps']} kbps "
+              f"(min {b['min_kbps']}, max {b['max_kbps']})")
+    if "encoded_bitrate" in s:
+        e = s["encoded_bitrate"]
+        print(f"            encoded {e['first_kbps']} → {e['last_kbps']} kbps "
+              f"(mean {e['mean_kbps']})")
+    if "wire_bytes" in s:
+        w = s["wire_bytes"]
+        print(f"            wire    {w['first_kbps']} → {w['last_kbps']} kbps "
+              f"(mean {w['mean_kbps']}, total {w['total_bytes']/1000:.1f} KB)")
+    print(f"  viewer:   {r['frames_depayloaded']:>4d} frames  "
+          f"{r['duration_seconds']:>5.1f}s  exit={r['exit_reason']}")
+    if "wire_bytes" in r:
+        w = r["wire_bytes"]
+        print(f"            wire    {w['first_kbps']} → {w['last_kbps']} kbps "
+              f"(mean {w['mean_kbps']}, total {w['total_bytes']/1000:.1f} KB)")
+    if "decoder_errors" in r:
+        d = r["decoder_errors"]
+        total = d['depay_warnings'] + d['decoder_warnings'] + d['other_warnings']
+        if total:
+            print(f"            warnings depay={d['depay_warnings']} "
+                  f"decoder={d['decoder_warnings']} other={d['other_warnings']}")
+    if "latency" in summary:
+        L = summary["latency"]
+        print(f"  latency:  median {L['median_ms']:.1f} ms  "
+              f"p95 {L['p95_ms']:.1f} ms  p99 {L['p99_ms']:.1f} ms  "
+              f"max {L['max_ms']:.1f} ms  (n={L['samples_count']})")
+    if summary["errors"]:
+        for e in summary["errors"]:
+            print(f"  ! {e}")
+    print(f"  results: {run_dir}")

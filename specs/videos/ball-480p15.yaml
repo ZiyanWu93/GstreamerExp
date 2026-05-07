@@ -1,0 +1,13 @@
+name: ball-480p15
+description: "Moving ball pattern at 640x480x15fps. Light load \u2014 natural vp8enc\
+  \ output ~70-100 kbps, well below typical impairment caps. Use for plumbing smoke\
+  \ tests, not for stressing congestion control."
+source:
+  backend: synthetic
+  width: 640
+  height: 480
+  fps: 15
+  num_frames: 300
+  clock_overlay: true
+  synthetic:
+    pattern: ball

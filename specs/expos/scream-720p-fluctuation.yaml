@@ -1,0 +1,8 @@
+name: scream-720p-fluctuation
+description: |
+  Watch SCReAM at 720p30 react to a fluctuating 5 Mbps → 300 kbps → 5 Mbps
+  link. Renders the receiver pipeline on veda's display alongside the
+  measurement (which is unchanged from `cli.py 11`).
+configuration: 11
+display: :20
+xauthority: ~/.Xauthority

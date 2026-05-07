@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>GstreamerExp — Features & Roadmap</title>
+<style>
+  :root {
+    --bg: #fafafa;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #5f6b7a;
+    --rule: #e1e4e8;
+    --accent: #2563eb;
+    --accent-soft: #eef2ff;
+    --good: #1d6f1d;
+    --good-soft: #ecf7ec;
+    --gap: #b14a02;
+    --gap-soft: #fdf3e7;
+    --code: #f4f5f7;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                 Helvetica, Arial, sans-serif;
+    margin: 0;
+    color: var(--ink);
+    background: var(--bg);
+    line-height: 1.55;
+  }
+
+  /* ---- Two-column layout: sticky sidebar + scrolling main ---- */
+  .layout {
+    display: grid;
+    grid-template-columns: 240px minmax(0, 1fr);
+    max-width: 1180px;
+    margin: 0 auto;
+  }
+  .sidebar {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    padding: 28px 18px 28px 24px;
+    border-right: 1px solid var(--rule);
+    background: var(--bg);
+    font-size: 13.5px;
+  }
+  .sidebar .brand {
+    font-weight: 700;
+    font-size: 14px;
+    margin: 0 0 4px 0;
+    color: var(--ink);
+  }
+  .sidebar .brand-sub {
+    font-size: 12px;
+    color: var(--muted);
+    margin: 0 0 18px 0;
+  }
+  .sidebar nav { display: block; }
+  .sidebar nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 8px 0;
+  }
+  .sidebar nav .group {
+    border-top: 1px solid var(--rule);
+    padding-top: 10px;
+    margin-top: 10px;
+  }
+  .sidebar nav .group:first-child {
+    border-top: none;
+    padding-top: 0;
+    margin-top: 0;
+  }
+  .sidebar nav a {
+    display: block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    color: var(--muted);
+    text-decoration: none;
+    line-height: 1.4;
+  }
+  .sidebar nav a:hover { background: var(--accent-soft); color: var(--accent); }
+  .sidebar nav a.top {
+    color: var(--ink);
+    font-weight: 600;
+    font-size: 13.5px;
+  }
+  .sidebar nav a.sub {
+    font-size: 12.5px;
+    padding-left: 18px;
+    color: #6e7681;
+  }
+  .sidebar nav a.active {
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+  .sidebar nav a.top.active { color: var(--accent); }
+  .sidebar .footer-link {
+    margin-top: 18px;
+    padding-top: 12px;
+    border-top: 1px solid var(--rule);
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .sidebar .footer-link a { color: var(--accent); text-decoration: none; }
+  .sidebar .footer-link a:hover { text-decoration: underline; }
+
+  .content {
+    padding: 32px 36px 80px 36px;
+    max-width: 920px;
+    min-width: 0;
+  }
+  @media (max-width: 880px) {
+    .layout { grid-template-columns: 1fr; }
+    .sidebar {
+      position: static;
+      height: auto;
+      border-right: none;
+      border-bottom: 1px solid var(--rule);
+    }
+    .content { padding: 24px 20px 60px; }
+  }
+  h1 {
+    font-size: 28px;
+    margin: 0 0 6px 0;
+  }
+  .subtitle {
+    color: var(--muted);
+    font-size: 15px;
+    margin-bottom: 24px;
+  }
+  h2 {
+    font-size: 21px;
+    margin: 36px 0 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--rule);
+  }
+  h3 {
+    font-size: 16px;
+    margin: 22px 0 8px;
+  }
+  h4 {
+    font-size: 14px;
+    margin: 16px 0 6px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  p { margin: 0 0 12px 0; }
+  ul, ol { margin: 0 0 12px 0; padding-left: 22px; }
+  li { margin-bottom: 4px; }
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.88em;
+    background: var(--code);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+  pre {
+    background: var(--code);
+    padding: 12px 14px;
+    border-radius: 6px;
+    overflow-x: auto;
+    font-size: 13px;
+    line-height: 1.5;
+    margin: 0 0 14px 0;
+  }
+  pre code { background: none; padding: 0; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 6px 0 16px 0;
+    font-size: 14px;
+    background: var(--panel);
+  }
+  th, td {
+    text-align: left;
+    padding: 8px 10px;
+    border: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  th {
+    background: #f1f3f6;
+    font-weight: 600;
+  }
+  td code { font-size: 0.9em; }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 16px 18px;
+    margin: 10px 0 14px;
+  }
+  .accent {
+    border-left: 4px solid var(--accent);
+    background: var(--accent-soft);
+    padding: 12px 16px;
+    border-radius: 0 6px 6px 0;
+    margin: 12px 0 14px;
+  }
+  .accent p:last-child { margin-bottom: 0; }
+  .nav {
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin-bottom: 24px;
+    font-size: 14px;
+  }
+  .nav a {
+    color: var(--accent);
+    text-decoration: none;
+    margin-right: 14px;
+  }
+  .nav a:hover { text-decoration: underline; }
+  .grid2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 14px;
+  }
+  @media (max-width: 800px) {
+    .grid2 { grid-template-columns: 1fr; }
+  }
+  .pipeline-card h3 { margin-top: 0; }
+  .pipeline-card .ascii {
+    background: #0d1117;
+    color: #c9d1d9;
+    padding: 12px 14px;
+    border-radius: 6px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px;
+    line-height: 1.55;
+    overflow-x: auto;
+    white-space: pre;
+  }
+  .ascii .hi { color: #79c0ff; }
+  .ascii .cc { color: #d2a8ff; }
+  .ascii .rec { color: #ffa657; }
+  .ascii .net { color: #8b949e; }
+  .check  { color: var(--good); font-weight: 600; }
+  .pending { color: var(--gap); font-weight: 600; }
+  .status-row { font-size: 14px; line-height: 1.6; }
+  .status-row .icon { display: inline-block; width: 18px; }
+  .legend {
+    font-size: 12px; color: var(--muted);
+    margin: 4px 0 10px;
+  }
+  .legend span {
+    display: inline-block; padding: 1px 8px; border-radius: 3px;
+    margin-right: 8px; font-weight: 600;
+  }
+  .legend .done    { background: var(--good-soft); color: var(--good); }
+  .legend .todo    { background: var(--gap-soft);  color: var(--gap); }
+  .feature-block { margin-top: 14px; }
+  .feature-block h3 {
+    margin-bottom: 4px;
+  }
+  .feature-block ul { list-style: none; padding-left: 0; }
+  .feature-block li {
+    padding: 4px 0 4px 26px;
+    position: relative;
+    border-bottom: 1px dashed #eef0f2;
+  }
+  .feature-block li:last-child { border-bottom: none; }
+  .feature-block li.done::before {
+    content: "\2713";
+    position: absolute; left: 6px;
+    color: var(--good); font-weight: 700;
+  }
+  .feature-block li.todo::before {
+    content: "\25CB";
+    position: absolute; left: 6px;
+    color: var(--gap);
+  }
+  .small { font-size: 13px; color: var(--muted); }
+  .pill {
+    display: inline-block; font-size: 11px;
+    padding: 1px 7px; border-radius: 10px;
+    background: var(--accent-soft); color: var(--accent);
+    font-weight: 600; letter-spacing: 0.02em;
+    margin-left: 6px; vertical-align: middle;
+  }
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <aside class="sidebar">
+    <p class="brand">GstreamerExp</p>
+    <p class="brand-sub">Features &amp; Roadmap</p>
+    <nav id="toc">
+      <ul class="group">
+        <li><a class="top" href="#model">1 · Programming model</a></li>
+        <li><a class="sub" href="#spec-layers">Spec layers</a></li>
+        <li><a class="sub" href="#spec-to-pipeline">From spec to pipeline</a></li>
+        <li><a class="sub" href="#two-impl">Two-implementations rule</a></li>
+        <li><a class="sub" href="#verification">Verification contract</a></li>
+      </ul>
+      <ul class="group">
+        <li><a class="top" href="#pipelines">2 · Existing pipelines</a></li>
+        <li><a class="sub" href="#pipe-bare">Bare</a></li>
+        <li><a class="sub" href="#pipe-scream">SCReAM</a></li>
+        <li><a class="sub" href="#pipe-gcc">GCC</a></li>
+        <li><a class="sub" href="#pipe-recovery">Recovery primitives</a></li>
+      </ul>
+      <ul class="group">
+        <li><a class="top" href="#cc">3 · SCReAM vs GCC config space</a></li>
+        <li><a class="sub" href="#cc-shared">Shared by both</a></li>
+        <li><a class="sub" href="#cc-scream">SCReAM (camera + viewer)</a></li>
+        <li><a class="sub" href="#cc-gcc">GCC (camera + viewer)</a></li>
+        <li><a class="sub" href="#cc-example">Side-by-side example</a></li>
+      </ul>
+      <ul class="group">
+        <li><a class="top" href="#todo">4 · Features to do</a></li>
+        <li><a class="sub" href="#todo-capture">Capture</a></li>
+        <li><a class="sub" href="#todo-encoding">Encoding</a></li>
+        <li><a class="sub" href="#todo-transport">Transport</a></li>
+        <li><a class="sub" href="#todo-reception">Reception</a></li>
+        <li><a class="sub" href="#todo-latency">Latency</a></li>
+        <li><a class="sub" href="#todo-quality">Quality</a></li>
+        <li><a class="sub" href="#todo-audio">Audio</a></li>
+        <li><a class="sub" href="#todo-recording">Recording / forensics</a></li>
+        <li><a class="sub" href="#todo-sync">Synchronization</a></li>
+        <li><a class="sub" href="#todo-resilience">Resilience to loss</a></li>
+      </ul>
+    </nav>
+    <div class="footer-link">
+      <a href="index.html">← Back to hub</a>
+    </div>
+  </aside>
+
+  <main class="content">
+
+<h1>GstreamerExp — Features & Roadmap</h1>
+<p class="subtitle">
+  A reading map of how the testbed is organized today: the programming
+  model, the three pipeline shapes that exist, the configuration surface
+  for SCReAM and GCC, and the gaps between this testbed and a real
+  teleoperation video stack.
+</p>
+
+<!-- =================================================================== -->
+<h2 id="model">1 · Programming model</h2>
+
+<p>
+  Everything that affects pipeline behavior lives in a YAML
+  spec. The runner reads the spec, validates it strictly, projects it
+  into per-role dataclasses, and lets the worker assemble a
+  <code>Gst.Pipeline</code> from those dataclasses. No knob is set
+  inside the code — the spec is the single source of truth.
+</p>
+
+<div class="accent">
+  <strong>The five rules.</strong>
+  &nbsp;Pipeline first, experiments second.
+  &nbsp;Insights are functions of data, not frozen text.
+  &nbsp;Specs validate at load time.
+  &nbsp;No silent fallbacks.
+  &nbsp;Two implementations make a pattern; one implementation just uses one shape.
+</div>
+
+<h3 id="spec-layers">Spec layers</h3>
+<p>
+  Four directories under <code>specs/</code>, each one orthogonal to
+  the others. A configuration composes a video and a network preset
+  into a complete scenario; an experiment composes configurations into
+  a comparison.
+</p>
+
+<table>
+  <thead>
+    <tr><th>Layer</th><th>What it declares</th><th>How it's referenced</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>specs/videos/</code></td>
+      <td>Source preset — backend (synthetic/file), dimensions, fps, num_frames</td>
+      <td><code>video: ball-480p15</code> in a configuration</td>
+    </tr>
+    <tr>
+      <td><code>specs/networks/</code></td>
+      <td>Impairment preset — list of <code>tc</code> steps (rate, delay, loss) over time</td>
+      <td><code>network: fluctuating-5mbps-300kbps</code> in a configuration</td>
+    </tr>
+    <tr>
+      <td><code>specs/configurations/</code></td>
+      <td>Per-run scenario — codec, encoder, transport, CC, recovery, sink, actors</td>
+      <td><code>cli.py 8</code> runs configuration <code>8.yaml</code></td>
+    </tr>
+    <tr>
+      <td><code>specs/experiments/</code></td>
+      <td>Named comparison — list of configurations + <code>varies:</code> whitelist of paths that may differ</td>
+      <td><code>experiment.py scream-vs-gcc-720p</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="spec-to-pipeline">From spec to pipeline</h3>
+<p>
+  <code>cli.py</code> is the entry point for a single run. The flow:
+</p>
+
+<pre><code>YAML configuration
+    │
+    ▼   validation.py
+    │   ──────────────
+    │   • strict schema check (typos at any level fail here)
+    │   • cross-field rules  (e.g. recovery.nack=True ⇒ rtx_buffer_ms required)
+    │   • resolve refs       (video: → source block, network: → step list)
+    │
+    ▼   validation.project_to_roles()
+    │   ────────────────────────────
+    │   one unified spec  →  Camera dataclass + Viewer dataclass
+    │                        (peer hosts, ports, codec object injected)
+    │
+    ▼   runner.py        (local or distributed via SSH; ExitStack teardown)
+    │   • runs `pre_run`  hooks (e.g. tc qdisc setup)
+    │   • spawns worker.py on each actor
+    │   • runs `during_run` hooks at scheduled offsets (e.g. tc step changes)
+    │   • runs `post_run` hooks (cleanup)
+    │   • fetches result files; writes runs/&lt;id&gt;/&lt;ts&gt;/summary.json
+    │
+    ▼   worker.py
+        • camera.py / viewer.py build a Gst.Pipeline from the dataclass
+        • metrics.py attaches pad probes per scenario.metrics
+        • GLib main loop runs until num_frames or EOS</code></pre>
+
+<h3 id="two-impl">The "two implementations" rule</h3>
+<p>
+  A field is tagged with a <code>kind:</code> discriminator only when
+  two real variants exist. With one variant, it stays flat. The
+  current shape:
+</p>
+
+<table>
+  <thead>
+    <tr><th>Field</th><th>Shape today</th><th>Why</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>congestion_control.algorithm</code></td>
+      <td>tagged: <code>scream</code> | <code>gcc</code></td>
+      <td>two real algorithms with disjoint parameters</td>
+    </tr>
+    <tr>
+      <td><code>source.backend</code></td>
+      <td>tagged: <code>synthetic</code> | <code>file</code></td>
+      <td>two real backends today</td>
+    </tr>
+    <tr>
+      <td><code>loss.model</code></td>
+      <td>tagged: <code>none</code> | <code>uniform</code> | <code>bursty</code></td>
+      <td>three real loss generators</td>
+    </tr>
+    <tr>
+      <td><code>codec</code></td>
+      <td>flat scalar: <code>vp8</code></td>
+      <td>only VP8 implemented; widen to a tag when a second codec lands</td>
+    </tr>
+    <tr>
+      <td><code>rate_kbps</code>, <code>delay_ms</code></td>
+      <td>flat scalar</td>
+      <td>one rate / delay model today (TBF cap, fixed delay)</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="verification">Verification contract</h3>
+<p>
+  Every run is bracketed by checks: the spec's <code>scenario.metrics</code>
+  list states what must be measured; <code>reporting.py</code> verifies
+  each one was sampled. <code>tools/network_probe.py</code> empirically
+  validates that the impairment <code>tc</code> applied matches the
+  spec (so a Gilbert-Elliott burstiness claim can be checked against
+  what actually flowed). State leaks (stranded <code>tc</code> qdiscs,
+  orphaned workers) are bugs in the cleanup structure — every
+  allocation registers its teardown atomically through
+  <code>ExitStack</code> in <code>runner.py</code>.
+</p>
+
+<!-- =================================================================== -->
+<h2 id="pipelines">2 · Existing pipelines</h2>
+
+<p>
+  Three pipeline shapes, dispatched at build time from
+  <code>spec.congestion_control</code>. Both halves —
+  <em>camera</em> (sender) and <em>viewer</em> (receiver) — have the
+  matching shape on each side. Recovery elements (NACK+RTX, PLI,
+  ULPFEC) are orthogonal: any combination is wireable into any of the
+  three shapes.
+</p>
+
+<div class="legend">
+  <span style="background:#1f2d2d;color:#79c0ff">media</span>
+  <span style="background:#1f2d2d;color:#d2a8ff">congestion control</span>
+  <span style="background:#1f2d2d;color:#ffa657">recovery</span>
+  <span style="background:#1f2d2d;color:#8b949e">transport</span>
+</div>
+
+<div class="grid2">
+
+  <div class="panel pipeline-card" id="pipe-bare">
+    <h3>Bare <span class="pill">baseline</span></h3>
+    <p class="small">
+      No congestion control. Encoder is pinned at
+      <code>encoder.bitrate_kbps</code>. Used as the reference shape:
+      everything else is "bare plus a controller plus optional
+      recovery."
+    </p>
+    <h4>camera (sender)</h4>
+    <pre class="ascii"><span class="hi">videotestsrc</span> → <span class="hi">caps</span> → <span class="hi">vp8enc</span> → <span class="hi">rtpvp8pay</span> → <span class="net">udpsink</span></pre>
+    <h4>viewer (receiver)</h4>
+    <pre class="ascii"><span class="net">udpsrc</span> → <span class="hi">caps</span> → <span class="hi">rtpvp8depay</span> → <span class="hi">vp8dec</span> → <span class="hi">videoconvert</span> → fakesink</pre>
+  </div>
+
+  <div class="panel pipeline-card" id="pipe-scream">
+    <h3>SCReAM <span class="pill">delay-based</span></h3>
+    <p class="small">
+      <code>screamtx</code> sits between payloader and udpsink and
+      drives <code>vp8enc.target-bitrate</code> via its
+      <code>current-max-bitrate</code> notify. RTCP feedback flows back
+      from the viewer's <code>screamrx</code> through a separate
+      udpsrc/udpsink pair on the camera.
+    </p>
+    <h4>camera (sender)</h4>
+    <pre class="ascii"><span class="hi">videotestsrc</span> → <span class="hi">vp8enc</span> → <span class="hi">rtpvp8pay</span> → <span class="cc">screamtx</span> → rtpbin → <span class="net">udpsink</span>
+                                              ▲
+                                              │  RTCP feedback
+              <span class="net">udpsrc (rtcp_port)</span> → rtpbin ─────┘</pre>
+    <h4>viewer (receiver)</h4>
+    <pre class="ascii"><span class="net">udpsrc</span> → <span class="cc">screamrx</span> → rtpbin → <span class="hi">rtpvp8depay</span> → <span class="hi">vp8dec</span> → fakesink
+                          │
+                          ▼  RTCP back to camera
+                      funnel → <span class="net">udpsink</span></pre>
+  </div>
+
+  <div class="panel pipeline-card" id="pipe-gcc">
+    <h3>GCC <span class="pill">loss + delay</span></h3>
+    <p class="small">
+      <code>rtpgccbwe</code> sits in front of rtpbin and reads TWCC
+      feedback to estimate the bottleneck rate. Each outgoing RTP
+      packet carries a transport-wide sequence number (TWCC RTP header
+      extension); the viewer's rtpbin generates the feedback packets
+      itself — no custom receiver-side estimator.
+    </p>
+    <h4>camera (sender)</h4>
+    <pre class="ascii"><span class="hi">videotestsrc</span> → <span class="hi">vp8enc</span> → <span class="hi">rtpvp8pay</span> [+TWCC ext] → <span class="cc">rtpgccbwe</span> → rtpbin → <span class="net">udpsink</span>
+                                                              ▲
+                                                              │  TWCC RTCP
+                                  <span class="net">udpsrc (rtcp_port)</span> → rtpbin ──┘</pre>
+    <h4>viewer (receiver)</h4>
+    <pre class="ascii"><span class="net">udpsrc</span> → rtpbin (twcc-feedback-interval) → <span class="hi">rtpvp8depay</span> → <span class="hi">vp8dec</span> → fakesink
+                  │
+                  ▼  TWCC feedback back to camera
+              <span class="net">udpsink</span></pre>
+  </div>
+
+  <div class="panel pipeline-card" id="pipe-recovery">
+    <h3>Recovery (orthogonal) <span class="pill">composable</span></h3>
+    <p class="small">
+      Any of the three shapes can be augmented with NACK+RTX, PLI, and
+      ULPFEC independently. Three primitives, each landed and tested.
+    </p>
+    <h4>camera-side additions</h4>
+    <ul class="small" style="margin-top: 0;">
+      <li><code>rtprtxsend</code> — ring buffer for retransmissions; depth = <code>rtx_buffer_ms</code></li>
+      <li><code>rtpulpfecenc</code> — proactive FEC repair packets at <code>fec_percentage</code> overhead</li>
+      <li>AVPF profile flag — required when nack or pli is on</li>
+    </ul>
+    <h4>viewer-side additions</h4>
+    <ul class="small" style="margin-top: 0;">
+      <li><code>rtprtxreceive</code> — RTX→media PT demux + rtpbin do-retransmission</li>
+      <li><code>rtpstorage + rtpulpfecdec</code> — sliding-window FEC recovery (no feedback round-trip)</li>
+      <li>rtpbin do-lost — emits keyframe-request events that become outbound PLI RTCP</li>
+      <li>jitter-buffer latency: 200 ms with NACK, 10 ms without</li>
+    </ul>
+  </div>
+
+</div>
+
+<!-- =================================================================== -->
+<h2 id="cc">3 · Configuration space — SCReAM vs GCC</h2>
+
+<p>
+  Each algorithm is exposed in full so the testbed can study performance
+  implications across every meaningful knob. Bitrate bounds (init / min
+  / max) are required because we always intend to pick them.
+  Algorithm-specific knobs are <em>Optional</em>: absence in the spec
+  means "no override, let the algorithm use its documented default."
+  <strong>Defaults live with the algorithms, never in this project's
+  code.</strong>
+</p>
+
+<h3 id="cc-shared">Shared by both</h3>
+<table>
+  <thead>
+    <tr><th>YAML field</th><th>Purpose</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>congestion_control.algorithm</code></td><td>discriminator: <code>scream</code> | <code>gcc</code></td></tr>
+    <tr><td><code>congestion_control.init_bitrate_kbps</code></td><td>starting estimate before the first RTT of feedback</td></tr>
+    <tr><td><code>congestion_control.min_bitrate_kbps</code></td><td>floor — controller will not drop below this</td></tr>
+    <tr><td><code>congestion_control.max_bitrate_kbps</code></td><td>ceiling — controller will not climb above this</td></tr>
+  </tbody>
+</table>
+
+<div class="grid2">
+
+  <div class="panel" id="cc-scream">
+    <h3>SCReAM <span class="pill">camera side</span></h3>
+    <p class="small">
+      Mapped to <code>screamtx.params</code> CLI flags. Field names
+      readable in Python; flag names match SCReAM's own.
+    </p>
+    <table>
+      <thead><tr><th>YAML field</th><th>Flag</th><th>Default</th></tr></thead>
+      <tbody>
+        <tr><td><code>delay_target_seconds</code></td><td><code>-delaytarget</code></td><td>0.06 s</td></tr>
+        <tr><td><code>ect</code></td><td><code>-ect</code></td><td>0 (valid: -1, 0, 1, 3 — ECN markings)</td></tr>
+        <tr><td><code>pacing_headroom</code></td><td><code>-paceheadroom</code></td><td>1.5×</td></tr>
+        <tr><td><code>adaptive_pacing_headroom</code></td><td><code>-adaptivepaceheadroom</code></td><td>1.5×</td></tr>
+        <tr><td><code>inflight_headroom</code></td><td><code>-inflightheadroom</code></td><td>2.0×</td></tr>
+        <tr><td><code>max_window_headroom</code></td><td><code>-maxwindowheadroom</code></td><td>5.0×</td></tr>
+        <tr><td><code>min_packets_in_flight</code></td><td><code>-minpktsinflight</code></td><td>0</td></tr>
+        <tr><td><code>microburst_interval_ms</code></td><td><code>-microburstinterval</code></td><td>0.5 ms (range 0.2–20)</td></tr>
+        <tr><td><code>reorder_time_seconds</code></td><td><code>-reordertime</code></td><td>0.03 s</td></tr>
+        <tr><td><code>mul_increase</code></td><td><code>-mulincrease</code></td><td>0.05</td></tr>
+        <tr><td><code>relaxed_pacing</code></td><td><code>-relaxedpacing</code> (flag)</td><td>off</td></tr>
+        <tr><td><code>no_pacing</code></td><td><code>-nopace</code> (flag)</td><td>off</td></tr>
+      </tbody>
+    </table>
+    <h4>SCReAM viewer side</h4>
+    <p class="small">
+      The current <code>gstscream</code> plugin's <code>screamrx</code>
+      element exposes no GObject properties — <code>ackDiff</code> and
+      <code>nReportedRtpPackets</code> are baked into the C++
+      constructor. Extending the plugin would unlock these knobs.
+    </p>
+  </div>
+
+  <div class="panel" id="cc-gcc">
+    <h3>GCC <span class="pill">camera side</span></h3>
+    <p class="small">
+      Mapped to <code>rtpgccbwe</code> GObject properties. Far smaller
+      surface than SCReAM — most of GCC's behavior is hard-coded inside
+      the rtpgccbwe element today.
+    </p>
+    <table>
+      <thead><tr><th>YAML field</th><th>Property</th><th>Default</th></tr></thead>
+      <tbody>
+        <tr><td><code>estimator</code></td><td><code>estimator</code></td><td><code>kalman</code> (alt: <code>linear-regression</code>)</td></tr>
+      </tbody>
+    </table>
+
+    <h4>GCC viewer side</h4>
+    <table>
+      <thead><tr><th>YAML field</th><th>Property</th><th>Default</th></tr></thead>
+      <tbody>
+        <tr><td><code>twcc_feedback_interval_ms</code></td><td><code>rtpbin.twcc-feedback-interval</code></td><td>100 ms</td></tr>
+      </tbody>
+    </table>
+
+    <h4>Why so few knobs?</h4>
+    <p class="small">
+      GCC has internal parameters (Kalman filter gains, trendline window,
+      overuse threshold adaptation) that aren't surfaced as GStreamer
+      properties. To study them, the rtpgccbwe Rust source would need
+      to expose them as GObject properties first.
+    </p>
+  </div>
+
+</div>
+
+<h3 id="cc-example">Side-by-side example</h3>
+<p>The same scenario, swapping only the controller — pair-comparison ready:</p>
+
+<div class="grid2">
+  <div class="panel">
+    <h4 style="margin-top:0;">SCReAM (config 8)</h4>
+<pre><code>video: ball-480p15
+network: fluctuating-5mbps-300kbps
+codec: vp8
+encoder:
+  bitrate_kbps: 500
+  keyframe_interval_frames: 60
+congestion_control:
+  algorithm: scream
+  init_bitrate_kbps: 500
+  min_bitrate_kbps:  200
+  max_bitrate_kbps: 4000
+recovery: { nack: false, pli: false, fec: false }
+latency_budget_ms: 0</code></pre>
+  </div>
+  <div class="panel">
+    <h4 style="margin-top:0;">GCC (config 10)</h4>
+<pre><code>video: ball-480p15
+network: fluctuating-5mbps-300kbps
+codec: vp8
+encoder:
+  bitrate_kbps: 500
+  keyframe_interval_frames: 60
+congestion_control:
+  algorithm: gcc
+  init_bitrate_kbps: 500
+  min_bitrate_kbps:  200
+  max_bitrate_kbps: 4000
+recovery: { nack: false, pli: false, fec: false }
+latency_budget_ms: 0</code></pre>
+  </div>
+</div>
+
+<p class="small">
+  An experiment that compares the two declares
+  <code>varies: [congestion_control]</code> and the experiment
+  validator deep-compares the two configurations to reject any other
+  silent divergence.
+</p>
+
+<!-- =================================================================== -->
+<h2 id="todo">4 · Features to do</h2>
+
+<p>
+  What's currently in scope: VP8 → RTP → (SCReAM | GCC | bare) → UDP
+  over loopback or between two real hosts, with <code>tc tbf</code> +
+  <code>netem</code> impairment (uniform iid or Gilbert-Elliott bursty
+  loss) driven by <code>during_run</code> hooks. Recovery primitives
+  NACK+RTX, PLI, and ULPFEC are implemented and orthogonal. Per-frame
+  Y-plane PSNR against a reproduced source is the working quality
+  metric. Below: gaps between this testbed and an actual teleoperation
+  video stack, ignoring the operator-control return path.
+</p>
+
+<div class="legend">
+  <span class="done">DONE</span>
+  <span class="todo">TODO</span>
+</div>
+
+<div class="feature-block" id="todo-capture">
+  <h3>Capture</h3>
+  <ul>
+    <li class="todo">Real video from vehicle cameras (replace <code>videotestsrc</code>)</li>
+    <li class="todo">Multi-camera support (front / rear / sides; teleop typically ≥3 streams)</li>
+    <li class="todo">Hardware encoder on the vehicle side (V4L2 / NVENC / VAAPI)</li>
+    <li class="todo">Camera timestamp / frame-clock metadata (for sensor fusion, AR overlays, replay)</li>
+    <li class="todo">Camera calibration intrinsics/extrinsics passthrough</li>
+  </ul>
+</div>
+
+<div class="feature-block" id="todo-encoding">
+  <h3>Encoding</h3>
+  <ul>
+    <li class="todo">Hardware-accelerated encoding path</li>
+    <li class="todo">
+      Adaptive resolution — drop from 720p to 480p/360p when the
+      rate-controller cuts the bitrate budget below the threshold where
+      the higher resolution can hold quality. <code>vp8enc</code>
+      currently has only <code>target-bitrate</code> as a knob, so
+      under tight bottlenecks it produces blocky 720p (worst-case
+      ~10 dB PSNR observed) instead of clean 360p. Encoder-side control
+      loop driven by SCReAM's <code>current-max-bitrate</code> notify
+      or GCC's <code>estimated-bitrate</code>; reconfigures
+      <code>vp8enc</code> + the source capsfilter via runtime
+      renegotiation.
+    </li>
+    <li class="todo">Region-of-interest / variable quality across the frame (more bits on the road, fewer on the sky)</li>
+    <li class="todo">Scene-change detection and forced-keyframe-on-cut</li>
+    <li class="todo">HDR / wide-color-gamut preservation (taillight visibility, low-light scenes)</li>
+  </ul>
+</div>
+
+<div class="feature-block" id="todo-transport">
+  <h3>Transport</h3>
+  <ul>
+    <li class="todo">Encryption (SRTP / DTLS)</li>
+    <li class="todo">Authentication (operator station identity)</li>
+    <li class="todo">Redundant transport / multi-path (LTE + 5G failover)</li>
+    <li class="todo">Per-stream priority / DSCP marking</li>
+    <li class="done">Loss recovery on top of SCReAM: NACK+RTX, PLI, ULPFEC — all three landed and orthogonal</li>
+  </ul>
+</div>
+
+<div class="feature-block" id="todo-reception">
+  <h3>Reception</h3>
+  <ul>
+    <li class="todo">Real display sink (replace <code>fakesink</code> with <code>glimagesink</code> / direct framebuffer / HMD)</li>
+    <li class="todo">Display sync (VSYNC alignment so frames present without tearing)</li>
+    <li class="todo">Per-camera composited view (mosaic / picture-in-picture)</li>
+    <li class="todo">Multi-stream synchronization across cameras (so they show the same instant)</li>
+  </ul>
+</div>
+
+<div class="feature-block" id="todo-latency">
+  <h3>Latency</h3>
+  <ul>
+    <li class="todo">Glass-to-glass latency measurement (capture → display) — the headline metric for teleop</li>
+    <li class="done">
+      Per-stage latency attribution — <code>stage_latency</code> metric,
+      8 probes (encoder.sink/src, pay.src, udpsink.sink, udpsrc.src,
+      depay.src, decoder.sink/src, convert.src) joined by RTP timestamp;
+      <code>analysis/dimensions/latency.py</code> surfaces per-stage
+      durations
+    </li>
+    <li class="todo">Latency-budget enforcement (drop frames when budget exceeded, don't queue)</li>
+    <li class="todo">Operator-side jitter buffer with explicit depth and policy</li>
+  </ul>
+</div>
+
+<div class="feature-block" id="todo-quality">
+  <h3>Quality</h3>
+  <ul>
+    <li class="done">Per-frame quality metric — <code>decoded_psnr</code> (Y-plane PSNR vs reproduced source); SSIM / VMAF still missing</li>
+    <li class="todo">Quality degradation indicator surfaced to the operator UI</li>
+    <li class="todo">Audit-grade frame loss accounting (which frames, when, why)</li>
+  </ul>
+</div>
+
+<div class="feature-block" id="todo-audio">
+  <h3>Audio</h3>
+  <ul>
+    <li class="todo">Ambient audio from the vehicle (sirens, horns, impacts) — often safety-relevant</li>
+  </ul>
+</div>
+
+<div class="feature-block" id="todo-recording">
+  <h3>Recording / forensics</h3>
+  <ul>
+    <li class="todo">On-vehicle and on-operator recording of the actual streamed bitstream (for incident replay)</li>
+    <li class="todo">Synchronized multi-camera + telemetry capture</li>
+    <li class="todo">Lossless local copy alongside the lossy transmitted copy (so post-incident analysis isn't degraded)</li>
+  </ul>
+</div>
+
+<div class="feature-block" id="todo-sync">
+  <h3>Synchronization</h3>
+  <ul>
+    <li class="todo">Vehicle wall-clock timestamps in RTP headers (NTP / PTP-aligned)</li>
+    <li class="todo">Cross-stream sync (camera N's frame at time T arrives with the same T across all cameras)</li>
+  </ul>
+</div>
+
+<div class="feature-block" id="todo-resilience">
+  <h3>Resilience to loss</h3>
+  <ul>
+    <li class="todo">Decoder error concealment / freeze-on-bad-frame strategy</li>
+    <li class="done">Keyframe-on-loss request from receiver — PLI wired both sides (do-lost on rtpjitterbuffer → AVPF feedback)</li>
+    <li class="done">Per-packet retransmit on loss — NACK+RTX wired via <code>rtprtxsend</code> / <code>rtprtxreceive</code></li>
+    <li class="done">Proactive redundancy on the wire — ULPFEC (<code>rtpulpfecenc</code> on camera, <code>rtpstorage</code> + <code>rtpulpfecdec</code> on viewer)</li>
+    <li class="todo">I-frame frequency tuned to recovery time, not just to bitrate efficiency</li>
+  </ul>
+</div>
+
+<p class="small" style="margin-top: 24px;">
+  Source of truth: <code>TODO.md</code> at the project root. This page
+  is regenerated from that file when the gap list moves.
+</p>
+
+  </main>
+</div>
+
+<script>
+  // Scrollspy: highlight the sidebar link whose target section is
+  // currently in view. Tracks both top-level <h2 id> anchors and the
+  // subsection ids declared on h3/panel/feature-block elements.
+  (function() {
+    var links = document.querySelectorAll('#toc a');
+    var byId = {};
+    links.forEach(function(a) {
+      var id = a.getAttribute('href').slice(1);
+      byId[id] = a;
+    });
+    var targets = Object.keys(byId)
+      .map(function(id) { return document.getElementById(id); })
+      .filter(Boolean);
+
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        var link = byId[entry.target.id];
+        if (!link) return;
+        if (entry.isIntersecting) {
+          link.dataset.visible = '1';
+        } else {
+          delete link.dataset.visible;
+        }
+      });
+      // Pick the first visible link in document order; clear others.
+      var firstActive = null;
+      targets.forEach(function(t) {
+        var l = byId[t.id];
+        if (l && l.dataset.visible && !firstActive) firstActive = l;
+      });
+      links.forEach(function(l) { l.classList.remove('active'); });
+      if (firstActive) firstActive.classList.add('active');
+    }, { rootMargin: '-20% 0px -70% 0px', threshold: 0 });
+
+    targets.forEach(function(t) { observer.observe(t); });
+  })();
+</script>
+
+</body>
+</html>

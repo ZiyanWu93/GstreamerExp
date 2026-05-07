@@ -1,0 +1,14 @@
+# Python dependencies for GstreamerExp.
+#
+# Install with:
+#     pip install -r requirements.txt
+#
+# Note: PyGObject (the `gi` module) is NOT installed via pip — it
+# binds to system libraries that the OS package manager provides.
+# On Debian/Ubuntu:
+#     sudo apt install python3-gi gir1.2-glib-2.0
+# That's a pre-requirement, not pip-installable.
+
+PyYAML>=5.4
+numpy>=1.20
+matplotlib>=3.3

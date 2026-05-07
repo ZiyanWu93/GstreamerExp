@@ -1,0 +1,30 @@
+name: bursty-5mbps-300kbps-short
+description: "Three-step impairment via tc on $NIC at the sender. Same shape as\n\
+  fluctuating-5mbps-300kbps, but the middle step uses Gilbert-Elliott\nbursty loss\
+  \ (avg 3 consecutive packet drops at 2% rate) in place of\nuniform iid. With the\
+  \ receiver's FEC storage at 200 ms, a 3-packet\nburst at 300 kbps is well within\
+  \ the protection window \u2014 this is\nwhere FEC should self-heal without round-trip\
+  \ latency.\n\nPair with bursty-5mbps-300kbps-long to span burst depths across the\n\
+  recovery study; pair with fluctuating-5mbps-300kbps for the uniform\nbaseline.\n"
+camera_steps:
+- duration: 7
+  rate_kbps: 5000
+  delay_ms: 20
+  loss:
+    model: none
+  label: "5 Mbps \xB7 20 ms \xB7 clean"
+- duration: 6
+  rate_kbps: 300
+  delay_ms: 100
+  loss:
+    model: bursty
+    pct: 2
+    burst: 3
+  label: "300 kbps \xB7 100 ms \xB7 2% bursty (B=3)"
+- duration: 7
+  rate_kbps: 5000
+  delay_ms: 20
+  loss:
+    model: none
+  label: "5 Mbps \xB7 20 ms \xB7 clean"
+viewer_steps: []

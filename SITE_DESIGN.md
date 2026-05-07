@@ -1,0 +1,191 @@
+# GstreamerExp Site Design
+
+A reader landing on this project should be able to go from "what is
+this?" to "show me the SCReAM-vs-GCC bottleneck-phase result" in two
+clicks. Today the documentation is scattered across `README.md`,
+`features.html`, `HYPOTHESES.md`, `analysis/hypotheses/*.html`, and
+`reference/diagrams/*.html` — each useful, none of them an entry
+point. The site is a thin navigation surface that ties them together.
+
+## 1 · Goals
+
+- **Single entry point.** One URL (`index.html`) that no reader
+  bounces off because they don't know the directory layout.
+- **Three layers, no deeper.** Project overview → documentation →
+  experiments. Anything more nested is a sign the site is trying to
+  be a book.
+- **Content already exists.** The hub doesn't duplicate what
+  `features.html` or `h1.html` say. It points to them with one-line
+  hooks that tell the reader why they'd click.
+- **Cheap to extend.** A new hypothesis page is one new card in the
+  Experiments grid. No build step, no config file, no template
+  language.
+
+## 2 · Mental model
+
+```
+┌───────────────────────────────────────────────────────────────┐
+│ Layer 1 — Overview                                            │
+│   "What is this project, and what's the principle in 60 sec?" │
+└───────────────────────────────────────────────────────────────┘
+                              │
+              ┌───────────────┼───────────────┐
+              ▼               ▼               ▼
+┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐
+│ Layer 2 ·       │ │ Layer 2 ·       │ │ Layer 2 ·       │
+│ Documentation   │ │ Reference       │ │ Hypotheses      │
+│                 │ │                 │ │                 │
+│ • README        │ │ • State machine │ │ catalog         │
+│ • Features &    │ │ • Component     │ │ (HYPOTHESES.md) │
+│   Roadmap       │ │ • Layers        │ │                 │
+│ • TODO          │ │ • Flow          │ │                 │
+└─────────────────┘ └─────────────────┘ └─────────────────┘
+                                                │
+                                                ▼
+                                  ┌─────────────────────────┐
+                                  │ Layer 3 · Experiments   │
+                                  │                         │
+                                  │ • H1 — SCReAM vs GCC    │
+                                  │ • H4 — Latency budget   │
+                                  │ • H2/H3/H5/H6 (pending) │
+                                  └─────────────────────────┘
+```
+
+The reader's path is always **top to bottom**. They land on the
+overview, scan the three layer-2 cards, and click into the one that
+matches their question. From the Hypotheses catalog they pick a
+specific experiment. There is no horizontal navigation between
+layer-2 sections — readers go back to the hub if they need to jump.
+
+## 3 · Inventory — what gets linked
+
+Every existing page is accounted for. Nothing in the project is
+authored *for* the site; the site only links to what's already there.
+
+| Layer | Page | What it answers | Source file |
+|---|---|---|---|
+| 1 | Overview | What is this? | inline on `index.html` |
+| 2-Doc | README | How is the project organized? Five operating principles. | `README.md` |
+| 2-Doc | Features & Roadmap | What's built, what's the config space, what's missing? | `features.html` |
+| 2-Doc | TODO | Gap list against a real teleop stack. | `TODO.md` |
+| 2-Ref | State machine | GStreamer element lifecycle. | `reference/diagrams/state-machine.html` |
+| 2-Ref | Component diagram | Pipeline / Element / Pad / Bus relationships. | `reference/diagrams/component-diagram.html` |
+| 2-Ref | Layer diagram | App → Pipeline → Element → Pad → Buffer. | `reference/diagrams/layer-diagram.html` |
+| 2-Ref | Flow diagram | Buffer flow through a running pipeline. | `reference/diagrams/flow-diagram.html` |
+| 2-Hyp | Hypothesis catalog | All claims, source citations, experimental designs. | `HYPOTHESES.md` |
+| 3 | H1 page | Does SCReAM under-use bandwidth vs GCC? | `analysis/hypotheses/h1.html` |
+| 3 | H4 page | Does NACK lose its benefit under a latency budget? | `analysis/hypotheses/h4.html` |
+| 3 | H2/H3/H5/H6 | (untested / verifier-only today) | `analysis/hypotheses/h{N}_*.py` |
+
+The `.md` files render as raw markdown when served by `http.server`.
+That's an acceptable starting point — the site's job is to find
+them, not pretty-print them. If markdown rendering becomes worth
+solving, the hub can switch to a static markdown renderer without
+the IA changing.
+
+## 4 · Page layout — `index.html`
+
+```
+╔══════════════════════════════════════════════════════════════════╗
+║  GstreamerExp                                                    ║
+║  Video congestion-control testbed — SCReAM vs GCC on GStreamer   ║
+║                                                                  ║
+║  [60-word lede: pipeline-first, declarative specs, five-         ║
+║   dimension evaluation framework, what makes this project        ║
+║   different from a comparison-study repo.]                       ║
+╚══════════════════════════════════════════════════════════════════╝
+
+  ┌─ Documentation ──────────┐  ┌─ Reference ──────────────┐
+  │ ▸ README                 │  │ ▸ State machine          │
+  │   Five operating         │  │ ▸ Component diagram      │
+  │   principles             │  │ ▸ Layer diagram          │
+  │ ▸ Features & Roadmap     │  │ ▸ Flow diagram            │
+  │   Programming model,     │  │                          │
+  │   pipelines, CC config,  │  │  GStreamer concept maps  │
+  │   what's done / what's   │  │  underneath the testbed  │
+  │   missing                │  │                          │
+  │ ▸ TODO                   │  │                          │
+  │   Gap list vs real teleop│  │                          │
+  └──────────────────────────┘  └──────────────────────────┘
+
+  ┌─ Hypotheses ─────────────────────────────────────────────┐
+  │  Each hypothesis is a falsifiable claim about pipeline   │
+  │  behavior, sourced from the literature or from project   │
+  │  observation. Verdict is derived from runs/, not frozen. │
+  │                                                          │
+  │  [card: H1] supported / refuted (regime-dependent)       │
+  │     SCReAM vs GCC bottleneck-phase utilization           │
+  │     → analysis/hypotheses/h1.html                        │
+  │                                                          │
+  │  [card: H4] supported                                    │
+  │     Latency-budget enforcement reverses NACK's benefit   │
+  │     → analysis/hypotheses/h4.html                        │
+  │                                                          │
+  │  [card: H2] untested · verifier exists                   │
+  │     GCC's rate control collapses under bursty loss       │
+  │     → script: h2_gcc_bursty_collapse.py                  │
+  │                                                          │
+  │  [card: H3, H5, H6] untested · verifier exists           │
+  │                                                          │
+  │  Full catalog → HYPOTHESES.md                            │
+  └──────────────────────────────────────────────────────────┘
+```
+
+Visual style follows `features.html` and `h1.html` — same color
+palette (light background, blue accent, monospace for code), same
+type system. The hub is one page, not a multi-page nav; long enough
+to scroll through but short enough to scan.
+
+## 5 · URL structure & serving
+
+The hub lives at `projects/GstreamerExp/index.html`. Served by
+`python3 -m http.server` from `projects/GstreamerExp/` on port 8766
+(already running from earlier in this session). All linked pages
+resolve as relative URLs:
+
+```
+http://localhost:8766/                       → index.html  (the hub)
+http://localhost:8766/README.md              → markdown (raw)
+http://localhost:8766/features.html          → Features & Roadmap
+http://localhost:8766/TODO.md                → markdown (raw)
+http://localhost:8766/HYPOTHESES.md          → markdown (raw)
+http://localhost:8766/analysis/hypotheses/h1.html
+http://localhost:8766/analysis/hypotheses/h4.html
+http://localhost:8766/reference/diagrams/component-diagram.html
+http://localhost:8766/reference/diagrams/state-machine.html
+http://localhost:8766/reference/diagrams/layer-diagram.html
+http://localhost:8766/reference/diagrams/flow-diagram.html
+```
+
+The existing `localhost:8765` server (scoped to
+`analysis/hypotheses/`) keeps working independently — no need to
+disturb it.
+
+## 6 · Adding new content
+
+| Want to add | What to do |
+|---|---|
+| A new hypothesis result | Add `h{N}.html` under `analysis/hypotheses/`, append a card to the Hypotheses grid in `index.html`. |
+| A new doc page | Drop the `.html` (or `.md`) into the project, append a card to the Documentation column. |
+| A new diagram | Drop into `reference/diagrams/`, append to the Reference column. |
+| A new project sibling (e.g. TTP-T-5G-NFLambda) | Out of scope for this hub. A future `projects/index.html` at the writing root would link multiple project hubs together. |
+
+No build step. The hub is hand-edited HTML; the cost of one new card
+is the cost of one `<a>` block.
+
+## 7 · What this design deliberately doesn't do
+
+- **No multi-project portal.** Today there's only GstreamerExp
+  worth navigating; a writing-root portal would be premature.
+  Easy to add later — the GstreamerExp hub becomes a child page
+  of the future portal, no rework.
+- **No client-side framework.** Static HTML with a CSS file
+  inline. The whole site renders without JS; H1/H4 pages still
+  load Plotly because they're charts, but the hub doesn't.
+- **No live verdict scraping.** Hypothesis verdicts on the hub
+  are written into the cards by hand, captured at the moment the
+  hub is updated. Re-deriving a verdict means running
+  `python3 analysis/hypotheses/h{N}.py` and editing the card.
+  Automating that is a separate project once the catalog is
+  bigger than ~10 hypotheses.
+- **No search.** Nine pages don't need search.

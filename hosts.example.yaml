@@ -1,0 +1,28 @@
+# hosts.example.yaml — copy this to `hosts.yaml` and fill in values
+# for your own machines. `hosts.yaml` is gitignored.
+#
+# Distributed configs (those with network: <name> referring to a
+# shaped network spec) use these defaults when their `scenario.actors`
+# block leaves host / project_root / network_env blank. Loopback
+# configs (host: 127.0.0.1) don't need this file.
+#
+# Each role's fields:
+#   host         — IP or hostname of the machine running this role
+#   project_root — path on that machine where the testbed has been
+#                  rsync'd (the runner copies this directory to that
+#                  remote path before each run)
+#   network_env  — environment variables exported into tc shaping
+#                  scripts. Required: NIC (network interface name to
+#                  apply shaping on; this NIC must carry the
+#                  camera→viewer flow).
+
+actors:
+  camera:
+    host: 192.0.2.10            # replace with your camera host
+    project_root: ~/gstexp
+    network_env:
+      NIC: eth0                 # replace with your camera NIC
+
+  viewer:
+    host: 192.0.2.20            # replace with your viewer host
+    project_root: ~/gstexp

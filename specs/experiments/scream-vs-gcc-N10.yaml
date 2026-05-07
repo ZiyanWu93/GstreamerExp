@@ -1,0 +1,18 @@
+name: scream-vs-gcc-N10
+description: |
+  SCReAM vs GCC head-to-head at 480p15 + fluctuating-5mbps-300kbps.
+  This experiment shows the controllers' probing personalities clearly
+  (SCReAM ramps to ~2 Mbps target, GCC stays near 600 kbps) but does not
+  exercise their queue management, because the encoder is content-bound
+  at ~80 kbps and never threatens the 300 kbps cap. See scream-vs-gcc-720p
+  for the heavier-workload comparison that actually binds.
+reps: 10
+varies:
+  - congestion_control.algorithm
+configurations:
+  - id: 8
+    label: SCReAM
+    color: "#d62728"
+  - id: 10
+    label: GCC
+    color: "#1f77b4"

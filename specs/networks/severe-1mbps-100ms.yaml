@@ -1,0 +1,28 @@
+name: severe-1mbps-100ms
+description: "Heavier three-step impairment than fluctuating-5mbps-300kbps:\n  t=0..5s\
+  \   : 5 Mbps,   20 ms                              (good)\n  t=5..15s  : 1 Mbps,\
+  \  100 ms, 5% uniform iid loss         (severe; longer + more loss)\n  t=15..20s\
+  \ : 5 Mbps,   20 ms                              (recovery)\nDesigned to bind on\
+  \ encoder workloads in the 500 kbps \u2013 2 Mbps range.\nThe configuration must\
+  \ set the interface name via\n`network_env: { NIC: <ifname> }`.\n"
+camera_steps:
+- duration: 5
+  rate_kbps: 5000
+  delay_ms: 20
+  loss:
+    model: none
+  label: "5 Mbps \xB7 20 ms \xB7 clean"
+- duration: 10
+  rate_kbps: 1000
+  delay_ms: 100
+  loss:
+    model: uniform
+    pct: 5
+  label: "1 Mbps \xB7 100 ms \xB7 5% uniform"
+- duration: 5
+  rate_kbps: 5000
+  delay_ms: 20
+  loss:
+    model: none
+  label: "5 Mbps \xB7 20 ms \xB7 clean"
+viewer_steps: []

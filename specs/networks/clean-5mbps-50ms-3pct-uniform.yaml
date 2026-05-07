@@ -1,0 +1,27 @@
+name: clean-5mbps-50ms-3pct-uniform
+description: |
+  Constant impairment via tc on $NIC at the sender for the full run:
+  5 Mbps capacity, 50 ms one-way delay (100 ms RTT), 3% uniform iid
+  packet loss. Designed for H4 (latency budget × NACK).
+
+  Rationale for the parameters:
+  - The constant rate and constant loss isolate the recovery × budget
+    interaction without phase-transition noise.
+  - 50 ms one-way delay puts the RTT around 100 ms — comparable to
+    the operational latency budget being tested. This is what makes
+    the H4 prediction testable: if NACK adds a retransmission
+    round-trip (~RTT) on top of the natural latency, retransmitted
+    frames have a real chance of arriving past the 100 ms budget.
+    An RTT well below the budget would make the budget never bite.
+  - 3% uniform loss is heavy enough that NACK retransmission has
+    substantial work; light enough that the wire-level (no-budget)
+    recovery still works.
+camera_steps:
+- duration: 0
+  rate_kbps: 5000
+  delay_ms: 50
+  loss:
+    model: uniform
+    pct: 3
+  label: "5 Mbps · 50 ms · 3% uniform"
+viewer_steps: []

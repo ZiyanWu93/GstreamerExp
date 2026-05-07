@@ -1,0 +1,18 @@
+name: scream-vs-gcc-720p
+description: |
+  SCReAM vs GCC head-to-head at 720p30 + fluctuating-5mbps-300kbps.
+  The encoder workload (~180-500 kbps actual wire rate) exceeds the
+  300 kbps impairment cap, so the controllers' queue-management
+  behavior actually has work to do. Designed as the successor to
+  scream-vs-gcc-N10, which used a content-bound 480p15 workload that
+  did not bind on the cap.
+reps: 10
+varies:
+  - congestion_control.algorithm
+configurations:
+  - id: 11
+    label: SCReAM
+    color: "#d62728"
+  - id: 12
+    label: GCC
+    color: "#1f77b4"

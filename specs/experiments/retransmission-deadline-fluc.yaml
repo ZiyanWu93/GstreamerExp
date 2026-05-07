@@ -1,0 +1,62 @@
+name: retransmission-deadline-fluc
+description: |
+  H4 — SCReAM vs GCC across three latency deadlines, on the
+  fluctuating-5mbps-300kbps network. 12-arm 2×2×2 over
+  (CC algorithm) × (retransmission on/off) × (budget 0 / 50 / 100 ms).
+
+  Replaces the earlier constant-network experiment with a more
+  realistic capacity-step network: 5 Mbps clean for 7 s, drop to
+  300 kbps + 2% loss for 6 s, recover to 5 Mbps for 7 s. The loss
+  happens during the bottleneck phase, where retransmission has the
+  most work to do but also the least bandwidth to do it on.
+
+  Predictions tested on this page:
+  1. SCReAM produces more frames than GCC on a fluctuating network
+     (consistent with H1).
+  2. Retransmission's frame-count benefit shrinks under tight
+     deadlines (consistent with the constant-network finding).
+  3. The SCReAM-vs-GCC ranking may reverse at tight deadlines if
+     SCReAM's lateness tail is larger than GCC's.
+reps: 5
+varies:
+  - congestion_control.algorithm
+  - recovery.nack
+  - recovery.rtx_buffer_ms
+  - latency_budget_ms
+configurations:
+  - id: 41
+    label: SCReAM no-rec budget=0
+    color: "#fcae91"
+  - id: 42
+    label: SCReAM retransmit budget=0
+    color: "#de2d26"
+  - id: 43
+    label: GCC no-rec budget=0
+    color: "#bdd7e7"
+  - id: 44
+    label: GCC retransmit budget=0
+    color: "#3182bd"
+  - id: 45
+    label: SCReAM no-rec budget=50
+    color: "#a50f15"
+  - id: 46
+    label: SCReAM retransmit budget=50
+    color: "#67000d"
+  - id: 47
+    label: GCC no-rec budget=50
+    color: "#08519c"
+  - id: 48
+    label: GCC retransmit budget=50
+    color: "#08306b"
+  - id: 49
+    label: SCReAM no-rec budget=100
+    color: "#cb181d"
+  - id: 50
+    label: SCReAM retransmit budget=100
+    color: "#99000d"
+  - id: 51
+    label: GCC no-rec budget=100
+    color: "#2171b5"
+  - id: 52
+    label: GCC retransmit budget=100
+    color: "#084594"

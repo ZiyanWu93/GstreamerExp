@@ -1,0 +1,13 @@
+name: ball-720p30
+description: Moving ball at 1280x720x30fps. Natural vp8enc output ~400 kbps - 2 Mbps
+  depending on encoder target; saturates a 300 kbps impairment cap cleanly. Recommended
+  workload for SCReAM-vs-GCC comparison under congestion.
+source:
+  backend: synthetic
+  width: 1280
+  height: 720
+  fps: 30
+  num_frames: 600
+  clock_overlay: true
+  synthetic:
+    pattern: ball

@@ -1,0 +1,42 @@
+meta:
+  name: distributed_gcc_norecovery_budget0_fluc_fast
+  description: "Distributed (aum\u2192veda) GCC at 720p30 over\n`fluctuating-fast-5mbps-300kbps`.\
+    \ Recovery: none. Budget: 0.\nMinimal H1\u2194H4 cross-experiment comparison:\
+    \ same 2-arm SCReAM vs\nGCC setup that H1 used on this network, with H4's late_drops\n\
+    metric included so we get receiver-side delivered frames.\n"
+  flags:
+  - sudo
+  - gcc
+video: ball-720p30
+network: fluctuating-fast-5mbps-300kbps
+scenario:
+  actors:
+    camera: {}
+    viewer: {}
+  setup_delay_seconds: 3.0
+  drain_delay_seconds: 1.0
+  metrics:
+  - frame_count
+  - encoder_target_kbps
+  - frame_latency
+  - wire_bytes
+  - encoded_bitrate
+  - decoder_errors
+  - late_drops
+codec: vp8
+encoder:
+  bitrate_kbps: 1500
+  keyframe_interval_frames: 60
+congestion_control:
+  algorithm: gcc
+  init_bitrate_kbps: 1500
+  min_bitrate_kbps: 200
+  max_bitrate_kbps: 4000
+sink:
+  backend: fake
+  sync: false
+recovery:
+  nack: false
+  pli: false
+  fec: false
+latency_budget_ms: 0

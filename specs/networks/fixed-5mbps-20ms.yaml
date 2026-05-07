@@ -1,0 +1,12 @@
+name: fixed-5mbps-20ms
+description: "Static impairment via tc on $NIC at the sender. Single step that holds\n\
+  for the run \u2014 useful for steady-state controller behavior. The\nconfiguration\
+  \ must set the interface name via\n`network_env: { NIC: <ifname> }`.\n"
+camera_steps:
+- duration: 0
+  rate_kbps: 5000
+  delay_ms: 20
+  loss:
+    model: none
+  label: "5 Mbps \xB7 20 ms"
+viewer_steps: []

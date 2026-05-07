@@ -1,0 +1,31 @@
+name: bursty-5mbps-300kbps-long
+description: "Three-step impairment via tc on $NIC at the sender. Same shape as\n\
+  fluctuating-5mbps-300kbps, but the middle step uses Gilbert-Elliott\nbursty loss\
+  \ with avg 15 consecutive packet drops at 2% rate. At\n300 kbps the average burst\
+  \ spans roughly half a second \u2014 past the\nreceiver's 200 ms FEC storage window\
+  \ and likely past the jitter\nbuffer's NACK budget. This is the regime where only\
+  \ PLI's forced\nkeyframe rebuild can recover decoder reference state.\n\nPair with\
+  \ bursty-5mbps-300kbps-short and fluctuating-5mbps-300kbps to\nspan burst depths\
+  \ across the recovery study.\n"
+camera_steps:
+- duration: 7
+  rate_kbps: 5000
+  delay_ms: 20
+  loss:
+    model: none
+  label: "5 Mbps \xB7 20 ms \xB7 clean"
+- duration: 6
+  rate_kbps: 300
+  delay_ms: 100
+  loss:
+    model: bursty
+    pct: 2
+    burst: 15
+  label: "300 kbps \xB7 100 ms \xB7 2% bursty (B=15)"
+- duration: 7
+  rate_kbps: 5000
+  delay_ms: 20
+  loss:
+    model: none
+  label: "5 Mbps \xB7 20 ms \xB7 clean"
+viewer_steps: []
