@@ -108,7 +108,7 @@ def main():
                         help="emit JSON instead of a table")
     args = parser.parse_args()
 
-    project_root = Path(__file__).resolve().parent
+    project_root = Path(__file__).resolve().parent.parent
     runs_root = project_root / "runs"
     if not runs_root.is_dir():
         sys.exit(f"no runs/ at {runs_root}")

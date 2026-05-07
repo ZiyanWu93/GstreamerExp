@@ -23,7 +23,7 @@ import yaml
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from validation import resolve_includes, validate_doc
+from gstexp.validation import resolve_includes, validate_doc
 
 BASE_CONFIG_PATH = PROJECT_ROOT / "specs/configurations/8.yaml"
 BASE_DOC = yaml.safe_load(BASE_CONFIG_PATH.read_text())
@@ -407,14 +407,14 @@ class TestDecodedPsnrConstraints(unittest.TestCase):
     def test_projection_omits_ground_truth_when_metric_off(self):
         # Sanity: without decoded_psnr in scenario.metrics, the viewer
         # spec should not carry ground_truth — keep the spec minimal.
-        from validation import project_to_roles
+        from gstexp.validation import project_to_roles
         doc = resolve_includes(deepcopy(self.doc), PROJECT_ROOT, BASE_CONFIG_PATH)
         validate_doc(doc, BASE_CONFIG_PATH)
         _camera, viewer = project_to_roles(doc, "8")
         self.assertNotIn("ground_truth", viewer)
 
     def test_projection_carries_ground_truth_when_metric_on(self):
-        from validation import project_to_roles
+        from gstexp.validation import project_to_roles
         self.doc["scenario"]["metrics"].append("decoded_psnr")
         doc = resolve_includes(deepcopy(self.doc), PROJECT_ROOT, BASE_CONFIG_PATH)
         validate_doc(doc, BASE_CONFIG_PATH)

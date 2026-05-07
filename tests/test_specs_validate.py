@@ -18,9 +18,9 @@ import yaml
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from validation import resolve_includes, validate_doc, project_to_roles
+from gstexp.validation import resolve_includes, validate_doc, project_to_roles
 from experiment import _load_and_validate_spec as load_experiment
-from expo import _load_and_validate_spec as load_expo
+from gstexp.expo import _load_and_validate_spec as load_expo
 
 
 class TestConfigurations(unittest.TestCase):

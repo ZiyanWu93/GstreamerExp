@@ -31,10 +31,12 @@ from pathlib import Path
 
 import yaml
 
-from cli import run_configuration
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
+from cli import run_configuration  # noqa: E402, F401  (cli.py at project root)
 
 
-PROJECT_ROOT = Path(__file__).resolve().parent
 EXPOS_DIR = PROJECT_ROOT / "specs" / "expos"
 CONFIGURATIONS_DIR = PROJECT_ROOT / "specs" / "configurations"
 

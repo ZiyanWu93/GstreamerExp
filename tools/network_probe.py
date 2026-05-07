@@ -35,8 +35,8 @@ import yaml
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from runner import _ssh, _measure_clock_skew                   # noqa: E402
-from validation import _compile_network_steps                   # noqa: E402
+from gstexp.runner import _ssh, _measure_clock_skew                   # noqa: E402
+from gstexp.validation import _compile_network_steps                   # noqa: E402
 
 
 # --- knobs --------------------------------------------------------------

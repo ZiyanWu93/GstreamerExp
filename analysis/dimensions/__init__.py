@@ -21,7 +21,7 @@ loop over them without knowing what each dimension measures.
 from analysis.dimensions import (
     throughput, quality, latency, adaptation, stability,
 )
-from metrics import DIMENSIONS as _METRIC_DIMENSIONS
+from gstexp.metrics import DIMENSIONS as _METRIC_DIMENSIONS
 
 # Order is the order they appear in the comprehensive report.
 DIMENSION_MODULES = [throughput, quality, latency, adaptation, stability]

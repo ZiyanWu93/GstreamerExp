@@ -29,9 +29,9 @@ import gi
 gi.require_version("Gst", "1.0")
 from gi.repository import Gst, GLib
 
-from camera import CameraPipeline
-from viewer import ViewerPipeline
-from pipeline_config import (
+from gstexp.camera import CameraPipeline
+from gstexp.viewer import ViewerPipeline
+from gstexp.pipeline_config import (
     Camera, CameraRecovery, Decoder, Depacketizer, Egress, Encoder,
     FileSource, GccCameraConfig, GccViewerConfig, Ingress, Packetizer,
     ScreamCameraConfig, ScreamViewerConfig, Sink, Source, SyntheticSource,
@@ -97,7 +97,7 @@ def _load_encoder(d: dict) -> Encoder:
 
 def _load_decoder(d: dict) -> Decoder:
     return Decoder(codec=_load_codec(d["codec"]))
-from metrics import make_metrics
+from gstexp.metrics import make_metrics
 
 
 def main():

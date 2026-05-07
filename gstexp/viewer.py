@@ -23,7 +23,7 @@ gi.require_version("Gst", "1.0")
 gi.require_version("GstRtp", "1.0")
 from gi.repository import Gst, GstRtp
 
-from pipeline_config import Codec, GccViewerConfig, ScreamViewerConfig, Sink, Viewer
+from gstexp.pipeline_config import Codec, GccViewerConfig, ScreamViewerConfig, Sink, Viewer
 
 
 TWCC_URI = "http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01"

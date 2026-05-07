@@ -23,7 +23,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 import experiment as experiment_mod
-import expo as expo_mod
+import gstexp.expo as expo_mod
 
 
 @contextmanager

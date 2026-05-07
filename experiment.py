@@ -34,7 +34,7 @@ from pathlib import Path
 
 import yaml
 
-from validation import resolve_includes, validate_doc
+from gstexp.validation import resolve_includes, validate_doc
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent

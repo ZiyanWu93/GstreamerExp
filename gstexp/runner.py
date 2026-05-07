@@ -397,7 +397,7 @@ def run_distributed(
     # 2) Run setup_remote.sh on each host (idempotent, fast on repeat).
     for host in (camera_host, viewer_host):
         print(f"[scenario] setup → {host}", flush=True)
-        _ssh(host, f"cd {remote_project_root} && bash setup_remote.sh", check=True)
+        _ssh(host, f"cd {remote_project_root} && bash scripts/setup_remote.sh", check=True)
 
     # 3) Build worker env / command strings. Pure string assembly, no
     #    side effects — done before the try/finally so the cleanup block
@@ -438,7 +438,7 @@ def run_distributed(
         return (
             f"cd {remote_project_root} && "
             f"source $HOME/gst-1.24/env.sh && "
-            f"exec env {env_str} python3 -u worker.py {spec_path} "
+            f"exec env {env_str} python3 -u -m gstexp.worker {spec_path} "
             f"--result-out {result_path} --pid-file {pid_file} {args_extra}"
         )
 

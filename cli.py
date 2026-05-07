@@ -25,9 +25,9 @@ from typing import Optional
 
 import yaml
 
-from validation import resolve_includes, validate_doc, project_to_roles
-from runner import run_distributed, run_local, scream_env
-from reporting import build_summary, print_report, read_result
+from gstexp.validation import resolve_includes, validate_doc, project_to_roles
+from gstexp.runner import run_distributed, run_local, scream_env
+from gstexp.reporting import build_summary, print_report, read_result
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent
@@ -128,11 +128,13 @@ def run_configuration(config_arg: str, *,
     run_dir = PROJECT_ROOT / "runs" / config_id / _timestamp()
     run_dir.mkdir(parents=True)
 
-    worker = (PROJECT_ROOT / "worker.py").resolve()
     metric_args = []
     for m in metrics_list:
         metric_args.extend(["--metric", m])
-    base_cmd = [sys.executable, "-u", str(worker)] + metric_args
+    # `-m gstexp.worker` puts the project root on sys.path automatically
+    # (the directory containing the gstexp/ package, i.e. cwd) — no need
+    # to pass the worker file path explicitly.
+    base_cmd = [sys.executable, "-u", "-m", "gstexp.worker"] + metric_args
     camera_result = run_dir / "camera.json"
     viewer_result = run_dir / "viewer.json"
     child_env = scream_env(PROJECT_ROOT)

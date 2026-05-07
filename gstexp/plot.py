@@ -28,7 +28,7 @@ matplotlib.use("Agg")  # headless — no need for X server
 import matplotlib.pyplot as plt
 
 
-PROJECT_ROOT = Path(__file__).resolve().parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 RUNS_ROOT = PROJECT_ROOT / "runs"
 EXPT_DIR = RUNS_ROOT / "experiments"
 FIG_DIR = RUNS_ROOT / "figures"

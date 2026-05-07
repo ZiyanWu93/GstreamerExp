@@ -411,10 +411,17 @@ def resolve_includes(doc: dict, project_root: Path, config_path: Path,
         defaults = (hosts_doc.get("actors") or {})
         scenario = doc.setdefault("scenario", {})
         cfg_actors = scenario.setdefault("actors", {})
+        # Loopback hosts (127.0.0.1, localhost) are configured for local
+        # in-process runs and don't need rsync/SSH paths from hosts.yaml.
+        # Filling project_root would flip the distributed-detection in
+        # cli.py and trigger an unnecessary remote copy to the loopback.
+        _LOOPBACK = {"127.0.0.1", "localhost", "::1"}
         for role, default in defaults.items():
             if not isinstance(default, dict):
                 continue
             existing = cfg_actors.get(role)
+            if isinstance(existing, dict) and existing.get("host") in _LOOPBACK:
+                continue
             if existing is None or existing == {}:
                 # Role not yet populated in this config — use defaults.
                 cfg_actors[role] = dict(default)
@@ -775,7 +782,7 @@ def _validate_scenario(scenario, fail) -> None:
         fail("scenario.metrics must be a list of strings")
     # Cross-check against the metric registry so a typo (e.g. frame_count_kbps)
     # fails at config load instead of silently dropping a metric.
-    from metrics import METRIC_CLASSES
+    from gstexp.metrics import METRIC_CLASSES
     for m in metrics:
         if m not in METRIC_CLASSES:
             fail(f"scenario.metrics: unknown metric {m!r}; "
