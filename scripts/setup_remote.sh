@@ -9,7 +9,9 @@
 
 set -e
 
-cd "$(dirname "$(realpath "$0")")"
+# This script lives in scripts/ but operates at the project root
+# (where scream/, .scream-plugin/, and the patch are).
+cd "$(dirname "$(realpath "$0")")/.."
 HERE="$(pwd)"
 
 # Fast path: skip the work if a previous successful run still applies.
@@ -82,10 +84,11 @@ fi
 #    applied. Detection: presence of the distinctive `FlowError::Eos`
 #    pattern in screamtx/imp.rs (only the patched version has it). The
 #    rationale and the patch itself live in scream-eos-fix.patch.
-if [ -f "$SCREAMTX_IMP" ] && [ -f scream-eos-fix.patch ]; then
+PATCH="scripts/scream-eos-fix.patch"
+if [ -f "$SCREAMTX_IMP" ] && [ -f "$PATCH" ]; then
     if ! grep -q "FlowError::Eos" "$SCREAMTX_IMP"; then
-        echo "[setup] applying scream-eos-fix.patch"
-        patch -p1 -N < scream-eos-fix.patch
+        echo "[setup] applying $PATCH"
+        patch -p1 -N < "$PATCH"
     fi
 fi
 

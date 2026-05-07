@@ -10,8 +10,8 @@ across two Linux hosts (camera + viewer) connected by SSH.
 
 For the *philosophy* of the project (what gets added, how
 experiments are structured, the five-dimension evaluation framework),
-see [`DESIGN.md`](DESIGN.md). The rest of this file is **how to
-get it running**.
+see [`docs/DESIGN.md`](docs/DESIGN.md). The rest of this file is
+**how to get it running**.
 
 ## Prerequisites
 
@@ -50,7 +50,7 @@ cp hosts.example.yaml hosts.yaml
 #    This downloads the SCReAM source tree from upstream
 #    (EricssonResearch/scream) into ./scream/ — that directory is
 #    gitignored. Compile takes ~30 minutes on a 24-core host.
-scp build_gstreamer.sh setup_remote.sh scream-eos-fix.patch <camera-host>:/tmp/
+scp scripts/build_gstreamer.sh scripts/setup_remote.sh scripts/scream-eos-fix.patch <camera-host>:/tmp/
 ssh <camera-host> "bash /tmp/build_gstreamer.sh && cd ~/gstexp && bash /tmp/setup_remote.sh"
 # Repeat for <viewer-host>.
 
@@ -111,8 +111,8 @@ The presentation principles those pages follow are documented in
 ├── runs/               # experiment outputs, gitignored
 ├── tests/              # validator + spec test suite
 ├── tools/              # ancillary scripts (network_probe, fetch_test_video, …)
-├── build_gstreamer.sh  # builds GStreamer 1.24 + gst-plugins-rs
-├── setup_remote.sh     # per-host bootstrap (clones SCReAM, applies patch, builds)
+├── scripts/            # build/setup shell scripts + scream-eos-fix.patch
+├── docs/               # design notes, hypothesis catalog, todo
 ├── scream/             # SCReAM source — cloned by setup_remote.sh, gitignored
 └── hosts.yaml          # YOUR machine config — gitignored, copy from .example
 ```
