@@ -46,8 +46,8 @@ point. The site is a thin navigation surface that ties them together.
                                   │ Layer 3 · Experiments   │
                                   │                         │
                                   │ • H1 — SCReAM vs GCC    │
-                                  │ • H4 — Latency budget   │
-                                  │ • H2/H3/H5/H6 (pending) │
+                                  │ • H2 — Latency budget   │
+                                  │ • H3/H4 — 5G traces     │
                                   └─────────────────────────┘
 ```
 
@@ -74,8 +74,9 @@ authored *for* the site; the site only links to what's already there.
 | 2-Ref | Flow diagram | Buffer flow through a running pipeline. | `reference/diagrams/flow-diagram.html` |
 | 2-Hyp | Hypothesis catalog | All claims, source citations, experimental designs. | `HYPOTHESES.md` |
 | 3 | H1 page | Does SCReAM under-use bandwidth vs GCC? | `analysis/hypotheses/h1.html` |
-| 3 | H4 page | Does NACK lose its benefit under a latency budget? | `analysis/hypotheses/h4.html` |
-| 3 | H2/H3/H5/H6 | (untested / verifier-only today) | `analysis/hypotheses/h{N}_*.py` |
+| 3 | H2 page | Does NACK lose its benefit under a latency budget? | `analysis/hypotheses/h2.html` |
+| 3 | H3 page | Does the original realistic-trace workload under-drive the network? | `analysis/hypotheses/h3.html` |
+| 3 | H4 page | Does SCReAM preserve more decodable video on stressed realistic traces? | `analysis/hypotheses/h4.html` |
 
 The `.md` files render as raw markdown when served by `http.server`.
 That's an acceptable starting point — the site's job is to find
@@ -117,15 +118,17 @@ the IA changing.
   │     SCReAM vs GCC bottleneck-phase utilization           │
   │     → analysis/hypotheses/h1.html                        │
   │                                                          │
+  │  [card: H2] supported                                    │
+  │     Latency/deadline comparison under fluctuation        │
+  │     → analysis/hypotheses/h2.html                        │
+  │                                                          │
+  │  [card: H3] supported                                    │
+  │     Workload calibration for realistic 5G traces         │
+  │     → analysis/hypotheses/h3.html                        │
+  │                                                          │
   │  [card: H4] supported                                    │
-  │     Latency-budget enforcement reverses NACK's benefit   │
+  │     SCReAM vs GCC on stressed realistic traces           │
   │     → analysis/hypotheses/h4.html                        │
-  │                                                          │
-  │  [card: H2] untested · verifier exists                   │
-  │     GCC's rate control collapses under bursty loss       │
-  │     → script: h2_gcc_bursty_collapse.py                  │
-  │                                                          │
-  │  [card: H3, H5, H6] untested · verifier exists           │
   │                                                          │
   │  Full catalog → HYPOTHESES.md                            │
   └──────────────────────────────────────────────────────────┘
@@ -150,6 +153,8 @@ http://localhost:8766/features.html          → Features & Roadmap
 http://localhost:8766/TODO.md                → markdown (raw)
 http://localhost:8766/HYPOTHESES.md          → markdown (raw)
 http://localhost:8766/analysis/hypotheses/h1.html
+http://localhost:8766/analysis/hypotheses/h2.html
+http://localhost:8766/analysis/hypotheses/h3.html
 http://localhost:8766/analysis/hypotheses/h4.html
 http://localhost:8766/reference/diagrams/component-diagram.html
 http://localhost:8766/reference/diagrams/state-machine.html

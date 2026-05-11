@@ -7,7 +7,12 @@
 # configs (host: 127.0.0.1) don't need this file.
 #
 # Each role's fields:
-#   host         — IP or hostname of the machine running this role
+#   host         — default endpoint for this role. Used as both SSH and media
+#                  endpoint unless ssh_host / media_host override it.
+#   ssh_host     — optional SSH/rsync endpoint. Use this for Tailscale
+#                  control-plane access, e.g. aum-ts / veda-ts.
+#   media_host   — optional RTP/RTCP endpoint embedded in the GStreamer
+#                  specs and tc peer filter. Defaults to host.
 #   project_root — path on that machine where the testbed has been
 #                  rsync'd (the runner copies this directory to that
 #                  remote path before each run)
@@ -18,11 +23,15 @@
 
 actors:
   camera:
-    host: 192.0.2.10            # replace with your camera host
+    host: aum-ts
+    ssh_host: aum-ts
+    media_host: aum-ts
     project_root: ~/gstexp
     network_env:
-      NIC: eth0                 # replace with your camera NIC
+      NIC: tailscale0
 
   viewer:
-    host: 192.0.2.20            # replace with your viewer host
+    host: veda-ts
+    ssh_host: veda-ts
+    media_host: veda-ts
     project_root: ~/gstexp

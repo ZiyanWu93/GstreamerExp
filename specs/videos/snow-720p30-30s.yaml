@@ -1,0 +1,16 @@
+name: snow-720p30-30s
+description: >
+  Random-noise pattern at 1280x720x30fps for 915 frames (~30.5s), sized
+  to cover the full translated 5G Mahimahi trace duration. This is an
+  intentional stress workload: VP8 cannot compress it down to the
+  content floor, so observed wire bitrate should track the configured
+  target closely enough to make the network matter.
+source:
+  backend: synthetic
+  width: 1280
+  height: 720
+  fps: 30
+  num_frames: 915
+  clock_overlay: true
+  synthetic:
+    pattern: snow

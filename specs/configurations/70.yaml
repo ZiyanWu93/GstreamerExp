@@ -1,0 +1,39 @@
+meta:
+  name: distributed_gcc_5g_cqi_snow_5mbps
+  description: Distributed (aum->veda) GCC at 720p30 over `mahimahi-5g-cqi-100ms` using a high-entropy snow workload targeting 5 Mbps.
+  flags:
+  - sudo
+  - gcc
+video: snow-720p30-30s
+network: mahimahi-5g-cqi-100ms
+scenario:
+  actors:
+    camera: {}
+    viewer: {}
+  setup_delay_seconds: 3.0
+  drain_delay_seconds: 1.0
+  metrics:
+  - frame_count
+  - encoder_target_kbps
+  - frame_latency
+  - wire_bytes
+  - encoded_bitrate
+  - decoder_errors
+  - late_drops
+codec: vp8
+encoder:
+  bitrate_kbps: 5000
+  keyframe_interval_frames: 60
+congestion_control:
+  algorithm: gcc
+  init_bitrate_kbps: 5000
+  min_bitrate_kbps: 200
+  max_bitrate_kbps: 8000
+sink:
+  backend: fake
+  sync: false
+recovery:
+  nack: false
+  pli: false
+  fec: false
+latency_budget_ms: 0

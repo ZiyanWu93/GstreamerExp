@@ -1,0 +1,66 @@
+id: H3
+slug: h3
+title: Media workload calibration gates realistic 5G trace comparisons
+claim: Media workload calibration gates realistic 5G trace comparisons.
+status: supported
+source: Project-internal validity check for realistic-trace SCReAM/GCC experiments
+page: analysis/hypotheses/h3.html
+verifier: analysis/hypotheses/h3_media_workload_calibration.py
+prediction: >
+  The current ball-720p30-30s VP8 workload is not valid for comparing
+  SCReAM and GCC on the translated 5G traces because observed camera
+  wire bitrate is far below trace capacity. A workload is considered
+  under-driving when each translated 5G trace has at least 10x median
+  capacity headroom over observed camera wire bitrate and fewer than
+  15% of 100 ms bins below 1 Mbit/s.
+verdict_rule: >
+  Supported if all tested realistic traces meet the under-driving rule;
+  inconclusive if only some do; refuted if none do; untested if required
+  records are absent.
+setup:
+  environment:
+    topology: controller-worker
+    controller: local workstation
+    camera_worker: aum
+    viewer_worker: veda
+    transport: Tailscale hostnames from hosts.yaml for media/control addressing
+    sync_scope: allowlisted project files needed to run the selected experiment
+  experiments:
+  - name: scream-vs-gcc-mahimahi-5g-cqi
+    configurations: [55, 56]
+    role: CQI trace workload calibration
+    command: python3 experiment.py scream-vs-gcc-mahimahi-5g-cqi
+    log: null
+  - name: scream-vs-gcc-mahimahi-5g-ho
+    configurations: [57, 58]
+    role: handover-like trace workload calibration
+    command: python3 experiment.py scream-vs-gcc-mahimahi-5g-ho
+    log: runs/experiment-logs/scream-vs-gcc-mahimahi-5g-ho.log
+  - name: scream-vs-gcc-mahimahi-5g-rb
+    configurations: [59, 60]
+    role: resource-block trace workload calibration
+    command: python3 experiment.py scream-vs-gcc-mahimahi-5g-rb
+    log: runs/experiment-logs/scream-vs-gcc-mahimahi-5g-rb.log
+  required_metrics:
+  - wire_bytes
+  - encoded_bitrate
+  - frame_count
+results:
+  expected_records:
+  - runs/experiments/scream-vs-gcc-mahimahi-5g-cqi.json
+  - runs/experiments/scream-vs-gcc-mahimahi-5g-ho.json
+  - runs/experiments/scream-vs-gcc-mahimahi-5g-rb.json
+  report: analysis/hypotheses/results/h3_report.json
+  figures:
+  - analysis/hypotheses/results/h3_capacity_headroom.svg
+  - analysis/hypotheses/results/h3_ho_headroom_timeseries.svg
+  tables:
+  - headroom
+conclusions:
+  established_claims:
+  - The current ball-720p30-30s VP8 workload emits roughly 220-230 kbit/s, far below the typical capacity of the translated 5G traces.
+  - The previous realistic-trace SCReAM/GCC comparisons should not be interpreted as meaningful algorithm comparisons.
+  - A future realistic-trace comparison must first pass this calibration gate with a high-quality or high-bitrate workload whose observed wire bitrate actually stresses the trace.
+  limits:
+  - This validates that the old workload is too light; it does not yet test a replacement high-quality workload.
+  - Brief low-capacity fades still exist in the handover-like traces; the claim is about typical headroom across the full replay.

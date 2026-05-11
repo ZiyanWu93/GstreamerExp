@@ -1,10 +1,11 @@
-"""Scenario runners — local and distributed.
+"""Scenario runners — local controller and remote workers.
 
 run_local() spawns camera and viewer workers as child processes on
-this host. run_distributed() rsyncs to two hosts, measures clock skew,
-spawns workers via SSH, and fetches result files back. Both runners
-honour the same hook contract (pre_run / during_run / post_run) and
-the same env-injection rules.
+this host. run_distributed() treats this host as the controller: it
+syncs the minimal worker payload to two remote workers, measures clock
+skew, spawns workers via SSH, and fetches result files back. Both
+runners honour the same hook contract (pre_run / during_run / post_run)
+and the same env-injection rules.
 
 This module also owns the SSH primitives (with ControlMaster caching),
 the clock-skew TTL cache, and the scream_env helper that lets a local
@@ -57,6 +58,43 @@ _SKEW_CACHE_TTL = 300.0   # seconds; skew is stable enough over this window
 # leaves comfortable margin for normal runs and short-circuits
 # wedged ones into the ExitStack cleanup path.
 _WORKER_WAIT_TIMEOUT_S = 90.0
+
+
+def _worker_payload_rsync_args(project_root: Path, host: str,
+                               remote_project_root: str) -> list[str]:
+    """Build the rsync command for the remote worker payload.
+
+    The controller keeps specs, runs, analysis, docs, and working notes
+    locally. Workers only need the Python runtime package plus setup
+    scripts. SCReAM source/build output is intentionally not synced:
+    scripts/setup_remote.sh owns that remote-local checkout and build
+    cache, so repeated runs don't churn large artifacts over SSH.
+    """
+    include_rules = [
+        "--include=/gstexp/***",
+        "--include=/scripts/",
+        "--include=/scripts/setup_remote.sh",
+        "--include=/scripts/scream-eos-fix.patch",
+        "--include=/scripts/build_gstreamer.sh",
+        "--include=/scripts/fix_clock.sh",
+        "--include=/requirements.txt",
+        "--include=/pyproject.toml",
+        "--exclude=*",
+    ]
+    return [
+        "rsync", "-az", "--delete", "--prune-empty-dirs",
+        *include_rules,
+        f"{project_root}/", f"{host}:{remote_project_root}/",
+    ]
+
+
+def _sync_worker_payload(project_root: Path, host: str,
+                         remote_project_root: str) -> None:
+    print(f"[controller] sync worker payload → {host}", flush=True)
+    subprocess.run(
+        _worker_payload_rsync_args(project_root, host, remote_project_root),
+        check=True,
+    )
 
 
 def _measure_clock_skew(host: str, samples: int = 7) -> float:
@@ -343,7 +381,7 @@ def run_distributed(
     pre_hooks: list, during_hooks: list, post_hooks: list,
     metric_args: list,
 ) -> None:
-    """Distributed runner: sync to both hosts, spawn workers via SSH,
+    """Controller/worker runner: sync payload, spawn workers via SSH,
     coordinate, fetch result files back."""
     run_id = run_dir.name                          # e.g. "2026-04-30T..."
     remote_camera_pid = f"/tmp/gstexp-{run_id}-camera.pid"
@@ -353,35 +391,14 @@ def run_distributed(
     remote_camera_spec = f"/tmp/gstexp-{run_id}-camera-spec.json"
     remote_viewer_spec = f"/tmp/gstexp-{run_id}-viewer-spec.json"
 
-    print(f"[scenario] distributed: camera={camera_host}, viewer={viewer_host}")
-    print(f"[scenario] remote_project_root={remote_project_root}")
+    print(f"[controller] workers: camera={camera_host}, viewer={viewer_host}")
+    print(f"[controller] remote_project_root={remote_project_root}")
 
-    # 1) rsync project to both hosts. The exclude list keeps build
-    #    outputs host-local: pushing the controller's stale (or absent)
-    #    target/ + wrapper_lib build files would invalidate the remote
-    #    rebuild detection on every run, which previously cost ~20s of
-    #    incremental cargo compile per host per run.
-    rsync_excludes = [
-        "--exclude=runs/", "--exclude=__pycache__/",
-        "--exclude=*.pyc", "--exclude=_archive/",
-        "--exclude=reference/",
-        "--exclude=scream/gstscream/target/",
-        "--exclude=scream/code/wrapper_lib/build/",
-        "--exclude=scream/code/wrapper_lib/CMakeFiles/",
-        "--exclude=scream/code/wrapper_lib/CMakeCache.txt",
-        "--exclude=scream/code/wrapper_lib/cmake_install.cmake",
-        "--exclude=scream/code/wrapper_lib/Makefile",
-        "--exclude=scream/code/wrapper_lib/*.so",
-        "--exclude=scream/code/wrapper_lib/*.a",
-        "--exclude=.scream-plugin/",
-    ]
+    # 1) Sync the minimal runtime payload to both workers. The controller
+    #    owns code/spec authoring and result storage; workers own their
+    #    local GStreamer + SCReAM build caches.
     for host in (camera_host, viewer_host):
-        print(f"[scenario] rsync → {host}", flush=True)
-        subprocess.run(
-            ["rsync", "-az", "--delete", *rsync_excludes,
-             f"{project_root}/", f"{host}:{remote_project_root}/"],
-            check=True,
-        )
+        _sync_worker_payload(project_root, host, remote_project_root)
 
     # 1b) Measure clock skew (host_clock - controller_clock) for each host
     #     so we can subtract it from latency raw deltas. NTP is unreliable
@@ -485,7 +502,7 @@ def run_distributed(
             # fetch to happen AFTER the worker exits. Re-stating: kill
             # registered SECOND runs FIRST in LIFO (correct), fetch
             # registered FIRST runs LAST (correct).
-            print(f"[scenario] starting viewer on{viewer_host}", flush=True)
+            print(f"[controller] starting viewer worker on {viewer_host}", flush=True)
             viewer_proc = _ssh_popen(
                 viewer_host,
                 _ssh_worker_cmd(remote_viewer_spec, remote_viewer_result, remote_viewer_pid,
@@ -499,7 +516,7 @@ def run_distributed(
             time.sleep(setup_delay)
 
             # Camera: same shape as viewer.
-            print(f"[scenario] starting camera on{camera_host}", flush=True)
+            print(f"[controller] starting camera worker on {camera_host}", flush=True)
             camera_proc = _ssh_popen(
                 camera_host,
                 _ssh_worker_cmd(remote_camera_spec, remote_camera_result, remote_camera_pid,

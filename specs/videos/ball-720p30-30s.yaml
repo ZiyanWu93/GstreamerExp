@@ -1,0 +1,12 @@
+name: ball-720p30-30s
+description: Moving ball at 1280x720x30fps for 915 frames (~30.5s), sized to cover the full
+  5G Mahimahi trace duration.
+source:
+  backend: synthetic
+  width: 1280
+  height: 720
+  fps: 30
+  num_frames: 915
+  clock_overlay: true
+  synthetic:
+    pattern: ball

@@ -313,20 +313,27 @@ config load. Available metrics:
 | `encoded_bitrate`     | sender   | actual byte-rate emitted by `vp8enc` |
 | `decoder_errors`      | receiver | bus warnings from `rtpvp8depay` and `vp8dec` |
 
-## Distributed runs
+## Controller/Worker runs
 
-A configuration runs in distributed mode when its `scenario` block
-contains a `remote:` sub-block (with `project_root` and optional
-`display` / `xauthority`). `cli.py` then:
+A configuration runs in controller/worker mode when both actors have
+`project_root` set. The local machine remains the controller; the
+camera and viewer actors are remote workers. `cli.py` then:
 
-1. `rsync`'s the project to `sender_host` and `receiver_host`,
+1. syncs the minimal worker runtime payload to the camera and viewer
+   workers (`gstexp/`, selected setup scripts, and small dependency
+   metadata),
 2. measures clock skew per host (minimum-RTT sample, cached for 5 minutes),
 3. runs `setup_remote.sh` on each host (idempotent; rebuilds gstscream
    against 1.24 if the cache is stale),
 4. runs the configuration's hooks where each one specifies
-   (`local` / `sender` / `receiver`),
+   (`local` / `camera` / `viewer`),
 5. spawns `worker.py` over SSH with PID files for clean teardown,
 6. fetches result files back, writes `summary.json`.
+
+The controller does not sync `runs/`, `analysis/`, docs, specs, or SCReAM
+build artifacts to workers for each run. Effective camera/viewer specs are
+copied as one-shot `/tmp/gstexp-...-spec.json` files, and SCReAM source plus
+compiled outputs stay remote-worker state managed by `setup_remote.sh`.
 
 ## Tests
 

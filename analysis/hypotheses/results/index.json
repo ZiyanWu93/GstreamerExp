@@ -1,0 +1,791 @@
+{
+  "schema_version": 1,
+  "generated_from": "specs/hypotheses/*.yaml",
+  "hypotheses": [
+    {
+      "id": "H1",
+      "slug": "h1",
+      "title": "SCReAM bottleneck-phase sender rate is lower than GCC's on capacity-step networks",
+      "claim": "SCReAM's bottleneck-phase sender rate is lower than GCC's on capacity-step networks.",
+      "declared_status": "regime-dependent",
+      "execution_status": "analyzable",
+      "source": "Zhang 2019 SIMUtools plus project fast-transition extension",
+      "page": "analysis/hypotheses/h1.html",
+      "verifier": "analysis/hypotheses/h1_scream_underuse.py",
+      "prediction": "On capacity-step networks, SCReAM's bottleneck-phase encoder-rate utilization should be lower than GCC's by at least 5 percentage points, and GCC's bottleneck-phase encoder-rate variability should be at least 20% higher.\n",
+      "verdict_rule": "Supported when both utilization and variability thresholds hold; refuted when they do not. Current interpretation is regime-dependent across slow-changing and fast-changing capacity-step networks.\n",
+      "setup": {
+        "experiments": [
+          {
+            "name": "scream-vs-gcc-720p",
+            "configurations": [
+              11,
+              12
+            ],
+            "role": "slow-changing capacity-step comparison",
+            "minimum_completed_reps": 7
+          },
+          {
+            "name": "scream-vs-gcc-720p-fast",
+            "configurations": [
+              27,
+              28
+            ],
+            "role": "fast-changing capacity-step comparison",
+            "minimum_completed_reps": 7
+          }
+        ],
+        "required_metrics": [
+          "frame_count",
+          "encoder_target_kbps",
+          "wire_bytes"
+        ]
+      },
+      "results": {
+        "expected_records": [
+          "runs/experiments/scream-vs-gcc-720p.json",
+          "runs/experiments/scream-vs-gcc-720p-fast.json"
+        ]
+      },
+      "execution": {
+        "experiments": [
+          {
+            "name": "scream-vs-gcc-720p",
+            "spec_path": "specs/experiments/scream-vs-gcc-720p.yaml",
+            "record_path": "runs/experiments/scream-vs-gcc-720p.json",
+            "spec_exists": true,
+            "record_exists": true,
+            "expected_reps": 7,
+            "configurations": {
+              "11": {
+                "completed_runs": 9,
+                "failed_runs": 1,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-05-07T00-24-18",
+                  "2026-05-07T00-25-15",
+                  "2026-05-07T00-26-10",
+                  "2026-05-07T00-27-04",
+                  "2026-05-07T00-27-59",
+                  "2026-05-07T00-28-53",
+                  "2026-05-07T00-29-50",
+                  "2026-05-07T00-30-44",
+                  "2026-05-07T00-33-53"
+                ]
+              },
+              "12": {
+                "completed_runs": 10,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-05-07T00-24-48",
+                  "2026-05-07T00-25-42",
+                  "2026-05-07T00-26-37",
+                  "2026-05-07T00-27-31",
+                  "2026-05-07T00-28-26",
+                  "2026-05-07T00-29-21",
+                  "2026-05-07T00-30-17",
+                  "2026-05-07T00-31-12",
+                  "2026-05-07T00-33-25",
+                  "2026-05-07T00-34-20"
+                ]
+              }
+            },
+            "completed_runs": 19,
+            "failed_runs": 1,
+            "expected_runs": 14,
+            "execution_status": "analyzable"
+          },
+          {
+            "name": "scream-vs-gcc-720p-fast",
+            "spec_path": "specs/experiments/scream-vs-gcc-720p-fast.yaml",
+            "record_path": "runs/experiments/scream-vs-gcc-720p-fast.json",
+            "spec_exists": true,
+            "record_exists": true,
+            "expected_reps": 7,
+            "configurations": {
+              "27": {
+                "completed_runs": 7,
+                "failed_runs": 3,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-05-07T02-58-14",
+                  "2026-05-07T02-59-09",
+                  "2026-05-07T03-00-05",
+                  "2026-05-07T03-06-50",
+                  "2026-05-07T03-07-45",
+                  "2026-05-07T03-10-55",
+                  "2026-05-07T03-11-52"
+                ]
+              },
+              "28": {
+                "completed_runs": 9,
+                "failed_runs": 1,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-05-07T02-58-42",
+                  "2026-05-07T02-59-37",
+                  "2026-05-07T03-00-32",
+                  "2026-05-07T03-06-21",
+                  "2026-05-07T03-07-18",
+                  "2026-05-07T03-08-13",
+                  "2026-05-07T03-10-27",
+                  "2026-05-07T03-11-22",
+                  "2026-05-07T03-12-19"
+                ]
+              }
+            },
+            "completed_runs": 16,
+            "failed_runs": 4,
+            "expected_runs": 14,
+            "execution_status": "analyzable"
+          }
+        ]
+      },
+      "conclusions": {
+        "established_claims": [
+          "SCReAM/GCC ranking depends on the transition time scale of the capacity-step network.",
+          "Sender-side utilization and receiver-side delivered frames answer different questions."
+        ],
+        "limits": [
+          "The result is not a general claim that either algorithm is globally better."
+        ]
+      },
+      "spec_path": "specs/hypotheses/h1.yaml"
+    },
+    {
+      "id": "H2",
+      "slug": "h2",
+      "title": "GCC stays ahead across latency-deadline and retransmission settings",
+      "claim": "On the fluctuating network, GCC delivers more viewer frames than SCReAM across latency-deadline and retransmission settings.",
+      "declared_status": "supported",
+      "execution_status": "analyzable",
+      "source": "Project-internal fluctuating-network deadline/retransmission experiment",
+      "page": "analysis/hypotheses/h2.html",
+      "verifier": "analysis/hypotheses/h2_fluctuating_deadline_ranking.py",
+      "prediction": "On the fluctuating 5 Mbps/300 kbps capacity-step network, GCC should deliver more median viewer frames than SCReAM in every crossed cell of retransmission on/off and latency budget 0/50/100 ms.\n",
+      "verdict_rule": "Supported if all six deadline/retransmission cells show GCC ahead of SCReAM by at least 30 median viewer frames; inconclusive if only some cells meet the margin; refuted if the margin disappears.\n",
+      "setup": {
+        "experiments": [
+          {
+            "name": "retransmission-deadline-fluc",
+            "configurations": [
+              41,
+              42,
+              43,
+              44,
+              45,
+              46,
+              47,
+              48,
+              49,
+              50,
+              51,
+              52
+            ],
+            "role": "fluctuating-network CC deadline and retransmission comparison",
+            "minimum_completed_reps": 4
+          }
+        ],
+        "required_metrics": [
+          "late_drops",
+          "frame_count",
+          "wire_bytes"
+        ]
+      },
+      "results": {
+        "expected_records": [
+          "runs/experiments/retransmission-deadline-fluc.json"
+        ]
+      },
+      "execution": {
+        "experiments": [
+          {
+            "name": "retransmission-deadline-fluc",
+            "spec_path": "specs/experiments/retransmission-deadline-fluc.yaml",
+            "record_path": "runs/experiments/retransmission-deadline-fluc.json",
+            "spec_exists": true,
+            "record_exists": true,
+            "expected_reps": 4,
+            "configurations": {
+              "41": {
+                "completed_runs": 5,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-05-07T10-22-46",
+                  "2026-05-07T10-28-10",
+                  "2026-05-07T10-34-53",
+                  "2026-05-07T10-41-34",
+                  "2026-05-07T10-46-56"
+                ]
+              },
+              "42": {
+                "completed_runs": 4,
+                "failed_runs": 1,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-05-07T10-23-15",
+                  "2026-05-07T10-35-19",
+                  "2026-05-07T10-42-01",
+                  "2026-05-07T10-47-23"
+                ]
+              },
+              "43": {
+                "completed_runs": 5,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-05-07T10-23-42",
+                  "2026-05-07T10-30-24",
+                  "2026-05-07T10-35-46",
+                  "2026-05-07T10-42-27",
+                  "2026-05-07T10-47-50"
+                ]
+              },
+              "44": {
+                "completed_runs": 5,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-05-07T10-24-09",
+                  "2026-05-07T10-30-50",
+                  "2026-05-07T10-36-13",
+                  "2026-05-07T10-42-54",
+                  "2026-05-07T10-48-16"
+                ]
+              },
+              "45": {
+                "completed_runs": 5,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-05-07T10-24-36",
+                  "2026-05-07T10-31-17",
+                  "2026-05-07T10-36-40",
+                  "2026-05-07T10-43-21",
+                  "2026-05-07T10-48-43"
+                ]
+              },
+              "46": {
+                "completed_runs": 4,
+                "failed_runs": 1,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-05-07T10-25-02",
+                  "2026-05-07T10-31-44",
+                  "2026-05-07T10-43-47",
+                  "2026-05-07T10-49-10"
+                ]
+              },
+              "47": {
+                "completed_runs": 5,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-05-07T10-25-29",
+                  "2026-05-07T10-32-11",
+                  "2026-05-07T10-38-52",
+                  "2026-05-07T10-44-14",
+                  "2026-05-07T10-49-37"
+                ]
+              },
+              "48": {
+                "completed_runs": 5,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-05-07T10-25-56",
+                  "2026-05-07T10-32-37",
+                  "2026-05-07T10-39-20",
+                  "2026-05-07T10-44-43",
+                  "2026-05-07T10-50-05"
+                ]
+              },
+              "49": {
+                "completed_runs": 5,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-05-07T10-26-23",
+                  "2026-05-07T10-33-04",
+                  "2026-05-07T10-39-47",
+                  "2026-05-07T10-45-09",
+                  "2026-05-07T10-50-32"
+                ]
+              },
+              "50": {
+                "completed_runs": 5,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-05-07T10-26-49",
+                  "2026-05-07T10-33-31",
+                  "2026-05-07T10-40-14",
+                  "2026-05-07T10-45-36",
+                  "2026-05-07T10-50-58"
+                ]
+              },
+              "51": {
+                "completed_runs": 5,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-05-07T10-27-16",
+                  "2026-05-07T10-33-59",
+                  "2026-05-07T10-40-40",
+                  "2026-05-07T10-46-03",
+                  "2026-05-07T10-51-25"
+                ]
+              },
+              "52": {
+                "completed_runs": 5,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-05-07T10-27-43",
+                  "2026-05-07T10-34-26",
+                  "2026-05-07T10-41-07",
+                  "2026-05-07T10-46-29",
+                  "2026-05-07T10-51-52"
+                ]
+              }
+            },
+            "completed_runs": 58,
+            "failed_runs": 2,
+            "expected_runs": 48,
+            "execution_status": "analyzable"
+          }
+        ]
+      },
+      "conclusions": {
+        "established_claims": [
+          "GCC delivers more median viewer frames than SCReAM in every tested deadline/retransmission cell on the fluctuating network.",
+          "Neither deadline enforcement nor retransmission changes the SCReAM-vs-GCC ranking in this experiment."
+        ],
+        "limits": [
+          "This is a fluctuating-network ranking result, not a general claim about NACK or latency budgets on every network."
+        ]
+      },
+      "spec_path": "specs/hypotheses/h2.yaml"
+    },
+    {
+      "id": "H3",
+      "slug": "h3",
+      "title": "Media workload calibration gates realistic 5G trace comparisons",
+      "claim": "Media workload calibration gates realistic 5G trace comparisons.",
+      "declared_status": "supported",
+      "execution_status": "analyzable",
+      "source": "Project-internal validity check for realistic-trace SCReAM/GCC experiments",
+      "page": "analysis/hypotheses/h3.html",
+      "verifier": "analysis/hypotheses/h3_media_workload_calibration.py",
+      "prediction": "The current ball-720p30-30s VP8 workload is not valid for comparing SCReAM and GCC on the translated 5G traces because observed camera wire bitrate is far below trace capacity. A workload is considered under-driving when each translated 5G trace has at least 10x median capacity headroom over observed camera wire bitrate and fewer than 15% of 100 ms bins below 1 Mbit/s.\n",
+      "verdict_rule": "Supported if all tested realistic traces meet the under-driving rule; inconclusive if only some do; refuted if none do; untested if required records are absent.\n",
+      "setup": {
+        "environment": {
+          "topology": "controller-worker",
+          "controller": "local workstation",
+          "camera_worker": "aum",
+          "viewer_worker": "veda",
+          "transport": "Tailscale hostnames from hosts.yaml for media/control addressing",
+          "sync_scope": "allowlisted project files needed to run the selected experiment"
+        },
+        "experiments": [
+          {
+            "name": "scream-vs-gcc-mahimahi-5g-cqi",
+            "configurations": [
+              55,
+              56
+            ],
+            "role": "CQI trace workload calibration",
+            "command": "python3 experiment.py scream-vs-gcc-mahimahi-5g-cqi",
+            "log": null
+          },
+          {
+            "name": "scream-vs-gcc-mahimahi-5g-ho",
+            "configurations": [
+              57,
+              58
+            ],
+            "role": "handover-like trace workload calibration",
+            "command": "python3 experiment.py scream-vs-gcc-mahimahi-5g-ho",
+            "log": "runs/experiment-logs/scream-vs-gcc-mahimahi-5g-ho.log"
+          },
+          {
+            "name": "scream-vs-gcc-mahimahi-5g-rb",
+            "configurations": [
+              59,
+              60
+            ],
+            "role": "resource-block trace workload calibration",
+            "command": "python3 experiment.py scream-vs-gcc-mahimahi-5g-rb",
+            "log": "runs/experiment-logs/scream-vs-gcc-mahimahi-5g-rb.log"
+          }
+        ],
+        "required_metrics": [
+          "wire_bytes",
+          "encoded_bitrate",
+          "frame_count"
+        ]
+      },
+      "results": {
+        "expected_records": [
+          "runs/experiments/scream-vs-gcc-mahimahi-5g-cqi.json",
+          "runs/experiments/scream-vs-gcc-mahimahi-5g-ho.json",
+          "runs/experiments/scream-vs-gcc-mahimahi-5g-rb.json"
+        ],
+        "report": "analysis/hypotheses/results/h3_report.json",
+        "figures": [
+          "analysis/hypotheses/results/h3_capacity_headroom.svg",
+          "analysis/hypotheses/results/h3_ho_headroom_timeseries.svg"
+        ],
+        "tables": [
+          "headroom"
+        ]
+      },
+      "execution": {
+        "experiments": [
+          {
+            "name": "scream-vs-gcc-mahimahi-5g-cqi",
+            "spec_path": "specs/experiments/scream-vs-gcc-mahimahi-5g-cqi.yaml",
+            "record_path": "runs/experiments/scream-vs-gcc-mahimahi-5g-cqi.json",
+            "spec_exists": true,
+            "record_exists": true,
+            "expected_reps": 5,
+            "configurations": {
+              "55": {
+                "completed_runs": 5,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-05-10T15-47-26",
+                  "2026-05-10T15-48-44",
+                  "2026-05-10T15-50-07",
+                  "2026-05-10T15-51-25",
+                  "2026-05-10T15-52-43"
+                ]
+              },
+              "56": {
+                "completed_runs": 5,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-05-10T15-48-05",
+                  "2026-05-10T15-49-25",
+                  "2026-05-10T15-50-46",
+                  "2026-05-10T15-52-03",
+                  "2026-05-10T15-53-23"
+                ]
+              }
+            },
+            "completed_runs": 10,
+            "failed_runs": 0,
+            "expected_runs": 10,
+            "execution_status": "analyzable"
+          },
+          {
+            "name": "scream-vs-gcc-mahimahi-5g-ho",
+            "spec_path": "specs/experiments/scream-vs-gcc-mahimahi-5g-ho.yaml",
+            "record_path": "runs/experiments/scream-vs-gcc-mahimahi-5g-ho.json",
+            "spec_exists": true,
+            "record_exists": true,
+            "expected_reps": 5,
+            "configurations": {
+              "57": {
+                "completed_runs": 5,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-05-10T15-54-15",
+                  "2026-05-10T15-55-38",
+                  "2026-05-10T15-56-55",
+                  "2026-05-10T15-58-13",
+                  "2026-05-10T15-59-33"
+                ]
+              },
+              "58": {
+                "completed_runs": 5,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-05-10T15-54-54",
+                  "2026-05-10T15-56-16",
+                  "2026-05-10T15-57-34",
+                  "2026-05-10T15-58-52",
+                  "2026-05-10T16-02-31"
+                ]
+              }
+            },
+            "completed_runs": 10,
+            "failed_runs": 0,
+            "expected_runs": 10,
+            "execution_status": "analyzable"
+          },
+          {
+            "name": "scream-vs-gcc-mahimahi-5g-rb",
+            "spec_path": "specs/experiments/scream-vs-gcc-mahimahi-5g-rb.yaml",
+            "record_path": "runs/experiments/scream-vs-gcc-mahimahi-5g-rb.json",
+            "spec_exists": true,
+            "record_exists": true,
+            "expected_reps": 5,
+            "configurations": {
+              "59": {
+                "completed_runs": 5,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-05-10T16-03-25",
+                  "2026-05-10T16-04-45",
+                  "2026-05-10T16-06-06",
+                  "2026-05-10T16-07-23",
+                  "2026-05-10T16-08-43"
+                ]
+              },
+              "60": {
+                "completed_runs": 5,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-05-10T16-04-06",
+                  "2026-05-10T16-05-24",
+                  "2026-05-10T16-06-45",
+                  "2026-05-10T16-08-04",
+                  "2026-05-10T16-09-22"
+                ]
+              }
+            },
+            "completed_runs": 10,
+            "failed_runs": 0,
+            "expected_runs": 10,
+            "execution_status": "analyzable"
+          }
+        ]
+      },
+      "conclusions": {
+        "established_claims": [
+          "The current ball-720p30-30s VP8 workload emits roughly 220-230 kbit/s, far below the typical capacity of the translated 5G traces.",
+          "The previous realistic-trace SCReAM/GCC comparisons should not be interpreted as meaningful algorithm comparisons.",
+          "A future realistic-trace comparison must first pass this calibration gate with a high-quality or high-bitrate workload whose observed wire bitrate actually stresses the trace."
+        ],
+        "limits": [
+          "This validates that the old workload is too light; it does not yet test a replacement high-quality workload.",
+          "Brief low-capacity fades still exist in the handover-like traces; the claim is about typical headroom across the full replay."
+        ]
+      },
+      "spec_path": "specs/hypotheses/h3.yaml"
+    },
+    {
+      "id": "H4",
+      "slug": "h4",
+      "title": "SCReAM preserves more decodable video than GCC on calibrated stressed realistic 5G traces",
+      "claim": "SCReAM preserves more decodable video than GCC on calibrated stressed realistic 5G traces.",
+      "declared_status": "supported",
+      "execution_status": "analyzable",
+      "source": "Project-internal realistic-trace SCReAM/GCC experiment",
+      "page": "analysis/hypotheses/h4.html",
+      "verifier": "analysis/hypotheses/h4_scream_realistic_trace_advantage.py",
+      "prediction": "On fixed translated 5G Mahimahi traces scaled to 33% capacity, a calibrated high-entropy 384x216x30 VP8 workload should show where the controller matters. CQI is expected to act as a high-capacity control where both controllers deliver nearly all frames. On the stressed HO and RB traces, SCReAM should deliver more viewer-depayloaded frames than GCC while using no more than 85% of GCC's camera egress bitrate and reaching a similar viewer-side ingress bitrate.\n",
+      "verdict_rule": "Supported if all experiment runs pass, both stressed traces show SCReAM/GCC viewer-frame ratio >=1.25, both stressed traces show camera egress mean bitrate <=85% of GCC, viewer-side mean wire bitrate is within 10% of GCC on stressed traces, and at least one stressed trace shows >=2x viewer-frame ratio. Refuted if completed records fail those thresholds; untested if required records or summaries are missing.\n",
+      "setup": {
+        "environment": {
+          "topology": "controller-worker",
+          "controller": "local workstation",
+          "camera_worker": "aum",
+          "viewer_worker": "veda",
+          "transport": "Tailscale hostnames from hosts.yaml for media/control addressing",
+          "sync_scope": "allowlisted project files needed to run the selected experiment"
+        },
+        "experiments": [
+          {
+            "name": "scream-vs-gcc-mahimahi-5g-cqi-x0p33-snow-384x216",
+            "configurations": [
+              81,
+              82
+            ],
+            "role": "fixed realistic CQI-like high-capacity control trace",
+            "command": "python3 experiment.py scream-vs-gcc-mahimahi-5g-cqi-x0p33-snow-384x216",
+            "log": null
+          },
+          {
+            "name": "scream-vs-gcc-mahimahi-5g-ho-x0p33-snow-384x216",
+            "configurations": [
+              79,
+              80
+            ],
+            "role": "fixed realistic handover-like stressed trace",
+            "command": "python3 experiment.py scream-vs-gcc-mahimahi-5g-ho-x0p33-snow-384x216",
+            "log": null
+          },
+          {
+            "name": "scream-vs-gcc-mahimahi-5g-rb-x0p33-snow-384x216",
+            "configurations": [
+              83,
+              84
+            ],
+            "role": "fixed realistic RB-like stressed trace",
+            "command": "python3 experiment.py scream-vs-gcc-mahimahi-5g-rb-x0p33-snow-384x216",
+            "log": null
+          }
+        ],
+        "required_metrics": [
+          "frame_count",
+          "encoder_target_kbps",
+          "frame_latency",
+          "wire_bytes",
+          "encoded_bitrate",
+          "decoder_errors",
+          "late_drops"
+        ]
+      },
+      "results": {
+        "expected_records": [
+          "runs/experiments/scream-vs-gcc-mahimahi-5g-cqi-x0p33-snow-384x216.json",
+          "runs/experiments/scream-vs-gcc-mahimahi-5g-ho-x0p33-snow-384x216.json",
+          "runs/experiments/scream-vs-gcc-mahimahi-5g-rb-x0p33-snow-384x216.json"
+        ],
+        "report": "analysis/hypotheses/results/h4_report.json",
+        "figures": [
+          "analysis/hypotheses/results/h4_frame_delivery_by_trace.svg",
+          "analysis/hypotheses/results/h4_camera_egress_by_trace.svg",
+          "analysis/hypotheses/results/h4_cqi_timeseries.svg",
+          "analysis/hypotheses/results/h4_ho_timeseries.svg",
+          "analysis/hypotheses/results/h4_rb_timeseries.svg"
+        ],
+        "tables": [
+          "h4_arm_summary",
+          "h4_trace_comparison"
+        ]
+      },
+      "execution": {
+        "experiments": [
+          {
+            "name": "scream-vs-gcc-mahimahi-5g-cqi-x0p33-snow-384x216",
+            "spec_path": "specs/experiments/scream-vs-gcc-mahimahi-5g-cqi-x0p33-snow-384x216.yaml",
+            "record_path": "runs/experiments/scream-vs-gcc-mahimahi-5g-cqi-x0p33-snow-384x216.json",
+            "spec_exists": true,
+            "record_exists": true,
+            "expected_reps": 3,
+            "configurations": {
+              "81": {
+                "completed_runs": 3,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-05-10T20-44-59",
+                  "2026-05-10T20-46-22",
+                  "2026-05-10T20-47-40"
+                ]
+              },
+              "82": {
+                "completed_runs": 3,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-05-10T20-45-43",
+                  "2026-05-10T20-47-01",
+                  "2026-05-10T20-48-18"
+                ]
+              }
+            },
+            "completed_runs": 6,
+            "failed_runs": 0,
+            "expected_runs": 6,
+            "execution_status": "analyzable"
+          },
+          {
+            "name": "scream-vs-gcc-mahimahi-5g-ho-x0p33-snow-384x216",
+            "spec_path": "specs/experiments/scream-vs-gcc-mahimahi-5g-ho-x0p33-snow-384x216.yaml",
+            "record_path": "runs/experiments/scream-vs-gcc-mahimahi-5g-ho-x0p33-snow-384x216.json",
+            "spec_exists": true,
+            "record_exists": true,
+            "expected_reps": 3,
+            "configurations": {
+              "79": {
+                "completed_runs": 3,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-05-10T20-30-37",
+                  "2026-05-10T20-32-00",
+                  "2026-05-10T20-33-18"
+                ]
+              },
+              "80": {
+                "completed_runs": 3,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-05-10T20-31-20",
+                  "2026-05-10T20-32-39",
+                  "2026-05-10T20-33-57"
+                ]
+              }
+            },
+            "completed_runs": 6,
+            "failed_runs": 0,
+            "expected_runs": 6,
+            "execution_status": "analyzable"
+          },
+          {
+            "name": "scream-vs-gcc-mahimahi-5g-rb-x0p33-snow-384x216",
+            "spec_path": "specs/experiments/scream-vs-gcc-mahimahi-5g-rb-x0p33-snow-384x216.yaml",
+            "record_path": "runs/experiments/scream-vs-gcc-mahimahi-5g-rb-x0p33-snow-384x216.json",
+            "spec_exists": true,
+            "record_exists": true,
+            "expected_reps": 3,
+            "configurations": {
+              "83": {
+                "completed_runs": 3,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-05-10T20-49-08",
+                  "2026-05-10T20-50-25",
+                  "2026-05-10T20-51-46"
+                ]
+              },
+              "84": {
+                "completed_runs": 3,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-05-10T20-49-47",
+                  "2026-05-10T20-51-07",
+                  "2026-05-10T20-52-26"
+                ]
+              }
+            },
+            "completed_runs": 6,
+            "failed_runs": 0,
+            "expected_runs": 6,
+            "execution_status": "analyzable"
+          }
+        ]
+      },
+      "conclusions": {
+        "mechanism_claim": "SCReAM wins on the stressed HO/RB traces because its post-payload RTP pacing turns congestion-control decisions into lower camera egress, while GCC lowers its estimator target but this pipeline still emits multi-Mbit/s RTP that the trace cannot carry, leaving fewer complete frames decodable at the viewer.\n",
+        "supporting_subclaims": [
+          "Within each trace pair, the trace, video, codec, bitrate bounds, recovery settings, sink, workers, and run length are fixed; only congestion_control.algorithm varies.",
+          "CQI is the high-capacity control and both controllers deliver nearly all frames, so the advantage appears only when HO/RB capacity actually stresses the stream.",
+          "On HO, SCReAM delivers 2.74x GCC's viewer frames; on RB, it delivers 1.39x GCC's viewer frames.",
+          "The advantage is not from sending more traffic; SCReAM uses 0.72x GCC's camera egress on HO and 0.64x on RB.",
+          "GCC's target falls on the stressed traces, but its measured camera egress remains about 2.35 Mbit/s on HO and 2.32 Mbit/s on RB."
+        ],
+        "established_claims": [
+          "On the calibrated fixed CQI x0.33 trace, both controllers delivered nearly all frames, so this trace is a high-capacity control rather than evidence of a SCReAM advantage.",
+          "On the calibrated fixed HO x0.33 trace, SCReAM delivered roughly 2.7x as many viewer-depayloaded frames as GCC while producing lower camera egress.",
+          "On the calibrated fixed RB x0.33 trace, SCReAM delivered about 1.4x as many viewer-depayloaded frames as GCC while producing lower camera egress.",
+          "GCC's estimator target does drop on the stressed traces, but in this pipeline that target is not equivalent to lower post-encoder RTP egress.",
+          {
+            "The result is meaningful because the workload is no longer under-driving the stressed traces": "observed media bitrate is in the same range as the scaled trace capacities."
+          }
+        ],
+        "limits": [
+          "This is a fixed-trace, fixed-workload result; CQI shows that SCReAM does not produce a visible frame-delivery advantage when the trace has enough capacity for both controllers.",
+          "The current latency metric still has clock-skew artifacts; H4's primary claim is decodable frame delivery and camera egress."
+        ]
+      },
+      "spec_path": "specs/hypotheses/h4.yaml"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+name: scream-vs-gcc-mahimahi-5g-ho
+description: SCReAM vs GCC at 720p30 across the full 5G Mahimahi ho trace. No retransmission
+  and no latency budget enforcement; intended as an H1-style capacity-following comparison
+  under realistic time-varying capacity.
+reps: 5
+varies:
+- congestion_control.algorithm
+configurations:
+- id: 57
+  label: SCReAM
+  color: '#d62728'
+- id: 58
+  label: GCC
+  color: '#1f77b4'

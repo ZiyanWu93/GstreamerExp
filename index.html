@@ -139,6 +139,7 @@
   }
   .badge.supported { background: var(--good-soft); color: var(--good); }
   .badge.regime    { background: #fff7ed; color: #b45309; }
+  .badge.inconclusive { background: #fff7ed; color: #b45309; }
   .badge.untested  { background: var(--info-soft); color: var(--info); }
   .badge.refuted   { background: var(--gap-soft); color: var(--gap); }
   .hypo-card .target {
@@ -166,6 +167,10 @@
 </a>
 
 <h2 class="section">Hypotheses</h2>
+<p style="color: var(--muted); font-size: 14px; margin-top: -4px;">
+  Structured metadata:
+  <a href="analysis/hypotheses/results/index.json">analysis/hypotheses/results/index.json</a>
+</p>
 <div class="hypo-grid">
 
   <a class="hypo-card linked" href="analysis/hypotheses/h1.html">
@@ -177,50 +182,32 @@
     </div>
   </a>
 
-  <a class="hypo-card linked" href="analysis/hypotheses/h4.html">
-    <div class="id">H4</div>
+  <a class="hypo-card linked" href="analysis/hypotheses/h2.html">
+    <div class="id">H2</div>
     <div class="claim">On a fluctuating network, GCC delivers more frames than SCReAM in every condition — neither the latency deadline nor retransmission changes the ranking</div>
     <div class="footer">
       <span class="badge supported">tested · GCC ahead in every cell</span>
-      <span class="target">→ h4.html</span>
+      <span class="target">→ h2.html</span>
     </div>
   </a>
 
-  <div class="hypo-card">
-    <div class="id">H2</div>
-    <div class="claim">GCC's rate control collapses harder than SCReAM's under bursty loss</div>
-    <div class="footer">
-      <span class="badge untested">untested</span>
-      <span class="target">h2_gcc_bursty_collapse.py</span>
-    </div>
-  </div>
-
-  <div class="hypo-card">
+  <a class="hypo-card linked" href="analysis/hypotheses/h3.html">
     <div class="id">H3</div>
-    <div class="claim">PLI's quality advantage over NACK widens with content motion</div>
+    <div class="claim">Media workload calibration gates realistic 5G trace comparisons</div>
     <div class="footer">
-      <span class="badge untested">untested</span>
-      <span class="target">h3_pli_real_content.py</span>
+      <span class="badge supported">tested · workload under-drives traces</span>
+      <span class="target">→ h3.html</span>
     </div>
-  </div>
+  </a>
 
-  <div class="hypo-card">
-    <div class="id">H5</div>
-    <div class="claim">GCC under-utilizes after a sudden RTT spike; SCReAM doesn't</div>
+  <a class="hypo-card linked" href="analysis/hypotheses/h4.html">
+    <div class="id">H4</div>
+    <div class="claim">On stressed realistic 5G traces, SCReAM preserves more decodable video than GCC with lower camera egress on HO/RB</div>
     <div class="footer">
-      <span class="badge untested">untested</span>
-      <span class="target">h5_gcc_rtt_step.py</span>
+      <span class="badge supported">tested · SCReAM ahead on HO/RB</span>
+      <span class="target">→ h4.html</span>
     </div>
-  </div>
-
-  <div class="hypo-card">
-    <div class="id">H6</div>
-    <div class="claim">GCC backs off on TCP cross-traffic where SCReAM holds rate</div>
-    <div class="footer">
-      <span class="badge untested">untested</span>
-      <span class="target">h6_gcc_tcp_cross_traffic.py</span>
-    </div>
-  </div>
+  </a>
 
 </div>
 

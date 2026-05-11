@@ -106,6 +106,8 @@ def run_configuration(config_arg: str, *,
     viewer_actor = actors["viewer"]
     camera_host = camera_actor["host"]
     viewer_host = viewer_actor["host"]
+    camera_ssh_host = camera_actor.get("ssh_host") or camera_host
+    viewer_ssh_host = viewer_actor.get("ssh_host") or viewer_host
     metrics_list = scenario["metrics"]
     wrap_camera = camera_actor.get("wrap", [])
     wrap_viewer = viewer_actor.get("wrap", [])
@@ -113,9 +115,9 @@ def run_configuration(config_arg: str, *,
     during_hooks = hooks.get("during_run") or []
     post_hooks = hooks.get("post_run") or []
 
-    # Distributed mode is gated on having a remote project_root for both
-    # actors. In local mode (e.g. 127.0.0.1 hosts), project_root may be
-    # absent because workers run as direct child processes from cwd.
+    # Controller/worker mode is gated on having a remote project_root for
+    # both actors. In local mode (e.g. 127.0.0.1 hosts), project_root may
+    # be absent because workers run as direct child processes from cwd.
     camera_project_root = camera_actor.get("project_root")
     viewer_project_root = viewer_actor.get("project_root")
     distributed = camera_project_root is not None and viewer_project_root is not None
@@ -160,8 +162,8 @@ def run_configuration(config_arg: str, *,
             run_dir=run_dir,
             camera_result=camera_result,
             viewer_result=viewer_result,
-            camera_host=camera_host,
-            viewer_host=viewer_host,
+            camera_host=camera_ssh_host,
+            viewer_host=viewer_ssh_host,
             remote_project_root=remote_project_root,
             view_display=view_display,
             view_xauthority=view_xauthority,

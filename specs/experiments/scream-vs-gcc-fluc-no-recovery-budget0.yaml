@@ -1,0 +1,17 @@
+name: scream-vs-gcc-fluc-no-recovery-budget0
+description: >
+  Focused two-arm SCReAM vs GCC comparison using the already-verified
+  fluctuating-5mbps-300kbps setup where the controllers show a visible
+  frame-count difference. This reuses configs 41 and 43 from the larger
+  retransmission-deadline-fluc matrix, holding recovery off and latency
+  budget at 0 ms so only congestion_control.algorithm varies.
+reps: 5
+varies:
+- congestion_control.algorithm
+configurations:
+- id: 41
+  label: SCReAM no-rec budget=0
+  color: '#d62728'
+- id: 43
+  label: GCC no-rec budget=0
+  color: '#1f77b4'

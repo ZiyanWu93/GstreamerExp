@@ -1,7 +1,7 @@
 # Presentation principles for hypothesis result pages
 
-These rules guide every hypothesis page in this directory (H1 through
-H6 and beyond). The goal: a page where a cold reader can land
+These rules guide every active hypothesis page in this directory. The
+goal: a page where a cold reader can land
 anywhere and understand it — no assumed familiarity with the
 literature, no jargon without a referent, no buried conclusions.
 
@@ -32,6 +32,15 @@ that depends on context elsewhere.
 ### 1.5 Glossary at the end
 Definitions are reference material, not narrative. They go after the
 content, not before it.
+
+### 1.6 Use standard empirical-research labels
+Prefer familiar labels over project-specific coinages:
+**Claim**, **Prediction**, **Experimental Setup**, **Results**,
+**Supporting Evidence**, **Findings**, and **Limitations**. Use
+**Threats to Validity** only for measurement-design risks that could
+invalidate a result, such as confounding, instrumentation error, or
+generalization beyond the tested population. Ordinary limits on what a
+claim covers are **Limitations**.
 
 ---
 

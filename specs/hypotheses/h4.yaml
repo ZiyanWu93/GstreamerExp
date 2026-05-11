@@ -1,0 +1,93 @@
+id: H4
+slug: h4
+title: SCReAM preserves more decodable video than GCC on calibrated stressed realistic 5G traces
+claim: SCReAM preserves more decodable video than GCC on calibrated stressed realistic 5G traces.
+status: supported
+source: Project-internal realistic-trace SCReAM/GCC experiment
+page: analysis/hypotheses/h4.html
+verifier: analysis/hypotheses/h4_scream_realistic_trace_advantage.py
+prediction: >
+  On fixed translated 5G Mahimahi traces scaled to 33% capacity, a
+  calibrated high-entropy 384x216x30 VP8 workload should show where the
+  controller matters. CQI is expected to act as a high-capacity control
+  where both controllers deliver nearly all frames. On the stressed HO
+  and RB traces, SCReAM should deliver more viewer-depayloaded frames
+  than GCC while using no more than 85% of GCC's camera egress bitrate
+  and reaching a similar viewer-side ingress bitrate.
+verdict_rule: >
+  Supported if all experiment runs pass, both stressed traces show
+  SCReAM/GCC viewer-frame ratio >=1.25, both stressed traces show
+  camera egress mean bitrate <=85% of GCC, viewer-side mean wire
+  bitrate is within 10% of GCC on stressed traces, and at least one
+  stressed trace shows >=2x viewer-frame ratio. Refuted if completed
+  records fail those thresholds; untested if required records or
+  summaries are missing.
+setup:
+  environment:
+    topology: controller-worker
+    controller: local workstation
+    camera_worker: aum
+    viewer_worker: veda
+    transport: Tailscale hostnames from hosts.yaml for media/control addressing
+    sync_scope: allowlisted project files needed to run the selected experiment
+  experiments:
+  - name: scream-vs-gcc-mahimahi-5g-cqi-x0p33-snow-384x216
+    configurations: [81, 82]
+    role: fixed realistic CQI-like high-capacity control trace
+    command: python3 experiment.py scream-vs-gcc-mahimahi-5g-cqi-x0p33-snow-384x216
+    log: null
+  - name: scream-vs-gcc-mahimahi-5g-ho-x0p33-snow-384x216
+    configurations: [79, 80]
+    role: fixed realistic handover-like stressed trace
+    command: python3 experiment.py scream-vs-gcc-mahimahi-5g-ho-x0p33-snow-384x216
+    log: null
+  - name: scream-vs-gcc-mahimahi-5g-rb-x0p33-snow-384x216
+    configurations: [83, 84]
+    role: fixed realistic RB-like stressed trace
+    command: python3 experiment.py scream-vs-gcc-mahimahi-5g-rb-x0p33-snow-384x216
+    log: null
+  required_metrics:
+  - frame_count
+  - encoder_target_kbps
+  - frame_latency
+  - wire_bytes
+  - encoded_bitrate
+  - decoder_errors
+  - late_drops
+results:
+  expected_records:
+  - runs/experiments/scream-vs-gcc-mahimahi-5g-cqi-x0p33-snow-384x216.json
+  - runs/experiments/scream-vs-gcc-mahimahi-5g-ho-x0p33-snow-384x216.json
+  - runs/experiments/scream-vs-gcc-mahimahi-5g-rb-x0p33-snow-384x216.json
+  report: analysis/hypotheses/results/h4_report.json
+  figures:
+  - analysis/hypotheses/results/h4_frame_delivery_by_trace.svg
+  - analysis/hypotheses/results/h4_camera_egress_by_trace.svg
+  - analysis/hypotheses/results/h4_cqi_timeseries.svg
+  - analysis/hypotheses/results/h4_ho_timeseries.svg
+  - analysis/hypotheses/results/h4_rb_timeseries.svg
+  tables:
+  - h4_arm_summary
+  - h4_trace_comparison
+conclusions:
+  mechanism_claim: >
+    SCReAM wins on the stressed HO/RB traces because its post-payload
+    RTP pacing turns congestion-control decisions into lower camera
+    egress, while GCC lowers its estimator target but this pipeline
+    still emits multi-Mbit/s RTP that the trace cannot carry, leaving
+    fewer complete frames decodable at the viewer.
+  supporting_subclaims:
+  - Within each trace pair, the trace, video, codec, bitrate bounds, recovery settings, sink, workers, and run length are fixed; only congestion_control.algorithm varies.
+  - CQI is the high-capacity control and both controllers deliver nearly all frames, so the advantage appears only when HO/RB capacity actually stresses the stream.
+  - On HO, SCReAM delivers 2.74x GCC's viewer frames; on RB, it delivers 1.39x GCC's viewer frames.
+  - The advantage is not from sending more traffic; SCReAM uses 0.72x GCC's camera egress on HO and 0.64x on RB.
+  - GCC's target falls on the stressed traces, but its measured camera egress remains about 2.35 Mbit/s on HO and 2.32 Mbit/s on RB.
+  established_claims:
+  - On the calibrated fixed CQI x0.33 trace, both controllers delivered nearly all frames, so this trace is a high-capacity control rather than evidence of a SCReAM advantage.
+  - On the calibrated fixed HO x0.33 trace, SCReAM delivered roughly 2.7x as many viewer-depayloaded frames as GCC while producing lower camera egress.
+  - On the calibrated fixed RB x0.33 trace, SCReAM delivered about 1.4x as many viewer-depayloaded frames as GCC while producing lower camera egress.
+  - GCC's estimator target does drop on the stressed traces, but in this pipeline that target is not equivalent to lower post-encoder RTP egress.
+  - The result is meaningful because the workload is no longer under-driving the stressed traces: observed media bitrate is in the same range as the scaled trace capacities.
+  limits:
+  - This is a fixed-trace, fixed-workload result; CQI shows that SCReAM does not produce a visible frame-delivery advantage when the trace has enough capacity for both controllers.
+  - The current latency metric still has clock-skew artifacts; H4's primary claim is decodable frame delivery and camera egress.

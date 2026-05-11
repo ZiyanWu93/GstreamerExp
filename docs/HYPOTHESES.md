@@ -24,16 +24,28 @@ specs change).
 
 - Each hypothesis has a stable id (`H1`, `H2`, ...) and a slug used
   for its verifier file (`h1_scream_underuse.py`, etc.).
+- Each hypothesis also has a structured spec under
+  `specs/hypotheses/<slug>.yaml`. That spec is the source of truth for
+  claim text, setup, required metrics, expected experiment records,
+  current conclusions, and website registry metadata.
 - Source citations use the BibTeX keys from
   `literature_survey/surveys/scream-vs-gcc-mobile/references.bib`.
 - Predictions are quantitative — framed in metrics our framework
   computes — so the verifier can mechanically decide.
+- Use standard empirical-research labels in hypothesis pages and
+  summaries: **Claim**, **Prediction**, **Experimental Setup**,
+  **Results**, **Supporting Evidence**, **Findings**, and
+  **Limitations**. Reserve **Threats to Validity** for methodological
+  risks that could invalidate the measurement, not ordinary claim
+  scope.
 - A hypothesis stays in this catalog after it's tested. Refuted
   claims are part of the project's research record, not embarrassments
   to hide.
 - Adding a hypothesis: append a block here AND add a verifier script.
   The verifier may print "untested" until the experiment runs, but
   the file must exist.
+- Rebuild the website-facing registry after hypothesis metadata changes:
+  `python3 analysis/hypotheses/build_registry.py`.
 
 ---
 
@@ -50,40 +62,35 @@ specs change).
   - **Reading:** Zhang 2019's bottleneck-phase comparison is specific to networks where bottleneck phases are long enough for SCReAM's conservative ramp-up to be the binding constraint. With frequent transitions (sub-control-loop time scale), neither algorithm reaches steady state, GCC's responsiveness advantage disappears, and SCReAM's smoothing keeps it closer to the cap on average.
 - **Companion: overall utilization.** A separate measurement integrates sender rate over the full run divided by integrated capacity — answering "across the full 20 s, how much of the available bandwidth did each algorithm use?" This is a different question from H1's bottleneck-only utilization. Reported alongside H1 on the same page; uses the same data, no re-run needed.
 
-## H2 — GCC's rate control collapses harder than SCReAM's under bursty loss
+## H2 — GCC stays ahead across latency-deadline and retransmission settings
 
-- **Source:** Mustang 2024 TOMM (`2024-yu-mustang-improving-qoe-for-real-time-video-in-cellular-networks-by-masking-jitter`), transposed: GCC's Kalman delay estimator is sensitive to bursty-loss-driven jitter; SCReAM's queue-delay tracker is design-arguably less so.
-- **Prediction:** Compared at the same average loss rate (2%), bursty loss (`bursty-5mbps-300kbps-long`, B=15) reduces GCC's mean encoder rate during the impaired phase by ≥ 25% more than uniform loss does (`fluctuating-5mbps-300kbps`); SCReAM's degradation is < 10% across the same comparison.
-- **Design:** New 4-arm experiment crossing CC × loss model: {SCReAM, GCC} × {uniform 2%, bursty B=15}. Configs needed: GCC variants of the recovery-disabled SCReAM configs already in the repo. Recovery off for both arms so the controllers' raw response is what's measured.
-- **Verifier:** `analysis/hypotheses/h2_gcc_bursty_collapse.py`
+- **Source:** Project-internal fluctuating-network deadline/retransmission experiment.
+- **Prediction:** On the fluctuating 5 Mbps/300 kbps capacity-step network, GCC should deliver more median viewer frames than SCReAM in every crossed cell of retransmission on/off and latency budget 0/50/100 ms.
+- **Design:** `retransmission-deadline-fluc`, a 2×2×3 sweep over congestion controller (`scream`/`gcc`), retransmission off/on, and deadline 0/50/100 ms. The network, video workload, codec, and workers are held fixed.
+- **Verifier:** `analysis/hypotheses/h2_fluctuating_deadline_ranking.py`
+- **Verdict rule:** Supported if all six deadline/retransmission cells show GCC ahead of SCReAM by at least 30 median viewer frames.
+- **Verdict (supported):** GCC leads SCReAM in all six cells. The smallest GCC median-frame advantage is 34 frames, and the largest is 41 frames. Neither deadline enforcement nor retransmission changes the SCReAM-vs-GCC ranking in this experiment.
 
-## H3 — PLI's quality advantage over NACK widens with content motion
+## H3 — Media workload calibration gates realistic 5G trace comparisons
 
-- **Source:** Project-internal, motivated by the FileSource design rationale in `pipeline_config.py:FileSource`: real-content P-frame variance amplifies the cost of a lost reference frame; PLI's keyframe rebuild is content-agnostic.
-- **Prediction:** PLI minus NACK in PSNR p10 (worst-10% frames) is larger on `teleop-realmotion` than on `ball-720p30`, by ≥ 1 dB. (i.e., PLI's relative advantage over NACK grows with motion variance.)
-- **Design:** 2×2 experiment (recovery × content): {NACK only, PLI only} × {ball-720p30, teleop-realmotion}. Configs 13/15 (NACK/PLI on ball) and 19/21 (NACK/PLI on realmotion) already exist. Add `decoded_psnr` to all four; needs no source change since both ball-720p30 and teleop-realmotion satisfy the PSNR validator (synthetic and file backends, both with `clock_overlay: false`).
-- **Verifier:** `analysis/hypotheses/h3_pli_real_content.py`
+- **Source:** Project-internal validity check for realistic-trace SCReAM/GCC experiments.
+- **Prediction:** The current `ball-720p30-30s` VP8 workload is not valid for comparing SCReAM and GCC on the translated 5G traces because observed camera wire bitrate is far below trace capacity. A workload is considered under-driving when every translated 5G trace has ≥ 10× median capacity headroom over observed camera wire bitrate and fewer than 15% of 100 ms bins below 1 Mbit/s.
+- **Design:** Reuses the old trace records only as calibration data: `scream-vs-gcc-mahimahi-5g-cqi`, `scream-vs-gcc-mahimahi-5g-ho`, and `scream-vs-gcc-mahimahi-5g-rb`. It compares observed camera `wire_bytes.mean_kbps` against the translated Mahimahi trace capacity time series. It does not make a SCReAM-vs-GCC performance claim.
+- **Verifier:** `analysis/hypotheses/h3_media_workload_calibration.py`
+- **Verdict rule:** Supported if all tested realistic traces meet the under-driving rule; inconclusive if only some do; refuted if none do.
+- **Verdict (supported):** CQI median capacity is 11160 kbps vs 224.3 kbps emitted media (49.8× headroom), HO is 6240 vs 227.5 kbps (27.4×), and RB is 5160 vs 223.0 kbps (23.1×). The previous realistic-trace SCReAM/GCC comparisons were not meaningful algorithm tests; the workload was too compressible to stress the traces.
+- **Next design gate:** before adding a new SCReAM/GCC trace hypothesis, create a high-quality or high-motion workload and verify that observed emitted bitrate actually reaches the Mbps range and interacts with the low-capacity parts of the trace.
 
-## H4 — Latency-budget enforcement reverses NACK's apparent benefit
+## H4 — SCReAM preserves more decodable video than GCC on calibrated stressed realistic 5G traces
 
-- **Source:** Project-internal, motivated by the operational truth that a stale frame is useless to a teleoperator. Standard CC research papers report frames-delivered without operational deadline.
-- **Prediction:** Without a budget (`latency_budget_ms = 0`), NACK delivers ≥ 5% more frames than no-recovery (NACK's frame-count benefit). With a 100ms budget, NACK's `late_drops.delivered` falls *below* no-recovery's `late_drops.delivered` (the 200ms NACK jitter buffer pushes more frames past the 100ms budget than the savings from retransmissions).
-- **Design:** 2×2 experiment (recovery × budget): {no-recovery, NACK} × {budget=0, budget=100}. Needs new configs that vary `latency_budget_ms`, plus an experiment spec that lists `latency_budget_ms` in `varies`.
-- **Verifier:** `analysis/hypotheses/h4_budget_reverses_nack.py`
-
-## H5 — GCC under-utilizes after a sudden RTT spike; SCReAM doesn't
-
-- **Source:** Hassan 2022 SIGCOMM (`2022-hassan-vivisecting-mobility-management-in-5g-cellular-networks`) plus Mustang 2024 TOMM. A 5G handover is operationally a stepwise RTT inflation without congestion. GCC's RTT-driven backoff misfires on it.
-- **Prediction:** With a network spec that holds rate constant at 5 Mbps but introduces a 200ms RTT step at midstream lasting 2s, GCC's mean encoder rate drops by ≥ 30% during and ≥ 1s after the spike. SCReAM's mean encoder rate drops by < 10% over the same interval.
-- **Design:** New network spec `handover-rtt-step.yaml` (rate constant, delay step). Schema already supports it — just authoring. New configs running SCReAM and GCC against this network. Single-arm-each experiment.
-- **Verifier:** `analysis/hypotheses/h5_gcc_rtt_step.py`
-
-## H6 — GCC's rate collapses under TCP cross-traffic; SCReAM holds rate better
-
-- **Source:** Drucker 2025 COMSNETS (`2025-drucker-investigating-webrtc-bbr-as-an-alternative-to-gcc-for-live-video-streaming`): "GCC's bitrate drops by 96% under one long-lived Cubic on a shared bottleneck." Reproduced over a decade of GCC-vs-TCP papers (De Cicco 2013 onward).
-- **Prediction:** With concurrent iperf TCP Cubic flow on the same NIC during steady-state at 5 Mbps shared bottleneck, GCC's mean encoder rate during the cross-traffic interval drops to < 30% of its no-cross-traffic baseline. SCReAM's mean encoder rate stays > 60% of its baseline (or with comparable degradation, demonstrably reaches steady state under contention rather than collapse).
-- **Design:** Needs a new "cross_traffic" hook role in `runner.py` (a third actor that runs `iperf -c <camera> -t <duration>` on the camera host during the camera's run). Possibly 50 lines of code + one schema field. Single-arm-each experiment with and without cross traffic.
-- **Verifier:** `analysis/hypotheses/h6_gcc_tcp_cross_traffic.py`
+- **Source:** Project-internal realistic-trace SCReAM/GCC experiment, after H3 showed the original ball workload under-drove the translated traces.
+- **Prediction:** On translated 5G Mahimahi traces scaled to 33% capacity, the calibrated `snow-384x216-30s` VP8 workload should expose where the controller matters. CQI should be a high-capacity control where both controllers deliver nearly all frames. On the stressed HO and RB traces, SCReAM should deliver more viewer-depayloaded frames than GCC while using <= 85% of GCC's camera egress bitrate and reaching similar viewer ingress bitrate.
+- **Design:** Three fixed-trace experiments: `scream-vs-gcc-mahimahi-5g-cqi-x0p33-snow-384x216` (configs 81/82), `scream-vs-gcc-mahimahi-5g-ho-x0p33-snow-384x216` (configs 79/80), and `scream-vs-gcc-mahimahi-5g-rb-x0p33-snow-384x216` (configs 83/84). Within each trace pair, the network trace, video, codec, bitrate bounds, recovery settings, sink, hosts, and run length are fixed; the only declared comparison field is `congestion_control.algorithm` (`scream` vs `gcc`). The run uses the local machine as controller and `aum`→`veda` as Tailscale-addressed workers.
+- **Verifier:** `analysis/hypotheses/h4_scream_realistic_trace_advantage.py`
+- **Verdict rule:** Supported if all runs pass, both stressed traces show SCReAM/GCC viewer-frame ratio >= 1.25, both stressed traces show camera egress mean bitrate <= 85% of GCC, viewer-side mean wire bitrate is within 10% of GCC on stressed traces, and at least one stressed trace shows >= 2x viewer-frame ratio.
+- **Main claim:** SCReAM wins on the stressed HO/RB traces because its post-payload RTP pacing turns congestion-control decisions into lower camera egress, while GCC lowers its estimator target but this pipeline still emits multi-Mbit/s RTP that the trace cannot carry, leaving fewer complete frames decodable at the viewer.
+- **Supporting evidence:** the comparison holds trace/workload/codec/sink/workers fixed within each pair; CQI acts as the high-capacity control; HO and RB show frame-delivery separation; SCReAM's advantage comes with lower camera egress, not more traffic; and GCC's lower target does not become lower emitted RTP in this pipeline.
+- **Verdict (supported):** Across 3 repetitions per arm, CQI was non-discriminating: SCReAM delivered 903.7 frames vs GCC's 901.3 (1.00×). On HO, SCReAM delivered 544.7 frames vs GCC's 199.0 (2.74×) while producing 1696.0 vs 2353.0 kbps camera egress (0.72×). On RB, SCReAM delivered 445.3 frames vs GCC's 319.3 (1.39×) while producing 1480.8 vs 2324.9 kbps camera egress (0.64×). It does not establish a universal latency claim because the current latency metric still has clock-skew artifacts.
 
 ---
 
@@ -93,4 +100,4 @@ specs change).
 - **5G NR handover behavior** — Hassan 2022. Needs real 5G or Colosseum.
 - **On-device modem firmware buffer dominates RTT** — Guo 2016. Needs real cellular UE.
 
-These are recorded so future readers know the survey claims them, even though our testbed can't validate them without significant infrastructure. The first two of the H1–H6 list are the literature's own gap (no head-to-head SCReAM-vs-GCC measurement on cellular exists per the synthesis); these three are the bigger gap (no existing testbed in the field can answer them at low cost).
+These are recorded so future readers know the survey claims them, even though our testbed cannot validate them without significant infrastructure. They are parked outside the active numbered list so the website only advertises hypotheses with completed experiment evidence.

@@ -106,10 +106,10 @@ _TOP_LEVEL_KEYS = _TOP_LEVEL_REQUIRED | _TOP_LEVEL_OPTIONAL
 # are optional because most configurations don't use a wrapper.
 # Scenario carries run orchestration. The `actors:` block is required
 # and keyed by role; today the role set is exactly {camera, viewer}.
-# All per-host configuration (host, project_root, network_env, wrap)
-# lives inside the actor block — there is no top-level `network_env` or
-# `remote.project_root` anymore. Per-actor scope is what unlocks
-# asymmetric path impairment (each actor's NIC shapes its own egress).
+# All per-host configuration (host, ssh_host, media_host, project_root,
+# network_env, wrap) lives inside the actor block — there is no top-level
+# `network_env` or `remote.project_root` anymore. Per-actor scope is what
+# unlocks asymmetric path impairment (each actor's NIC shapes its own egress).
 _SCENARIO_REQUIRED = {"actors", "setup_delay_seconds",
                       "drain_delay_seconds", "metrics"}
 _SCENARIO_OPTIONAL: set = set()
@@ -117,8 +117,24 @@ _SCENARIO_KEYS = _SCENARIO_REQUIRED | _SCENARIO_OPTIONAL
 
 _VALID_ROLES = {"camera", "viewer"}
 _ACTOR_REQUIRED = {"host"}
-_ACTOR_OPTIONAL = {"project_root", "network_env", "wrap"}
+_ACTOR_OPTIONAL = {"ssh_host", "media_host", "project_root", "network_env", "wrap"}
 _ACTOR_KEYS = _ACTOR_REQUIRED | _ACTOR_OPTIONAL
+
+# Keep validation independent of the local GStreamer installation. The
+# worker imports gstexp.metrics and therefore needs gi/Gst at runtime; the
+# spec validator should still be able to run on a controller that only
+# prepares remote jobs.
+_VALID_METRICS = {
+    "frame_count",
+    "encoder_target_kbps",
+    "frame_latency",
+    "stage_latency",
+    "wire_bytes",
+    "encoded_bitrate",
+    "decoder_errors",
+    "decoded_psnr",
+    "late_drops",
+}
 
 
 # A network spec is purely declarative: a list of steps, each with
@@ -269,11 +285,13 @@ def _compile_role_steps(role: str, steps: list) -> dict | None:
     def _install_root():
         # Idempotent: del any prior root, then install prio + filter.
         return [
+            'PEER_IP_RESOLVED="$(getent ahostsv4 "$PEER_IP" | awk \'NR==1 {print $1}\')"',
+            '[ -n "$PEER_IP_RESOLVED" ] || { echo "could not resolve PEER_IP=$PEER_IP" >&2; exit 1; }',
             'tc qdisc del dev "$NIC" root 2>/dev/null || true',
             'tc qdisc add dev "$NIC" root handle 1: prio bands 2 '
             'priomap 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1',
             'tc filter add dev "$NIC" parent 1:0 protocol ip prio 1 u32 '
-            'match ip dst "$PEER_IP"/32 flowid 1:1',
+            'match ip dst "$PEER_IP_RESOLVED"/32 flowid 1:1',
         ]
 
     def _reinstall(s):
@@ -473,8 +491,8 @@ def resolve_includes(doc: dict, project_root: Path, config_path: Path,
         # dict to the right hook.
         actors = (doc.get("scenario") or {}).get("actors") or {}
         # PEER_IP is auto-injected from actor topology: the camera's peer
-        # is the viewer's host and vice versa. The shaping scripts use it
-        # in a `tc filter ... match ip dst $PEER_IP` clause so only
+        # is the viewer's media endpoint and vice versa. The shaping scripts use it
+        # in a `tc filter ... match ip dst $PEER_IP_RESOLVED` clause so only
         # peer-bound traffic gets impaired (not SSH / DNS / internet on
         # the host's default-route NIC).
         peer_role = {"camera": "viewer", "viewer": "camera"}
@@ -486,7 +504,8 @@ def resolve_includes(doc: dict, project_root: Path, config_path: Path,
                 env = dict((actors[role] or {}).get("network_env") or {})
                 peer = peer_role.get(role)
                 if peer and peer in actors:
-                    peer_host = (actors[peer] or {}).get("host")
+                    peer_actor = actors[peer] or {}
+                    peer_host = peer_actor.get("media_host") or peer_actor.get("host")
                     if peer_host:
                         env.setdefault("PEER_IP", peer_host)
                 if hook["script"] and not env:
@@ -780,13 +799,14 @@ def _validate_scenario(scenario, fail) -> None:
     metrics = scenario["metrics"]
     if not isinstance(metrics, list) or not all(isinstance(m, str) for m in metrics):
         fail("scenario.metrics must be a list of strings")
-    # Cross-check against the metric registry so a typo (e.g. frame_count_kbps)
-    # fails at config load instead of silently dropping a metric.
-    from gstexp.metrics import METRIC_CLASSES
+    # Cross-check against the metric registry's names so a typo (e.g.
+    # frame_count_kbps) fails at config load instead of silently dropping
+    # a metric. This deliberately avoids importing gstexp.metrics because
+    # that module imports gi/Gst, which is only required on execution hosts.
     for m in metrics:
-        if m not in METRIC_CLASSES:
+        if m not in _VALID_METRICS:
             fail(f"scenario.metrics: unknown metric {m!r}; "
-                 f"expected one of {sorted(METRIC_CLASSES)}")
+                 f"expected one of {sorted(_VALID_METRICS)}")
 
 
 def _validate_actors(actors, fail) -> None:
@@ -812,6 +832,10 @@ def _validate_actors(actors, fail) -> None:
                  f"expected {sorted(_ACTOR_KEYS)}")
         if not isinstance(actor["host"], str) or not actor["host"]:
             fail(f"scenario.actors.{role}.host must be a non-empty string")
+        if "ssh_host" in actor and not isinstance(actor["ssh_host"], str):
+            fail(f"scenario.actors.{role}.ssh_host must be a string")
+        if "media_host" in actor and not isinstance(actor["media_host"], str):
+            fail(f"scenario.actors.{role}.media_host must be a string")
         if "project_root" in actor and not isinstance(actor["project_root"], str):
             fail(f"scenario.actors.{role}.project_root must be a string")
         if "network_env" in actor:
@@ -874,8 +898,8 @@ def project_to_roles(doc: dict, config_id: str) -> tuple[dict, dict]:
     sink = doc["sink"]
     source = doc["source"]
     actors = doc["scenario"]["actors"]
-    camera_host = actors["camera"]["host"]
-    viewer_host = actors["viewer"]["host"]
+    camera_host = actors["camera"].get("media_host") or actors["camera"]["host"]
+    viewer_host = actors["viewer"].get("media_host") or actors["viewer"]["host"]
 
     # Port and rtcp_port are mechanical — derived from the config id with
     # the rtp/rtcp pair following RFC 3550 convention (rtcp = rtp + 1).

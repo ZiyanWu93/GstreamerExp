@@ -1,0 +1,15 @@
+name: scream-vs-gcc-mahimahi-5g-cqi-snow-5mbps
+description: >
+  SCReAM vs GCC on the translated 5G Mahimahi CQI trace using a
+  high-entropy 720p30 snow workload targeting 5 Mbps. CQI is the
+  high-capacity control for the calibrated trace comparison.
+reps: 3
+varies:
+- congestion_control.algorithm
+configurations:
+- id: 69
+  label: SCReAM snow 5M
+  color: '#d62728'
+- id: 70
+  label: GCC snow 5M
+  color: '#1f77b4'

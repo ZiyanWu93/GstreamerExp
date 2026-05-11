@@ -1,0 +1,40 @@
+meta:
+  name: distributed_scream_5g_cqi_nack0_budget0
+  description: 'Distributed (aum->veda) SCReAM at 720p30 over `mahimahi-5g-cqi-100ms`. Video
+    uses 915 frames to cover the full ~30.5s trace. Recovery: none. Latency budget: 0 ms.'
+  flags:
+  - sudo
+  - scream
+video: ball-720p30-30s
+network: mahimahi-5g-cqi-100ms
+scenario:
+  actors:
+    camera: {}
+    viewer: {}
+  setup_delay_seconds: 3.0
+  drain_delay_seconds: 1.0
+  metrics:
+  - frame_count
+  - encoder_target_kbps
+  - frame_latency
+  - wire_bytes
+  - encoded_bitrate
+  - decoder_errors
+  - late_drops
+codec: vp8
+encoder:
+  bitrate_kbps: 1500
+  keyframe_interval_frames: 60
+congestion_control:
+  algorithm: scream
+  init_bitrate_kbps: 1500
+  min_bitrate_kbps: 200
+  max_bitrate_kbps: 4000
+sink:
+  backend: fake
+  sync: false
+recovery:
+  nack: false
+  pli: false
+  fec: false
+latency_budget_ms: 0

@@ -1,0 +1,39 @@
+meta:
+  name: distributed_scream_5g_ho_x0p33_snow_384x216
+  description: Distributed (aum->veda) SCReAM over `mahimahi-5g-ho-100ms-x0p33` using calibrated 384x216x30 snow video.
+  flags:
+  - sudo
+  - scream
+video: snow-384x216-30s
+network: mahimahi-5g-ho-100ms-x0p33
+scenario:
+  actors:
+    camera: {}
+    viewer: {}
+  setup_delay_seconds: 3.0
+  drain_delay_seconds: 1.0
+  metrics:
+  - frame_count
+  - encoder_target_kbps
+  - frame_latency
+  - wire_bytes
+  - encoded_bitrate
+  - decoder_errors
+  - late_drops
+codec: vp8
+encoder:
+  bitrate_kbps: 1000
+  keyframe_interval_frames: 60
+congestion_control:
+  algorithm: scream
+  init_bitrate_kbps: 1000
+  min_bitrate_kbps: 100
+  max_bitrate_kbps: 4000
+sink:
+  backend: fake
+  sync: false
+recovery:
+  nack: false
+  pli: false
+  fec: false
+latency_budget_ms: 0

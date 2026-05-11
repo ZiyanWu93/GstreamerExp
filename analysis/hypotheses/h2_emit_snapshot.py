@@ -1,7 +1,7 @@
-"""Emit a JSON data snapshot for the H4 visualization page.
+"""Emit a JSON data snapshot for the H2 visualization page.
 
-Produces `analysis/hypotheses/h4_data_<experiment>.json`, consumed by
-`h4.html`. The H4 verifier prints a verdict; this script writes the
+Produces `analysis/hypotheses/h2_data_<experiment>.json`, consumed by
+`h2.html`. The H2 verifier prints a verdict; this script writes the
 richer data the page needs (per-rep delivered counts, per-arm means,
 per-arm lateness distributions).
 """
@@ -182,7 +182,7 @@ def main():
         "comparison":   comparison,
     }
     out_stem = args.out or args.experiment[0]
-    out = PROJECT_ROOT / "analysis" / "hypotheses" / f"h4_data_{out_stem}.json"
+    out = PROJECT_ROOT / "analysis" / "hypotheses" / f"h2_data_{out_stem}.json"
     out.write_text(json.dumps(snapshot, indent=2))
     n_reps = sum(len(a["reps"]) for a in arms.values())
     print(f"wrote {out}  ({n_reps} reps across {len(arms)} arms)")

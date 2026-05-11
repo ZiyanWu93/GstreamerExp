@@ -1,0 +1,16 @@
+name: scream-vs-gcc-mahimahi-5g-cqi-x0p33-snow-384x216
+description: >
+  SCReAM vs GCC on one fixed translated 5G Mahimahi CQI-like trace
+  scaled to 33% capacity, using calibrated high-entropy 384x216x30 snow
+  video. The trace is fixed; the comparison varies only the congestion
+  controller.
+reps: 3
+varies:
+- congestion_control.algorithm
+configurations:
+- id: 81
+  label: SCReAM CQI x0.33 snow 384x216
+  color: '#d62728'
+- id: 82
+  label: GCC CQI x0.33 snow 384x216
+  color: '#1f77b4'

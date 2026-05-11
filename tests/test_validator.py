@@ -219,6 +219,22 @@ class TestScenarioValidation(unittest.TestCase):
         with assert_validation_fails_with(self, "scenario.actors.camera: unknown key"):
             _resolve_and_validate(self.doc)
 
+    def test_ssh_host_and_media_host_split_passes(self):
+        self.doc["scenario"]["actors"]["camera"] = {
+            "host": "aum-ts",
+            "ssh_host": "aum-ts",
+            "media_host": "10.10.10.40",
+            "project_root": "~/gstexp",
+            "network_env": {"NIC": "eth0"},
+        }
+        self.doc["scenario"]["actors"]["viewer"] = {
+            "host": "veda-ts",
+            "ssh_host": "veda-ts",
+            "media_host": "10.10.10.41",
+            "project_root": "~/gstexp",
+        }
+        _resolve_and_validate(self.doc)
+
     def test_actor_missing_host_rejected(self):
         # The validator must reject a doc whose actor block is missing
         # required fields after hosts.yaml merge. We pass hosts_override={}

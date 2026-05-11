@@ -1,0 +1,221 @@
+{
+  "hypothesis": "H3",
+  "status": "supported",
+  "environment": {
+    "topology": "controller-worker",
+    "controller": "local workstation",
+    "camera_worker": "aum",
+    "viewer_worker": "veda",
+    "transport": "Tailscale FQDNs for media/control addressing where configured",
+    "hosts_source": "hosts.yaml, with hosts.example.yaml documenting the expected keys",
+    "sync_scope": "allowlisted project files only; run outputs are collected from workers"
+  },
+  "experiments": [
+    {
+      "name": "scream-vs-gcc-mahimahi-5g-cqi",
+      "description": "SCReAM vs GCC at 720p30 across the full 5G Mahimahi cqi trace. No retransmission and no latency budget enforcement; intended as an H1-style capacity-following comparison under realistic time-varying capacity.",
+      "spec_path": "specs/experiments/scream-vs-gcc-mahimahi-5g-cqi.yaml",
+      "record_path": "runs/experiments/scream-vs-gcc-mahimahi-5g-cqi.json",
+      "log_path": null,
+      "command": "python3 experiment.py scream-vs-gcc-mahimahi-5g-cqi",
+      "reps": 5,
+      "varies": [
+        "congestion_control.algorithm"
+      ],
+      "arms": [
+        {
+          "config_id": "55",
+          "label": "SCReAM",
+          "algorithm": "scream",
+          "network": "mahimahi-5g-cqi-100ms"
+        },
+        {
+          "config_id": "56",
+          "label": "GCC",
+          "algorithm": "gcc",
+          "network": "mahimahi-5g-cqi-100ms"
+        }
+      ],
+      "record_status": {
+        "started_at": "2026-05-10T15:47:26.114011",
+        "total_runs": 10,
+        "completed_runs": 10,
+        "failed_runs": 0
+      }
+    },
+    {
+      "name": "scream-vs-gcc-mahimahi-5g-ho",
+      "description": "SCReAM vs GCC at 720p30 across the full 5G Mahimahi ho trace. No retransmission and no latency budget enforcement; intended as an H1-style capacity-following comparison under realistic time-varying capacity.",
+      "spec_path": "specs/experiments/scream-vs-gcc-mahimahi-5g-ho.yaml",
+      "record_path": "runs/experiments/scream-vs-gcc-mahimahi-5g-ho.json",
+      "log_path": "runs/experiment-logs/scream-vs-gcc-mahimahi-5g-ho.log",
+      "command": "python3 experiment.py scream-vs-gcc-mahimahi-5g-ho",
+      "reps": 5,
+      "varies": [
+        "congestion_control.algorithm"
+      ],
+      "arms": [
+        {
+          "config_id": "57",
+          "label": "SCReAM",
+          "algorithm": "scream",
+          "network": "mahimahi-5g-ho-100ms"
+        },
+        {
+          "config_id": "58",
+          "label": "GCC",
+          "algorithm": "gcc",
+          "network": "mahimahi-5g-ho-100ms"
+        }
+      ],
+      "record_status": {
+        "started_at": "2026-05-10T15:54:15.188053",
+        "total_runs": 10,
+        "completed_runs": 10,
+        "failed_runs": 0
+      }
+    },
+    {
+      "name": "scream-vs-gcc-mahimahi-5g-rb",
+      "description": "SCReAM vs GCC at 720p30 across the full 5G Mahimahi rb trace. No retransmission and no latency budget enforcement; intended as an H1-style capacity-following comparison under realistic time-varying capacity.",
+      "spec_path": "specs/experiments/scream-vs-gcc-mahimahi-5g-rb.yaml",
+      "record_path": "runs/experiments/scream-vs-gcc-mahimahi-5g-rb.json",
+      "log_path": "runs/experiment-logs/scream-vs-gcc-mahimahi-5g-rb.log",
+      "command": "python3 experiment.py scream-vs-gcc-mahimahi-5g-rb",
+      "reps": 5,
+      "varies": [
+        "congestion_control.algorithm"
+      ],
+      "arms": [
+        {
+          "config_id": "59",
+          "label": "SCReAM",
+          "algorithm": "scream",
+          "network": "mahimahi-5g-rb-100ms"
+        },
+        {
+          "config_id": "60",
+          "label": "GCC",
+          "algorithm": "gcc",
+          "network": "mahimahi-5g-rb-100ms"
+        }
+      ],
+      "record_status": {
+        "started_at": "2026-05-10T16:03:25.291951",
+        "total_runs": 10,
+        "completed_runs": 10,
+        "failed_runs": 0
+      }
+    }
+  ],
+  "tables": {
+    "headroom": [
+      {
+        "experiment": "scream-vs-gcc-mahimahi-5g-cqi",
+        "config_id": "55",
+        "label": "SCReAM",
+        "algorithm": "scream",
+        "network": "mahimahi-5g-cqi-100ms",
+        "observed_wire_kbps": 218.46,
+        "min_kbps": 3600.0,
+        "p10_kbps": 8016.0,
+        "median_kbps": 11160.0,
+        "mean_kbps": 14274.222950819672,
+        "max_kbps": 40560.0,
+        "median_headroom": 51.08486679483658,
+        "p10_headroom": 36.6932161494095,
+        "bins_below_1000_kbps_pct": 0.0
+      },
+      {
+        "experiment": "scream-vs-gcc-mahimahi-5g-cqi",
+        "config_id": "56",
+        "label": "GCC",
+        "algorithm": "gcc",
+        "network": "mahimahi-5g-cqi-100ms",
+        "observed_wire_kbps": 230.18,
+        "min_kbps": 3600.0,
+        "p10_kbps": 8016.0,
+        "median_kbps": 11160.0,
+        "mean_kbps": 14274.222950819672,
+        "max_kbps": 40560.0,
+        "median_headroom": 48.48379529064211,
+        "p10_headroom": 34.82491962811712,
+        "bins_below_1000_kbps_pct": 0.0
+      },
+      {
+        "experiment": "scream-vs-gcc-mahimahi-5g-ho",
+        "config_id": "57",
+        "label": "SCReAM",
+        "algorithm": "scream",
+        "network": "mahimahi-5g-ho-100ms",
+        "observed_wire_kbps": 223.6,
+        "min_kbps": 1.0,
+        "p10_kbps": 720.0,
+        "median_kbps": 6240.0,
+        "mean_kbps": 7234.4,
+        "max_kbps": 27000.0,
+        "median_headroom": 27.906976744186046,
+        "p10_headroom": 3.2200357781753133,
+        "bins_below_1000_kbps_pct": 11.475409836065573
+      },
+      {
+        "experiment": "scream-vs-gcc-mahimahi-5g-ho",
+        "config_id": "58",
+        "label": "GCC",
+        "algorithm": "gcc",
+        "network": "mahimahi-5g-ho-100ms",
+        "observed_wire_kbps": 231.42,
+        "min_kbps": 1.0,
+        "p10_kbps": 720.0,
+        "median_kbps": 6240.0,
+        "mean_kbps": 7234.4,
+        "max_kbps": 27000.0,
+        "median_headroom": 26.963961628208455,
+        "p10_headroom": 3.11122634171636,
+        "bins_below_1000_kbps_pct": 11.475409836065573
+      },
+      {
+        "experiment": "scream-vs-gcc-mahimahi-5g-rb",
+        "config_id": "59",
+        "label": "SCReAM",
+        "algorithm": "scream",
+        "network": "mahimahi-5g-rb-100ms",
+        "observed_wire_kbps": 215.1,
+        "min_kbps": 1.0,
+        "p10_kbps": 2280.0,
+        "median_kbps": 5160.0,
+        "mean_kbps": 5530.239344262295,
+        "max_kbps": 11400.0,
+        "median_headroom": 23.98884239888424,
+        "p10_headroom": 10.599721059972106,
+        "bins_below_1000_kbps_pct": 3.278688524590164
+      },
+      {
+        "experiment": "scream-vs-gcc-mahimahi-5g-rb",
+        "config_id": "60",
+        "label": "GCC",
+        "algorithm": "gcc",
+        "network": "mahimahi-5g-rb-100ms",
+        "observed_wire_kbps": 230.88,
+        "min_kbps": 1.0,
+        "p10_kbps": 2280.0,
+        "median_kbps": 5160.0,
+        "mean_kbps": 5530.239344262295,
+        "max_kbps": 11400.0,
+        "median_headroom": 22.34927234927235,
+        "p10_headroom": 9.875259875259875,
+        "bins_below_1000_kbps_pct": 3.278688524590164
+      }
+    ]
+  },
+  "figures": [
+    {
+      "path": "analysis/hypotheses/results/h3_capacity_headroom.svg",
+      "caption": "Capacity percentiles versus observed camera wire bitrate."
+    },
+    {
+      "path": "analysis/hypotheses/results/h3_ho_headroom_timeseries.svg",
+      "caption": "Time-series view showing handover trace capacity against emitted media rate."
+    }
+  ]
+}

@@ -1,0 +1,494 @@
+{
+  "hypothesis": "H4",
+  "status": "supported",
+  "environment": {
+    "topology": "controller-worker",
+    "controller": "local workstation",
+    "camera_worker": "aum",
+    "viewer_worker": "veda",
+    "transport": "Tailscale FQDNs for media/control addressing where configured",
+    "hosts_source": "hosts.yaml, with hosts.example.yaml documenting the expected keys",
+    "sync_scope": "allowlisted project files only; run outputs are collected from workers"
+  },
+  "experiments": [
+    {
+      "name": "scream-vs-gcc-mahimahi-5g-cqi-x0p33-snow-384x216",
+      "description": "SCReAM vs GCC on one fixed translated 5G Mahimahi CQI-like trace scaled to 33% capacity, using calibrated high-entropy 384x216x30 snow video. The trace is fixed; the comparison varies only the congestion controller.\n",
+      "spec_path": "specs/experiments/scream-vs-gcc-mahimahi-5g-cqi-x0p33-snow-384x216.yaml",
+      "record_path": "runs/experiments/scream-vs-gcc-mahimahi-5g-cqi-x0p33-snow-384x216.json",
+      "log_path": null,
+      "command": "python3 experiment.py scream-vs-gcc-mahimahi-5g-cqi-x0p33-snow-384x216",
+      "reps": 3,
+      "varies": [
+        "congestion_control.algorithm"
+      ],
+      "arms": [
+        {
+          "config_id": "81",
+          "label": "SCReAM CQI x0.33 snow 384x216",
+          "algorithm": "scream",
+          "network": "mahimahi-5g-cqi-100ms-x0p33"
+        },
+        {
+          "config_id": "82",
+          "label": "GCC CQI x0.33 snow 384x216",
+          "algorithm": "gcc",
+          "network": "mahimahi-5g-cqi-100ms-x0p33"
+        }
+      ],
+      "record_status": {
+        "started_at": "2026-05-10T20:44:58.883283",
+        "total_runs": 6,
+        "completed_runs": 6,
+        "failed_runs": 0
+      }
+    },
+    {
+      "name": "scream-vs-gcc-mahimahi-5g-ho-x0p33-snow-384x216",
+      "description": "SCReAM vs GCC on one fixed translated 5G Mahimahi handover-like trace scaled to 33% capacity, using calibrated high-entropy 384x216x30 snow video. The trace is fixed; the comparison varies only the congestion controller.\n",
+      "spec_path": "specs/experiments/scream-vs-gcc-mahimahi-5g-ho-x0p33-snow-384x216.yaml",
+      "record_path": "runs/experiments/scream-vs-gcc-mahimahi-5g-ho-x0p33-snow-384x216.json",
+      "log_path": null,
+      "command": "python3 experiment.py scream-vs-gcc-mahimahi-5g-ho-x0p33-snow-384x216",
+      "reps": 3,
+      "varies": [
+        "congestion_control.algorithm"
+      ],
+      "arms": [
+        {
+          "config_id": "79",
+          "label": "SCReAM HO x0.33 snow 384x216",
+          "algorithm": "scream",
+          "network": "mahimahi-5g-ho-100ms-x0p33"
+        },
+        {
+          "config_id": "80",
+          "label": "GCC HO x0.33 snow 384x216",
+          "algorithm": "gcc",
+          "network": "mahimahi-5g-ho-100ms-x0p33"
+        }
+      ],
+      "record_status": {
+        "started_at": "2026-05-10T20:30:37.546252",
+        "total_runs": 6,
+        "completed_runs": 6,
+        "failed_runs": 0
+      }
+    },
+    {
+      "name": "scream-vs-gcc-mahimahi-5g-rb-x0p33-snow-384x216",
+      "description": "SCReAM vs GCC on one fixed translated 5G Mahimahi RB-like trace scaled to 33% capacity, using calibrated high-entropy 384x216x30 snow video. The trace is fixed; the comparison varies only the congestion controller.\n",
+      "spec_path": "specs/experiments/scream-vs-gcc-mahimahi-5g-rb-x0p33-snow-384x216.yaml",
+      "record_path": "runs/experiments/scream-vs-gcc-mahimahi-5g-rb-x0p33-snow-384x216.json",
+      "log_path": null,
+      "command": "python3 experiment.py scream-vs-gcc-mahimahi-5g-rb-x0p33-snow-384x216",
+      "reps": 3,
+      "varies": [
+        "congestion_control.algorithm"
+      ],
+      "arms": [
+        {
+          "config_id": "83",
+          "label": "SCReAM RB x0.33 snow 384x216",
+          "algorithm": "scream",
+          "network": "mahimahi-5g-rb-100ms-x0p33"
+        },
+        {
+          "config_id": "84",
+          "label": "GCC RB x0.33 snow 384x216",
+          "algorithm": "gcc",
+          "network": "mahimahi-5g-rb-100ms-x0p33"
+        }
+      ],
+      "record_status": {
+        "started_at": "2026-05-10T20:49:08.442305",
+        "total_runs": 6,
+        "completed_runs": 6,
+        "failed_runs": 0
+      }
+    }
+  ],
+  "claim_structure": {
+    "conclusion": "SCReAM wins on the stressed HO/RB traces because its post-payload RTP pacing turns congestion-control decisions into lower camera egress, while GCC lowers its estimator target but this pipeline still emits multi-Mbit/s RTP that the trace cannot carry, leaving fewer complete frames decodable at the viewer.",
+    "subclaims": [
+      "Within each trace pair, the trace, video, codec, bitrate bounds, recovery settings, sink, workers, and run length are fixed; only congestion_control.algorithm varies.",
+      "CQI is the high-capacity control and both controllers deliver nearly all frames, so the advantage appears only when HO/RB capacity actually stresses the stream.",
+      "On HO, SCReAM delivers 2.74x GCC's viewer frames; on RB, it delivers 1.39x GCC's viewer frames.",
+      "The advantage is not from sending more traffic; SCReAM uses 0.72x GCC's camera egress on HO and 0.64x on RB.",
+      "GCC's target falls on the stressed traces, but its measured camera egress remains about 2.35 Mbit/s on HO and 2.32 Mbit/s on RB."
+    ]
+  },
+  "tables": {
+    "h4_arm_summary": [
+      {
+        "trace": "CQI",
+        "experiment": "scream-vs-gcc-mahimahi-5g-cqi-x0p33-snow-384x216",
+        "network": "mahimahi-5g-cqi-100ms-x0p33",
+        "algorithm": "SCReAM",
+        "config_id": "81",
+        "runs": [
+          "2026-05-10T20-44-59",
+          "2026-05-10T20-46-22",
+          "2026-05-10T20-47-40"
+        ],
+        "pass_runs": 3,
+        "viewer_frames_mean": 903.6666666666666,
+        "viewer_frames_values": [
+          906.0,
+          900.0,
+          905.0
+        ],
+        "camera_wire_mean_kbps": 2861.2,
+        "camera_wire_values_kbps": [
+          2867.2,
+          2858.6,
+          2857.8
+        ],
+        "viewer_wire_mean_kbps": 2483.0666666666666,
+        "viewer_wire_values_kbps": [
+          2489.2,
+          2481.0,
+          2479.0
+        ],
+        "encoded_mean_kbps": 2878.633333333333,
+        "encoded_values_kbps": [
+          2875.5,
+          2898.8,
+          2861.6
+        ],
+        "encoder_target_mean_kbps": 3267.611111111111,
+        "encoder_target_values_kbps": [
+          3249.633333333333,
+          3247.6666666666665,
+          3305.5333333333333
+        ],
+        "latency_p95_mean_ms": -81.56666666666666,
+        "latency_p95_values_ms": [
+          -82.59,
+          -82.19,
+          -79.92
+        ]
+      },
+      {
+        "trace": "CQI",
+        "experiment": "scream-vs-gcc-mahimahi-5g-cqi-x0p33-snow-384x216",
+        "network": "mahimahi-5g-cqi-100ms-x0p33",
+        "algorithm": "GCC",
+        "config_id": "82",
+        "runs": [
+          "2026-05-10T20-45-43",
+          "2026-05-10T20-47-01",
+          "2026-05-10T20-48-18"
+        ],
+        "pass_runs": 3,
+        "viewer_frames_mean": 901.3333333333334,
+        "viewer_frames_values": [
+          901.0,
+          901.0,
+          902.0
+        ],
+        "camera_wire_mean_kbps": 2446.4,
+        "camera_wire_values_kbps": [
+          2446.3,
+          2446.8,
+          2446.1
+        ],
+        "viewer_wire_mean_kbps": 2097.9,
+        "viewer_wire_values_kbps": [
+          2098.8,
+          2097.9,
+          2097.0
+        ],
+        "encoded_mean_kbps": 2416.2333333333336,
+        "encoded_values_kbps": [
+          2419.9,
+          2409.0,
+          2419.8
+        ],
+        "encoder_target_mean_kbps": 2460.011111111111,
+        "encoder_target_values_kbps": [
+          2443.5,
+          2389.233333333333,
+          2547.3
+        ],
+        "latency_p95_mean_ms": -96.90333333333334,
+        "latency_p95_values_ms": [
+          -97.81,
+          -96.89,
+          -96.01
+        ]
+      },
+      {
+        "trace": "HO",
+        "experiment": "scream-vs-gcc-mahimahi-5g-ho-x0p33-snow-384x216",
+        "network": "mahimahi-5g-ho-100ms-x0p33",
+        "algorithm": "SCReAM",
+        "config_id": "79",
+        "runs": [
+          "2026-05-10T20-30-37",
+          "2026-05-10T20-32-00",
+          "2026-05-10T20-33-18"
+        ],
+        "pass_runs": 3,
+        "viewer_frames_mean": 544.6666666666666,
+        "viewer_frames_values": [
+          531.0,
+          548.0,
+          555.0
+        ],
+        "camera_wire_mean_kbps": 1696.0,
+        "camera_wire_values_kbps": [
+          1676.6,
+          1698.0,
+          1713.4
+        ],
+        "viewer_wire_mean_kbps": 1398.5333333333333,
+        "viewer_wire_values_kbps": [
+          1377.4,
+          1405.5,
+          1412.7
+        ],
+        "encoded_mean_kbps": 2448.9,
+        "encoded_values_kbps": [
+          2463.6,
+          2441.9,
+          2441.2
+        ],
+        "encoder_target_mean_kbps": 1351.8777777777777,
+        "encoder_target_values_kbps": [
+          1359.2666666666667,
+          1357.5,
+          1338.8666666666666
+        ],
+        "latency_p95_mean_ms": -108.84333333333333,
+        "latency_p95_values_ms": [
+          -109.47,
+          -109.37,
+          -107.69
+        ]
+      },
+      {
+        "trace": "HO",
+        "experiment": "scream-vs-gcc-mahimahi-5g-ho-x0p33-snow-384x216",
+        "network": "mahimahi-5g-ho-100ms-x0p33",
+        "algorithm": "GCC",
+        "config_id": "80",
+        "runs": [
+          "2026-05-10T20-31-20",
+          "2026-05-10T20-32-39",
+          "2026-05-10T20-33-57"
+        ],
+        "pass_runs": 3,
+        "viewer_frames_mean": 199.0,
+        "viewer_frames_values": [
+          197.0,
+          201.0,
+          199.0
+        ],
+        "camera_wire_mean_kbps": 2353.0,
+        "camera_wire_values_kbps": [
+          2344.9,
+          2352.5,
+          2361.6
+        ],
+        "viewer_wire_mean_kbps": 1427.7,
+        "viewer_wire_values_kbps": [
+          1427.8,
+          1429.0,
+          1426.3
+        ],
+        "encoded_mean_kbps": 2319.366666666667,
+        "encoded_values_kbps": [
+          2311.4,
+          2318.8,
+          2327.9
+        ],
+        "encoder_target_mean_kbps": 331.25555555555553,
+        "encoder_target_values_kbps": [
+          271.3,
+          336.26666666666665,
+          386.2
+        ],
+        "latency_p95_mean_ms": -101.46333333333334,
+        "latency_p95_values_ms": [
+          -101.64,
+          -101.33,
+          -101.42
+        ]
+      },
+      {
+        "trace": "RB",
+        "experiment": "scream-vs-gcc-mahimahi-5g-rb-x0p33-snow-384x216",
+        "network": "mahimahi-5g-rb-100ms-x0p33",
+        "algorithm": "SCReAM",
+        "config_id": "83",
+        "runs": [
+          "2026-05-10T20-49-08",
+          "2026-05-10T20-50-25",
+          "2026-05-10T20-51-46"
+        ],
+        "pass_runs": 3,
+        "viewer_frames_mean": 445.3333333333333,
+        "viewer_frames_values": [
+          440.0,
+          440.0,
+          456.0
+        ],
+        "camera_wire_mean_kbps": 1480.8333333333335,
+        "camera_wire_values_kbps": [
+          1500.7,
+          1468.4,
+          1473.4
+        ],
+        "viewer_wire_mean_kbps": 1236.0333333333333,
+        "viewer_wire_values_kbps": [
+          1248.7,
+          1225.3,
+          1234.1
+        ],
+        "encoded_mean_kbps": 2416.5333333333333,
+        "encoded_values_kbps": [
+          2413.7,
+          2414.8,
+          2421.1
+        ],
+        "encoder_target_mean_kbps": 1096.8444444444444,
+        "encoder_target_values_kbps": [
+          1080.3,
+          1098.3666666666666,
+          1111.8666666666666
+        ],
+        "latency_p95_mean_ms": -132.35333333333335,
+        "latency_p95_values_ms": [
+          -72.24,
+          -162.05,
+          -162.77
+        ]
+      },
+      {
+        "trace": "RB",
+        "experiment": "scream-vs-gcc-mahimahi-5g-rb-x0p33-snow-384x216",
+        "network": "mahimahi-5g-rb-100ms-x0p33",
+        "algorithm": "GCC",
+        "config_id": "84",
+        "runs": [
+          "2026-05-10T20-49-47",
+          "2026-05-10T20-51-07",
+          "2026-05-10T20-52-26"
+        ],
+        "pass_runs": 3,
+        "viewer_frames_mean": 319.3333333333333,
+        "viewer_frames_values": [
+          322.0,
+          318.0,
+          318.0
+        ],
+        "camera_wire_mean_kbps": 2324.866666666667,
+        "camera_wire_values_kbps": [
+          2323.4,
+          2325.8,
+          2325.4
+        ],
+        "viewer_wire_mean_kbps": 1302.4666666666667,
+        "viewer_wire_values_kbps": [
+          1301.4,
+          1302.7,
+          1303.3
+        ],
+        "encoded_mean_kbps": 2290.7999999999997,
+        "encoded_values_kbps": [
+          2290.2,
+          2290.0,
+          2292.2
+        ],
+        "encoder_target_mean_kbps": 177.53333333333333,
+        "encoder_target_values_kbps": [
+          163.1,
+          171.83333333333334,
+          197.66666666666666
+        ],
+        "latency_p95_mean_ms": -122.68666666666667,
+        "latency_p95_values_ms": [
+          -61.98,
+          -153.29,
+          -152.79
+        ]
+      }
+    ],
+    "h4_trace_comparison": [
+      {
+        "trace": "CQI",
+        "network": "mahimahi-5g-cqi-100ms-x0p33",
+        "scream_viewer_frames_mean": 903.6666666666666,
+        "gcc_viewer_frames_mean": 901.3333333333334,
+        "viewer_frame_ratio_scream_over_gcc": 1.0025887573964496,
+        "viewer_frame_delta": 2.3333333333332575,
+        "scream_camera_wire_mean_kbps": 2861.2,
+        "gcc_camera_wire_mean_kbps": 2446.4,
+        "camera_wire_ratio_scream_over_gcc": 1.1695552648790057,
+        "scream_encoder_target_mean_kbps": 3267.611111111111,
+        "gcc_encoder_target_mean_kbps": 2460.011111111111,
+        "gcc_target_to_camera_egress_ratio": 1.0055637308335148,
+        "scream_viewer_wire_mean_kbps": 2483.0666666666666,
+        "gcc_viewer_wire_mean_kbps": 2097.9,
+        "viewer_wire_delta_pct": 15.51173280352252
+      },
+      {
+        "trace": "HO",
+        "network": "mahimahi-5g-ho-100ms-x0p33",
+        "scream_viewer_frames_mean": 544.6666666666666,
+        "gcc_viewer_frames_mean": 199.0,
+        "viewer_frame_ratio_scream_over_gcc": 2.7370184254606365,
+        "viewer_frame_delta": 345.66666666666663,
+        "scream_camera_wire_mean_kbps": 1696.0,
+        "gcc_camera_wire_mean_kbps": 2353.0,
+        "camera_wire_ratio_scream_over_gcc": 0.7207819804504887,
+        "scream_encoder_target_mean_kbps": 1351.8777777777777,
+        "gcc_encoder_target_mean_kbps": 331.25555555555553,
+        "gcc_target_to_camera_egress_ratio": 0.14078009160882088,
+        "scream_viewer_wire_mean_kbps": 1398.5333333333333,
+        "gcc_viewer_wire_mean_kbps": 1427.7,
+        "viewer_wire_delta_pct": 2.042912843501208
+      },
+      {
+        "trace": "RB",
+        "network": "mahimahi-5g-rb-100ms-x0p33",
+        "scream_viewer_frames_mean": 445.3333333333333,
+        "gcc_viewer_frames_mean": 319.3333333333333,
+        "viewer_frame_ratio_scream_over_gcc": 1.394572025052192,
+        "viewer_frame_delta": 126.0,
+        "scream_camera_wire_mean_kbps": 1480.8333333333335,
+        "gcc_camera_wire_mean_kbps": 2324.866666666667,
+        "camera_wire_ratio_scream_over_gcc": 0.6369540905571646,
+        "scream_encoder_target_mean_kbps": 1096.8444444444444,
+        "gcc_encoder_target_mean_kbps": 177.53333333333333,
+        "gcc_target_to_camera_egress_ratio": 0.07636280216786626,
+        "scream_viewer_wire_mean_kbps": 1236.0333333333333,
+        "gcc_viewer_wire_mean_kbps": 1302.4666666666667,
+        "viewer_wire_delta_pct": 5.10057838972207
+      }
+    ]
+  },
+  "figures": [
+    {
+      "path": "analysis/hypotheses/results/h4_frame_delivery_by_trace.svg",
+      "caption": "Figure H4-1. Mean viewer-depayloaded frames by trace. Each grouped pair compares SCReAM and GCC under the same trace and workload; S/G labels show the SCReAM/GCC frame ratio."
+    },
+    {
+      "path": "analysis/hypotheses/results/h4_camera_egress_by_trace.svg",
+      "caption": "Figure H4-2. Mean camera egress bitrate by trace. S/G labels show whether the delivered-frame improvement came from simply sending more traffic; GCC's lower estimator target on stressed traces is not the same as lower emitted RTP rate."
+    },
+    {
+      "path": "analysis/hypotheses/results/h4_cqi_timeseries.svg",
+      "caption": "Figure H4-3a. CQI fixed-trace time series. Left: shared capacity and camera egress. Right: cumulative delivered frames."
+    },
+    {
+      "path": "analysis/hypotheses/results/h4_ho_timeseries.svg",
+      "caption": "Figure H4-3b. HO fixed-trace time series. The wide two-panel layout holds the trace fixed and shows where SCReAM's delivered-frame curve separates from GCC."
+    },
+    {
+      "path": "analysis/hypotheses/results/h4_rb_timeseries.svg",
+      "caption": "Figure H4-3c. RB fixed-trace time series. The wide two-panel layout holds the trace fixed and shows the moderate SCReAM frame-delivery advantage."
+    }
+  ]
+}

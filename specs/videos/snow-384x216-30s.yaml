@@ -1,0 +1,17 @@
+name: snow-384x216-30s
+description: >
+  Random-noise pattern at 384x216x30fps for 915 frames (~30.5s), sized
+  to cover the full translated 5G Mahimahi trace duration. This is a
+  calibrated stress workload for the scaled handover trace: encode-only
+  checks on aum put VP8 output around 2.5 Mbit/s with the realtime CBR
+  settings, close to the trace's mean capacity without overwhelming
+  startup decode.
+source:
+  backend: synthetic
+  width: 384
+  height: 216
+  fps: 30
+  num_frames: 915
+  clock_overlay: true
+  synthetic:
+    pattern: snow

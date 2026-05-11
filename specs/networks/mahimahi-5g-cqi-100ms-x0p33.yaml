@@ -1,0 +1,1839 @@
+name: mahimahi-5g-cqi-100ms-x0p33
+description: 'Mahimahi trace converted to step-based tc shaping. Source: /mnt/c/Users/ziyan/Downloads/5g_mahimahitraces
+  (1).zip:cqi.trace. Bin: 100 ms. Packet size assumption: 1500 bytes. Delay: 20 ms. Duration:
+  30.499s. Time-weighted mean rate: 14275 kbit/s. Each step has loss model none; capacity
+  variation is represented by changing tbf rate per bin. Scaled from mahimahi-5g-cqi-100ms
+  by factor 0.33, preserving step durations, delay, loss model, and labels. Original camera
+  mean rate: 14275 kbit/s. Scaled camera mean rate: 4711 kbit/s.'
+camera_steps:
+- duration: 0.1
+  rate_kbps: 12038
+  delay_ms: 20
+  loss:
+    model: none
+  label: 0-100 ms, 304 packets
+- duration: 0.1
+  rate_kbps: 12038
+  delay_ms: 20
+  loss:
+    model: none
+  label: 100-200 ms, 304 packets
+- duration: 0.1
+  rate_kbps: 12038
+  delay_ms: 20
+  loss:
+    model: none
+  label: 200-300 ms, 304 packets
+- duration: 0.1
+  rate_kbps: 12038
+  delay_ms: 20
+  loss:
+    model: none
+  label: 300-400 ms, 304 packets
+- duration: 0.1
+  rate_kbps: 12078
+  delay_ms: 20
+  loss:
+    model: none
+  label: 400-500 ms, 305 packets
+- duration: 0.1
+  rate_kbps: 12870
+  delay_ms: 20
+  loss:
+    model: none
+  label: 500-600 ms, 325 packets
+- duration: 0.1
+  rate_kbps: 12870
+  delay_ms: 20
+  loss:
+    model: none
+  label: 600-700 ms, 325 packets
+- duration: 0.1
+  rate_kbps: 12870
+  delay_ms: 20
+  loss:
+    model: none
+  label: 700-800 ms, 325 packets
+- duration: 0.1
+  rate_kbps: 12870
+  delay_ms: 20
+  loss:
+    model: none
+  label: 800-900 ms, 325 packets
+- duration: 0.1
+  rate_kbps: 12910
+  delay_ms: 20
+  loss:
+    model: none
+  label: 900-1000 ms, 326 packets
+- duration: 0.1
+  rate_kbps: 12791
+  delay_ms: 20
+  loss:
+    model: none
+  label: 1000-1100 ms, 323 packets
+- duration: 0.1
+  rate_kbps: 12830
+  delay_ms: 20
+  loss:
+    model: none
+  label: 1100-1200 ms, 324 packets
+- duration: 0.1
+  rate_kbps: 12830
+  delay_ms: 20
+  loss:
+    model: none
+  label: 1200-1300 ms, 324 packets
+- duration: 0.1
+  rate_kbps: 12791
+  delay_ms: 20
+  loss:
+    model: none
+  label: 1300-1400 ms, 323 packets
+- duration: 0.1
+  rate_kbps: 12830
+  delay_ms: 20
+  loss:
+    model: none
+  label: 1400-1500 ms, 324 packets
+- duration: 0.1
+  rate_kbps: 12514
+  delay_ms: 20
+  loss:
+    model: none
+  label: 1500-1600 ms, 316 packets
+- duration: 0.1
+  rate_kbps: 12514
+  delay_ms: 20
+  loss:
+    model: none
+  label: 1600-1700 ms, 316 packets
+- duration: 0.1
+  rate_kbps: 12553
+  delay_ms: 20
+  loss:
+    model: none
+  label: 1700-1800 ms, 317 packets
+- duration: 0.1
+  rate_kbps: 12514
+  delay_ms: 20
+  loss:
+    model: none
+  label: 1800-1900 ms, 316 packets
+- duration: 0.1
+  rate_kbps: 12514
+  delay_ms: 20
+  loss:
+    model: none
+  label: 1900-2000 ms, 316 packets
+- duration: 0.1
+  rate_kbps: 13385
+  delay_ms: 20
+  loss:
+    model: none
+  label: 2000-2100 ms, 338 packets
+- duration: 0.1
+  rate_kbps: 13385
+  delay_ms: 20
+  loss:
+    model: none
+  label: 2100-2200 ms, 338 packets
+- duration: 0.1
+  rate_kbps: 13385
+  delay_ms: 20
+  loss:
+    model: none
+  label: 2200-2300 ms, 338 packets
+- duration: 0.1
+  rate_kbps: 13385
+  delay_ms: 20
+  loss:
+    model: none
+  label: 2300-2400 ms, 338 packets
+- duration: 0.1
+  rate_kbps: 13385
+  delay_ms: 20
+  loss:
+    model: none
+  label: 2400-2500 ms, 338 packets
+- duration: 0.1
+  rate_kbps: 11761
+  delay_ms: 20
+  loss:
+    model: none
+  label: 2500-2600 ms, 297 packets
+- duration: 0.1
+  rate_kbps: 11722
+  delay_ms: 20
+  loss:
+    model: none
+  label: 2600-2700 ms, 296 packets
+- duration: 0.1
+  rate_kbps: 11761
+  delay_ms: 20
+  loss:
+    model: none
+  label: 2700-2800 ms, 297 packets
+- duration: 0.1
+  rate_kbps: 11722
+  delay_ms: 20
+  loss:
+    model: none
+  label: 2800-2900 ms, 296 packets
+- duration: 0.1
+  rate_kbps: 11761
+  delay_ms: 20
+  loss:
+    model: none
+  label: 2900-3000 ms, 297 packets
+- duration: 0.1
+  rate_kbps: 13266
+  delay_ms: 20
+  loss:
+    model: none
+  label: 3000-3100 ms, 335 packets
+- duration: 0.1
+  rate_kbps: 13306
+  delay_ms: 20
+  loss:
+    model: none
+  label: 3100-3200 ms, 336 packets
+- duration: 0.1
+  rate_kbps: 13306
+  delay_ms: 20
+  loss:
+    model: none
+  label: 3200-3300 ms, 336 packets
+- duration: 0.1
+  rate_kbps: 13266
+  delay_ms: 20
+  loss:
+    model: none
+  label: 3300-3400 ms, 335 packets
+- duration: 0.1
+  rate_kbps: 13306
+  delay_ms: 20
+  loss:
+    model: none
+  label: 3400-3500 ms, 336 packets
+- duration: 0.1
+  rate_kbps: 9583
+  delay_ms: 20
+  loss:
+    model: none
+  label: 3500-3600 ms, 242 packets
+- duration: 0.1
+  rate_kbps: 9583
+  delay_ms: 20
+  loss:
+    model: none
+  label: 3600-3700 ms, 242 packets
+- duration: 0.1
+  rate_kbps: 9583
+  delay_ms: 20
+  loss:
+    model: none
+  label: 3700-3800 ms, 242 packets
+- duration: 0.1
+  rate_kbps: 9583
+  delay_ms: 20
+  loss:
+    model: none
+  label: 3800-3900 ms, 242 packets
+- duration: 0.1
+  rate_kbps: 9583
+  delay_ms: 20
+  loss:
+    model: none
+  label: 3900-4000 ms, 242 packets
+- duration: 0.1
+  rate_kbps: 7168
+  delay_ms: 20
+  loss:
+    model: none
+  label: 4000-4100 ms, 181 packets
+- duration: 0.1
+  rate_kbps: 7128
+  delay_ms: 20
+  loss:
+    model: none
+  label: 4100-4200 ms, 180 packets
+- duration: 0.1
+  rate_kbps: 7128
+  delay_ms: 20
+  loss:
+    model: none
+  label: 4200-4300 ms, 180 packets
+- duration: 0.1
+  rate_kbps: 7168
+  delay_ms: 20
+  loss:
+    model: none
+  label: 4300-4400 ms, 181 packets
+- duration: 0.1
+  rate_kbps: 7128
+  delay_ms: 20
+  loss:
+    model: none
+  label: 4400-4500 ms, 180 packets
+- duration: 0.1
+  rate_kbps: 6534
+  delay_ms: 20
+  loss:
+    model: none
+  label: 4500-4600 ms, 165 packets
+- duration: 0.1
+  rate_kbps: 6534
+  delay_ms: 20
+  loss:
+    model: none
+  label: 4600-4700 ms, 165 packets
+- duration: 0.1
+  rate_kbps: 6534
+  delay_ms: 20
+  loss:
+    model: none
+  label: 4700-4800 ms, 165 packets
+- duration: 0.1
+  rate_kbps: 6494
+  delay_ms: 20
+  loss:
+    model: none
+  label: 4800-4900 ms, 164 packets
+- duration: 0.1
+  rate_kbps: 6534
+  delay_ms: 20
+  loss:
+    model: none
+  label: 4900-5000 ms, 165 packets
+- duration: 0.1
+  rate_kbps: 4673
+  delay_ms: 20
+  loss:
+    model: none
+  label: 5000-5100 ms, 118 packets
+- duration: 0.1
+  rate_kbps: 4633
+  delay_ms: 20
+  loss:
+    model: none
+  label: 5100-5200 ms, 117 packets
+- duration: 0.1
+  rate_kbps: 4673
+  delay_ms: 20
+  loss:
+    model: none
+  label: 5200-5300 ms, 118 packets
+- duration: 0.1
+  rate_kbps: 4673
+  delay_ms: 20
+  loss:
+    model: none
+  label: 5300-5400 ms, 118 packets
+- duration: 0.1
+  rate_kbps: 4633
+  delay_ms: 20
+  loss:
+    model: none
+  label: 5400-5500 ms, 117 packets
+- duration: 0.1
+  rate_kbps: 4475
+  delay_ms: 20
+  loss:
+    model: none
+  label: 5500-5600 ms, 113 packets
+- duration: 0.1
+  rate_kbps: 4514
+  delay_ms: 20
+  loss:
+    model: none
+  label: 5600-5700 ms, 114 packets
+- duration: 0.1
+  rate_kbps: 4475
+  delay_ms: 20
+  loss:
+    model: none
+  label: 5700-5800 ms, 113 packets
+- duration: 0.1
+  rate_kbps: 4475
+  delay_ms: 20
+  loss:
+    model: none
+  label: 5800-5900 ms, 113 packets
+- duration: 0.1
+  rate_kbps: 4475
+  delay_ms: 20
+  loss:
+    model: none
+  label: 5900-6000 ms, 113 packets
+- duration: 0.1
+  rate_kbps: 5029
+  delay_ms: 20
+  loss:
+    model: none
+  label: 6000-6100 ms, 127 packets
+- duration: 0.1
+  rate_kbps: 4990
+  delay_ms: 20
+  loss:
+    model: none
+  label: 6100-6200 ms, 126 packets
+- duration: 0.1
+  rate_kbps: 4990
+  delay_ms: 20
+  loss:
+    model: none
+  label: 6200-6300 ms, 126 packets
+- duration: 0.1
+  rate_kbps: 4990
+  delay_ms: 20
+  loss:
+    model: none
+  label: 6300-6400 ms, 126 packets
+- duration: 0.1
+  rate_kbps: 5029
+  delay_ms: 20
+  loss:
+    model: none
+  label: 6400-6500 ms, 127 packets
+- duration: 0.1
+  rate_kbps: 4316
+  delay_ms: 20
+  loss:
+    model: none
+  label: 6500-6600 ms, 109 packets
+- duration: 0.1
+  rate_kbps: 4316
+  delay_ms: 20
+  loss:
+    model: none
+  label: 6600-6700 ms, 109 packets
+- duration: 0.1
+  rate_kbps: 4356
+  delay_ms: 20
+  loss:
+    model: none
+  label: 6700-6800 ms, 110 packets
+- duration: 0.1
+  rate_kbps: 4316
+  delay_ms: 20
+  loss:
+    model: none
+  label: 6800-6900 ms, 109 packets
+- duration: 0.1
+  rate_kbps: 4356
+  delay_ms: 20
+  loss:
+    model: none
+  label: 6900-7000 ms, 110 packets
+- duration: 0.1
+  rate_kbps: 3287
+  delay_ms: 20
+  loss:
+    model: none
+  label: 7000-7100 ms, 83 packets
+- duration: 0.1
+  rate_kbps: 3326
+  delay_ms: 20
+  loss:
+    model: none
+  label: 7100-7200 ms, 84 packets
+- duration: 0.1
+  rate_kbps: 3287
+  delay_ms: 20
+  loss:
+    model: none
+  label: 7200-7300 ms, 83 packets
+- duration: 0.1
+  rate_kbps: 3326
+  delay_ms: 20
+  loss:
+    model: none
+  label: 7300-7400 ms, 84 packets
+- duration: 0.1
+  rate_kbps: 3287
+  delay_ms: 20
+  loss:
+    model: none
+  label: 7400-7500 ms, 83 packets
+- duration: 0.1
+  rate_kbps: 3010
+  delay_ms: 20
+  loss:
+    model: none
+  label: 7500-7600 ms, 76 packets
+- duration: 0.1
+  rate_kbps: 2970
+  delay_ms: 20
+  loss:
+    model: none
+  label: 7600-7700 ms, 75 packets
+- duration: 0.1
+  rate_kbps: 2970
+  delay_ms: 20
+  loss:
+    model: none
+  label: 7700-7800 ms, 75 packets
+- duration: 0.1
+  rate_kbps: 3010
+  delay_ms: 20
+  loss:
+    model: none
+  label: 7800-7900 ms, 76 packets
+- duration: 0.1
+  rate_kbps: 2970
+  delay_ms: 20
+  loss:
+    model: none
+  label: 7900-8000 ms, 75 packets
+- duration: 0.1
+  rate_kbps: 3010
+  delay_ms: 20
+  loss:
+    model: none
+  label: 8000-8100 ms, 76 packets
+- duration: 0.1
+  rate_kbps: 3010
+  delay_ms: 20
+  loss:
+    model: none
+  label: 8100-8200 ms, 76 packets
+- duration: 0.1
+  rate_kbps: 2970
+  delay_ms: 20
+  loss:
+    model: none
+  label: 8200-8300 ms, 75 packets
+- duration: 0.1
+  rate_kbps: 3010
+  delay_ms: 20
+  loss:
+    model: none
+  label: 8300-8400 ms, 76 packets
+- duration: 0.1
+  rate_kbps: 3010
+  delay_ms: 20
+  loss:
+    model: none
+  label: 8400-8500 ms, 76 packets
+- duration: 0.1
+  rate_kbps: 3445
+  delay_ms: 20
+  loss:
+    model: none
+  label: 8500-8600 ms, 87 packets
+- duration: 0.1
+  rate_kbps: 3445
+  delay_ms: 20
+  loss:
+    model: none
+  label: 8600-8700 ms, 87 packets
+- duration: 0.1
+  rate_kbps: 3445
+  delay_ms: 20
+  loss:
+    model: none
+  label: 8700-8800 ms, 87 packets
+- duration: 0.1
+  rate_kbps: 3445
+  delay_ms: 20
+  loss:
+    model: none
+  label: 8800-8900 ms, 87 packets
+- duration: 0.1
+  rate_kbps: 3445
+  delay_ms: 20
+  loss:
+    model: none
+  label: 8900-9000 ms, 87 packets
+- duration: 0.1
+  rate_kbps: 4396
+  delay_ms: 20
+  loss:
+    model: none
+  label: 9000-9100 ms, 111 packets
+- duration: 0.1
+  rate_kbps: 4356
+  delay_ms: 20
+  loss:
+    model: none
+  label: 9100-9200 ms, 110 packets
+- duration: 0.1
+  rate_kbps: 4396
+  delay_ms: 20
+  loss:
+    model: none
+  label: 9200-9300 ms, 111 packets
+- duration: 0.1
+  rate_kbps: 4356
+  delay_ms: 20
+  loss:
+    model: none
+  label: 9300-9400 ms, 110 packets
+- duration: 0.1
+  rate_kbps: 4396
+  delay_ms: 20
+  loss:
+    model: none
+  label: 9400-9500 ms, 111 packets
+- duration: 0.1
+  rate_kbps: 2891
+  delay_ms: 20
+  loss:
+    model: none
+  label: 9500-9600 ms, 73 packets
+- duration: 0.1
+  rate_kbps: 2930
+  delay_ms: 20
+  loss:
+    model: none
+  label: 9600-9700 ms, 74 packets
+- duration: 0.1
+  rate_kbps: 2891
+  delay_ms: 20
+  loss:
+    model: none
+  label: 9700-9800 ms, 73 packets
+- duration: 0.1
+  rate_kbps: 2930
+  delay_ms: 20
+  loss:
+    model: none
+  label: 9800-9900 ms, 74 packets
+- duration: 0.1
+  rate_kbps: 2891
+  delay_ms: 20
+  loss:
+    model: none
+  label: 9900-10000 ms, 73 packets
+- duration: 0.1
+  rate_kbps: 3604
+  delay_ms: 20
+  loss:
+    model: none
+  label: 10000-10100 ms, 91 packets
+- duration: 0.1
+  rate_kbps: 3643
+  delay_ms: 20
+  loss:
+    model: none
+  label: 10100-10200 ms, 92 packets
+- duration: 0.1
+  rate_kbps: 3604
+  delay_ms: 20
+  loss:
+    model: none
+  label: 10200-10300 ms, 91 packets
+- duration: 0.1
+  rate_kbps: 3643
+  delay_ms: 20
+  loss:
+    model: none
+  label: 10300-10400 ms, 92 packets
+- duration: 0.1
+  rate_kbps: 3604
+  delay_ms: 20
+  loss:
+    model: none
+  label: 10400-10500 ms, 91 packets
+- duration: 0.1
+  rate_kbps: 3010
+  delay_ms: 20
+  loss:
+    model: none
+  label: 10500-10600 ms, 76 packets
+- duration: 0.1
+  rate_kbps: 2970
+  delay_ms: 20
+  loss:
+    model: none
+  label: 10600-10700 ms, 75 packets
+- duration: 0.1
+  rate_kbps: 2970
+  delay_ms: 20
+  loss:
+    model: none
+  label: 10700-10800 ms, 75 packets
+- duration: 0.1
+  rate_kbps: 2970
+  delay_ms: 20
+  loss:
+    model: none
+  label: 10800-10900 ms, 75 packets
+- duration: 0.1
+  rate_kbps: 2970
+  delay_ms: 20
+  loss:
+    model: none
+  label: 10900-11000 ms, 75 packets
+- duration: 0.1
+  rate_kbps: 4118
+  delay_ms: 20
+  loss:
+    model: none
+  label: 11000-11100 ms, 104 packets
+- duration: 0.1
+  rate_kbps: 4079
+  delay_ms: 20
+  loss:
+    model: none
+  label: 11100-11200 ms, 103 packets
+- duration: 0.1
+  rate_kbps: 4079
+  delay_ms: 20
+  loss:
+    model: none
+  label: 11200-11300 ms, 103 packets
+- duration: 0.1
+  rate_kbps: 4079
+  delay_ms: 20
+  loss:
+    model: none
+  label: 11300-11400 ms, 103 packets
+- duration: 0.1
+  rate_kbps: 4079
+  delay_ms: 20
+  loss:
+    model: none
+  label: 11400-11500 ms, 103 packets
+- duration: 0.1
+  rate_kbps: 3920
+  delay_ms: 20
+  loss:
+    model: none
+  label: 11500-11600 ms, 99 packets
+- duration: 0.1
+  rate_kbps: 3920
+  delay_ms: 20
+  loss:
+    model: none
+  label: 11600-11700 ms, 99 packets
+- duration: 0.1
+  rate_kbps: 3881
+  delay_ms: 20
+  loss:
+    model: none
+  label: 11700-11800 ms, 98 packets
+- duration: 0.1
+  rate_kbps: 3920
+  delay_ms: 20
+  loss:
+    model: none
+  label: 11800-11900 ms, 99 packets
+- duration: 0.1
+  rate_kbps: 3920
+  delay_ms: 20
+  loss:
+    model: none
+  label: 11900-12000 ms, 99 packets
+- duration: 0.1
+  rate_kbps: 3445
+  delay_ms: 20
+  loss:
+    model: none
+  label: 12000-12100 ms, 87 packets
+- duration: 0.1
+  rate_kbps: 3485
+  delay_ms: 20
+  loss:
+    model: none
+  label: 12100-12200 ms, 88 packets
+- duration: 0.1
+  rate_kbps: 3445
+  delay_ms: 20
+  loss:
+    model: none
+  label: 12200-12300 ms, 87 packets
+- duration: 0.1
+  rate_kbps: 3485
+  delay_ms: 20
+  loss:
+    model: none
+  label: 12300-12400 ms, 88 packets
+- duration: 0.1
+  rate_kbps: 3485
+  delay_ms: 20
+  loss:
+    model: none
+  label: 12400-12500 ms, 88 packets
+- duration: 0.1
+  rate_kbps: 3841
+  delay_ms: 20
+  loss:
+    model: none
+  label: 12500-12600 ms, 97 packets
+- duration: 0.1
+  rate_kbps: 3841
+  delay_ms: 20
+  loss:
+    model: none
+  label: 12600-12700 ms, 97 packets
+- duration: 0.1
+  rate_kbps: 3802
+  delay_ms: 20
+  loss:
+    model: none
+  label: 12700-12800 ms, 96 packets
+- duration: 0.1
+  rate_kbps: 3841
+  delay_ms: 20
+  loss:
+    model: none
+  label: 12800-12900 ms, 97 packets
+- duration: 0.1
+  rate_kbps: 3841
+  delay_ms: 20
+  loss:
+    model: none
+  label: 12900-13000 ms, 97 packets
+- duration: 0.1
+  rate_kbps: 2851
+  delay_ms: 20
+  loss:
+    model: none
+  label: 13000-13100 ms, 72 packets
+- duration: 0.1
+  rate_kbps: 2851
+  delay_ms: 20
+  loss:
+    model: none
+  label: 13100-13200 ms, 72 packets
+- duration: 0.1
+  rate_kbps: 2851
+  delay_ms: 20
+  loss:
+    model: none
+  label: 13200-13300 ms, 72 packets
+- duration: 0.1
+  rate_kbps: 2851
+  delay_ms: 20
+  loss:
+    model: none
+  label: 13300-13400 ms, 72 packets
+- duration: 0.1
+  rate_kbps: 2851
+  delay_ms: 20
+  loss:
+    model: none
+  label: 13400-13500 ms, 72 packets
+- duration: 0.1
+  rate_kbps: 3247
+  delay_ms: 20
+  loss:
+    model: none
+  label: 13500-13600 ms, 82 packets
+- duration: 0.1
+  rate_kbps: 3247
+  delay_ms: 20
+  loss:
+    model: none
+  label: 13600-13700 ms, 82 packets
+- duration: 0.1
+  rate_kbps: 3287
+  delay_ms: 20
+  loss:
+    model: none
+  label: 13700-13800 ms, 83 packets
+- duration: 0.1
+  rate_kbps: 3247
+  delay_ms: 20
+  loss:
+    model: none
+  label: 13800-13900 ms, 82 packets
+- duration: 0.1
+  rate_kbps: 3287
+  delay_ms: 20
+  loss:
+    model: none
+  label: 13900-14000 ms, 83 packets
+- duration: 0.1
+  rate_kbps: 3841
+  delay_ms: 20
+  loss:
+    model: none
+  label: 14000-14100 ms, 97 packets
+- duration: 0.1
+  rate_kbps: 3802
+  delay_ms: 20
+  loss:
+    model: none
+  label: 14100-14200 ms, 96 packets
+- duration: 0.1
+  rate_kbps: 3841
+  delay_ms: 20
+  loss:
+    model: none
+  label: 14200-14300 ms, 97 packets
+- duration: 0.1
+  rate_kbps: 3841
+  delay_ms: 20
+  loss:
+    model: none
+  label: 14300-14400 ms, 97 packets
+- duration: 0.1
+  rate_kbps: 3841
+  delay_ms: 20
+  loss:
+    model: none
+  label: 14400-14500 ms, 97 packets
+- duration: 0.1
+  rate_kbps: 3960
+  delay_ms: 20
+  loss:
+    model: none
+  label: 14500-14600 ms, 100 packets
+- duration: 0.1
+  rate_kbps: 3920
+  delay_ms: 20
+  loss:
+    model: none
+  label: 14600-14700 ms, 99 packets
+- duration: 0.1
+  rate_kbps: 3960
+  delay_ms: 20
+  loss:
+    model: none
+  label: 14700-14800 ms, 100 packets
+- duration: 0.1
+  rate_kbps: 3920
+  delay_ms: 20
+  loss:
+    model: none
+  label: 14800-14900 ms, 99 packets
+- duration: 0.1
+  rate_kbps: 3960
+  delay_ms: 20
+  loss:
+    model: none
+  label: 14900-15000 ms, 100 packets
+- duration: 0.1
+  rate_kbps: 3208
+  delay_ms: 20
+  loss:
+    model: none
+  label: 15000-15100 ms, 81 packets
+- duration: 0.1
+  rate_kbps: 3208
+  delay_ms: 20
+  loss:
+    model: none
+  label: 15100-15200 ms, 81 packets
+- duration: 0.1
+  rate_kbps: 3208
+  delay_ms: 20
+  loss:
+    model: none
+  label: 15200-15300 ms, 81 packets
+- duration: 0.1
+  rate_kbps: 3208
+  delay_ms: 20
+  loss:
+    model: none
+  label: 15300-15400 ms, 81 packets
+- duration: 0.1
+  rate_kbps: 3208
+  delay_ms: 20
+  loss:
+    model: none
+  label: 15400-15500 ms, 81 packets
+- duration: 0.1
+  rate_kbps: 4396
+  delay_ms: 20
+  loss:
+    model: none
+  label: 15500-15600 ms, 111 packets
+- duration: 0.1
+  rate_kbps: 4396
+  delay_ms: 20
+  loss:
+    model: none
+  label: 15600-15700 ms, 111 packets
+- duration: 0.1
+  rate_kbps: 4435
+  delay_ms: 20
+  loss:
+    model: none
+  label: 15700-15800 ms, 112 packets
+- duration: 0.1
+  rate_kbps: 4396
+  delay_ms: 20
+  loss:
+    model: none
+  label: 15800-15900 ms, 111 packets
+- duration: 0.1
+  rate_kbps: 4396
+  delay_ms: 20
+  loss:
+    model: none
+  label: 15900-16000 ms, 111 packets
+- duration: 0.1
+  rate_kbps: 4000
+  delay_ms: 20
+  loss:
+    model: none
+  label: 16000-16100 ms, 101 packets
+- duration: 0.1
+  rate_kbps: 4000
+  delay_ms: 20
+  loss:
+    model: none
+  label: 16100-16200 ms, 101 packets
+- duration: 0.1
+  rate_kbps: 4000
+  delay_ms: 20
+  loss:
+    model: none
+  label: 16200-16300 ms, 101 packets
+- duration: 0.1
+  rate_kbps: 4000
+  delay_ms: 20
+  loss:
+    model: none
+  label: 16300-16400 ms, 101 packets
+- duration: 0.1
+  rate_kbps: 4000
+  delay_ms: 20
+  loss:
+    model: none
+  label: 16400-16500 ms, 101 packets
+- duration: 0.1
+  rate_kbps: 4435
+  delay_ms: 20
+  loss:
+    model: none
+  label: 16500-16600 ms, 112 packets
+- duration: 0.1
+  rate_kbps: 4435
+  delay_ms: 20
+  loss:
+    model: none
+  label: 16600-16700 ms, 112 packets
+- duration: 0.1
+  rate_kbps: 4435
+  delay_ms: 20
+  loss:
+    model: none
+  label: 16700-16800 ms, 112 packets
+- duration: 0.1
+  rate_kbps: 4435
+  delay_ms: 20
+  loss:
+    model: none
+  label: 16800-16900 ms, 112 packets
+- duration: 0.1
+  rate_kbps: 4435
+  delay_ms: 20
+  loss:
+    model: none
+  label: 16900-17000 ms, 112 packets
+- duration: 0.1
+  rate_kbps: 4198
+  delay_ms: 20
+  loss:
+    model: none
+  label: 17000-17100 ms, 106 packets
+- duration: 0.1
+  rate_kbps: 4198
+  delay_ms: 20
+  loss:
+    model: none
+  label: 17100-17200 ms, 106 packets
+- duration: 0.1
+  rate_kbps: 4158
+  delay_ms: 20
+  loss:
+    model: none
+  label: 17200-17300 ms, 105 packets
+- duration: 0.1
+  rate_kbps: 4198
+  delay_ms: 20
+  loss:
+    model: none
+  label: 17300-17400 ms, 106 packets
+- duration: 0.1
+  rate_kbps: 4198
+  delay_ms: 20
+  loss:
+    model: none
+  label: 17400-17500 ms, 106 packets
+- duration: 0.1
+  rate_kbps: 4316
+  delay_ms: 20
+  loss:
+    model: none
+  label: 17500-17600 ms, 109 packets
+- duration: 0.1
+  rate_kbps: 4277
+  delay_ms: 20
+  loss:
+    model: none
+  label: 17600-17700 ms, 108 packets
+- duration: 0.1
+  rate_kbps: 4316
+  delay_ms: 20
+  loss:
+    model: none
+  label: 17700-17800 ms, 109 packets
+- duration: 0.1
+  rate_kbps: 4277
+  delay_ms: 20
+  loss:
+    model: none
+  label: 17800-17900 ms, 108 packets
+- duration: 0.1
+  rate_kbps: 4316
+  delay_ms: 20
+  loss:
+    model: none
+  label: 17900-18000 ms, 109 packets
+- duration: 0.1
+  rate_kbps: 4673
+  delay_ms: 20
+  loss:
+    model: none
+  label: 18000-18100 ms, 118 packets
+- duration: 0.1
+  rate_kbps: 4673
+  delay_ms: 20
+  loss:
+    model: none
+  label: 18100-18200 ms, 118 packets
+- duration: 0.1
+  rate_kbps: 4633
+  delay_ms: 20
+  loss:
+    model: none
+  label: 18200-18300 ms, 117 packets
+- duration: 0.1
+  rate_kbps: 4673
+  delay_ms: 20
+  loss:
+    model: none
+  label: 18300-18400 ms, 118 packets
+- duration: 0.1
+  rate_kbps: 4673
+  delay_ms: 20
+  loss:
+    model: none
+  label: 18400-18500 ms, 118 packets
+- duration: 0.1
+  rate_kbps: 3960
+  delay_ms: 20
+  loss:
+    model: none
+  label: 18500-18600 ms, 100 packets
+- duration: 0.1
+  rate_kbps: 3960
+  delay_ms: 20
+  loss:
+    model: none
+  label: 18600-18700 ms, 100 packets
+- duration: 0.1
+  rate_kbps: 3960
+  delay_ms: 20
+  loss:
+    model: none
+  label: 18700-18800 ms, 100 packets
+- duration: 0.1
+  rate_kbps: 4000
+  delay_ms: 20
+  loss:
+    model: none
+  label: 18800-18900 ms, 101 packets
+- duration: 0.1
+  rate_kbps: 3960
+  delay_ms: 20
+  loss:
+    model: none
+  label: 18900-19000 ms, 100 packets
+- duration: 0.1
+  rate_kbps: 4118
+  delay_ms: 20
+  loss:
+    model: none
+  label: 19000-19100 ms, 104 packets
+- duration: 0.1
+  rate_kbps: 4158
+  delay_ms: 20
+  loss:
+    model: none
+  label: 19100-19200 ms, 105 packets
+- duration: 0.1
+  rate_kbps: 4118
+  delay_ms: 20
+  loss:
+    model: none
+  label: 19200-19300 ms, 104 packets
+- duration: 0.1
+  rate_kbps: 4118
+  delay_ms: 20
+  loss:
+    model: none
+  label: 19300-19400 ms, 104 packets
+- duration: 0.1
+  rate_kbps: 4158
+  delay_ms: 20
+  loss:
+    model: none
+  label: 19400-19500 ms, 105 packets
+- duration: 0.1
+  rate_kbps: 3683
+  delay_ms: 20
+  loss:
+    model: none
+  label: 19500-19600 ms, 93 packets
+- duration: 0.1
+  rate_kbps: 3683
+  delay_ms: 20
+  loss:
+    model: none
+  label: 19600-19700 ms, 93 packets
+- duration: 0.1
+  rate_kbps: 3683
+  delay_ms: 20
+  loss:
+    model: none
+  label: 19700-19800 ms, 93 packets
+- duration: 0.1
+  rate_kbps: 3722
+  delay_ms: 20
+  loss:
+    model: none
+  label: 19800-19900 ms, 94 packets
+- duration: 0.1
+  rate_kbps: 3683
+  delay_ms: 20
+  loss:
+    model: none
+  label: 19900-20000 ms, 93 packets
+- duration: 0.1
+  rate_kbps: 4396
+  delay_ms: 20
+  loss:
+    model: none
+  label: 20000-20100 ms, 111 packets
+- duration: 0.1
+  rate_kbps: 4396
+  delay_ms: 20
+  loss:
+    model: none
+  label: 20100-20200 ms, 111 packets
+- duration: 0.1
+  rate_kbps: 4396
+  delay_ms: 20
+  loss:
+    model: none
+  label: 20200-20300 ms, 111 packets
+- duration: 0.1
+  rate_kbps: 4396
+  delay_ms: 20
+  loss:
+    model: none
+  label: 20300-20400 ms, 111 packets
+- duration: 0.1
+  rate_kbps: 4356
+  delay_ms: 20
+  loss:
+    model: none
+  label: 20400-20500 ms, 110 packets
+- duration: 0.1
+  rate_kbps: 3524
+  delay_ms: 20
+  loss:
+    model: none
+  label: 20500-20600 ms, 89 packets
+- duration: 0.1
+  rate_kbps: 3524
+  delay_ms: 20
+  loss:
+    model: none
+  label: 20600-20700 ms, 89 packets
+- duration: 0.1
+  rate_kbps: 3524
+  delay_ms: 20
+  loss:
+    model: none
+  label: 20700-20800 ms, 89 packets
+- duration: 0.1
+  rate_kbps: 3524
+  delay_ms: 20
+  loss:
+    model: none
+  label: 20800-20900 ms, 89 packets
+- duration: 0.1
+  rate_kbps: 3524
+  delay_ms: 20
+  loss:
+    model: none
+  label: 20900-21000 ms, 89 packets
+- duration: 0.1
+  rate_kbps: 3920
+  delay_ms: 20
+  loss:
+    model: none
+  label: 21000-21100 ms, 99 packets
+- duration: 0.1
+  rate_kbps: 3920
+  delay_ms: 20
+  loss:
+    model: none
+  label: 21100-21200 ms, 99 packets
+- duration: 0.1
+  rate_kbps: 3881
+  delay_ms: 20
+  loss:
+    model: none
+  label: 21200-21300 ms, 98 packets
+- duration: 0.1
+  rate_kbps: 3920
+  delay_ms: 20
+  loss:
+    model: none
+  label: 21300-21400 ms, 99 packets
+- duration: 0.1
+  rate_kbps: 3920
+  delay_ms: 20
+  loss:
+    model: none
+  label: 21400-21500 ms, 99 packets
+- duration: 0.1
+  rate_kbps: 3089
+  delay_ms: 20
+  loss:
+    model: none
+  label: 21500-21600 ms, 78 packets
+- duration: 0.1
+  rate_kbps: 3128
+  delay_ms: 20
+  loss:
+    model: none
+  label: 21600-21700 ms, 79 packets
+- duration: 0.1
+  rate_kbps: 3128
+  delay_ms: 20
+  loss:
+    model: none
+  label: 21700-21800 ms, 79 packets
+- duration: 0.1
+  rate_kbps: 3089
+  delay_ms: 20
+  loss:
+    model: none
+  label: 21800-21900 ms, 78 packets
+- duration: 0.1
+  rate_kbps: 3128
+  delay_ms: 20
+  loss:
+    model: none
+  label: 21900-22000 ms, 79 packets
+- duration: 0.1
+  rate_kbps: 2970
+  delay_ms: 20
+  loss:
+    model: none
+  label: 22000-22100 ms, 75 packets
+- duration: 0.1
+  rate_kbps: 3010
+  delay_ms: 20
+  loss:
+    model: none
+  label: 22100-22200 ms, 76 packets
+- duration: 0.1
+  rate_kbps: 2970
+  delay_ms: 20
+  loss:
+    model: none
+  label: 22200-22300 ms, 75 packets
+- duration: 0.1
+  rate_kbps: 2970
+  delay_ms: 20
+  loss:
+    model: none
+  label: 22300-22400 ms, 75 packets
+- duration: 0.1
+  rate_kbps: 2970
+  delay_ms: 20
+  loss:
+    model: none
+  label: 22400-22500 ms, 75 packets
+- duration: 0.1
+  rate_kbps: 2772
+  delay_ms: 20
+  loss:
+    model: none
+  label: 22500-22600 ms, 70 packets
+- duration: 0.1
+  rate_kbps: 2772
+  delay_ms: 20
+  loss:
+    model: none
+  label: 22600-22700 ms, 70 packets
+- duration: 0.1
+  rate_kbps: 2772
+  delay_ms: 20
+  loss:
+    model: none
+  label: 22700-22800 ms, 70 packets
+- duration: 0.1
+  rate_kbps: 2772
+  delay_ms: 20
+  loss:
+    model: none
+  label: 22800-22900 ms, 70 packets
+- duration: 0.1
+  rate_kbps: 2772
+  delay_ms: 20
+  loss:
+    model: none
+  label: 22900-23000 ms, 70 packets
+- duration: 0.1
+  rate_kbps: 2970
+  delay_ms: 20
+  loss:
+    model: none
+  label: 23000-23100 ms, 75 packets
+- duration: 0.1
+  rate_kbps: 2970
+  delay_ms: 20
+  loss:
+    model: none
+  label: 23100-23200 ms, 75 packets
+- duration: 0.1
+  rate_kbps: 2970
+  delay_ms: 20
+  loss:
+    model: none
+  label: 23200-23300 ms, 75 packets
+- duration: 0.1
+  rate_kbps: 2970
+  delay_ms: 20
+  loss:
+    model: none
+  label: 23300-23400 ms, 75 packets
+- duration: 0.1
+  rate_kbps: 2970
+  delay_ms: 20
+  loss:
+    model: none
+  label: 23400-23500 ms, 75 packets
+- duration: 0.1
+  rate_kbps: 3128
+  delay_ms: 20
+  loss:
+    model: none
+  label: 23500-23600 ms, 79 packets
+- duration: 0.1
+  rate_kbps: 3128
+  delay_ms: 20
+  loss:
+    model: none
+  label: 23600-23700 ms, 79 packets
+- duration: 0.1
+  rate_kbps: 3128
+  delay_ms: 20
+  loss:
+    model: none
+  label: 23700-23800 ms, 79 packets
+- duration: 0.1
+  rate_kbps: 3168
+  delay_ms: 20
+  loss:
+    model: none
+  label: 23800-23900 ms, 80 packets
+- duration: 0.1
+  rate_kbps: 3128
+  delay_ms: 20
+  loss:
+    model: none
+  label: 23900-24000 ms, 79 packets
+- duration: 0.1
+  rate_kbps: 2772
+  delay_ms: 20
+  loss:
+    model: none
+  label: 24000-24100 ms, 70 packets
+- duration: 0.1
+  rate_kbps: 2772
+  delay_ms: 20
+  loss:
+    model: none
+  label: 24100-24200 ms, 70 packets
+- duration: 0.1
+  rate_kbps: 2772
+  delay_ms: 20
+  loss:
+    model: none
+  label: 24200-24300 ms, 70 packets
+- duration: 0.1
+  rate_kbps: 2812
+  delay_ms: 20
+  loss:
+    model: none
+  label: 24300-24400 ms, 71 packets
+- duration: 0.1
+  rate_kbps: 2772
+  delay_ms: 20
+  loss:
+    model: none
+  label: 24400-24500 ms, 70 packets
+- duration: 0.1
+  rate_kbps: 3010
+  delay_ms: 20
+  loss:
+    model: none
+  label: 24500-24600 ms, 76 packets
+- duration: 0.1
+  rate_kbps: 3049
+  delay_ms: 20
+  loss:
+    model: none
+  label: 24600-24700 ms, 77 packets
+- duration: 0.1
+  rate_kbps: 3049
+  delay_ms: 20
+  loss:
+    model: none
+  label: 24700-24800 ms, 77 packets
+- duration: 0.1
+  rate_kbps: 3049
+  delay_ms: 20
+  loss:
+    model: none
+  label: 24800-24900 ms, 77 packets
+- duration: 0.1
+  rate_kbps: 3010
+  delay_ms: 20
+  loss:
+    model: none
+  label: 24900-25000 ms, 76 packets
+- duration: 0.1
+  rate_kbps: 3168
+  delay_ms: 20
+  loss:
+    model: none
+  label: 25000-25100 ms, 80 packets
+- duration: 0.1
+  rate_kbps: 3128
+  delay_ms: 20
+  loss:
+    model: none
+  label: 25100-25200 ms, 79 packets
+- duration: 0.1
+  rate_kbps: 3168
+  delay_ms: 20
+  loss:
+    model: none
+  label: 25200-25300 ms, 80 packets
+- duration: 0.1
+  rate_kbps: 3128
+  delay_ms: 20
+  loss:
+    model: none
+  label: 25300-25400 ms, 79 packets
+- duration: 0.1
+  rate_kbps: 3168
+  delay_ms: 20
+  loss:
+    model: none
+  label: 25400-25500 ms, 80 packets
+- duration: 0.1
+  rate_kbps: 2772
+  delay_ms: 20
+  loss:
+    model: none
+  label: 25500-25600 ms, 70 packets
+- duration: 0.1
+  rate_kbps: 2732
+  delay_ms: 20
+  loss:
+    model: none
+  label: 25600-25700 ms, 69 packets
+- duration: 0.1
+  rate_kbps: 2772
+  delay_ms: 20
+  loss:
+    model: none
+  label: 25700-25800 ms, 70 packets
+- duration: 0.1
+  rate_kbps: 2772
+  delay_ms: 20
+  loss:
+    model: none
+  label: 25800-25900 ms, 70 packets
+- duration: 0.1
+  rate_kbps: 2772
+  delay_ms: 20
+  loss:
+    model: none
+  label: 25900-26000 ms, 70 packets
+- duration: 0.1
+  rate_kbps: 2574
+  delay_ms: 20
+  loss:
+    model: none
+  label: 26000-26100 ms, 65 packets
+- duration: 0.1
+  rate_kbps: 2574
+  delay_ms: 20
+  loss:
+    model: none
+  label: 26100-26200 ms, 65 packets
+- duration: 0.1
+  rate_kbps: 2534
+  delay_ms: 20
+  loss:
+    model: none
+  label: 26200-26300 ms, 64 packets
+- duration: 0.1
+  rate_kbps: 2574
+  delay_ms: 20
+  loss:
+    model: none
+  label: 26300-26400 ms, 65 packets
+- duration: 0.1
+  rate_kbps: 2574
+  delay_ms: 20
+  loss:
+    model: none
+  label: 26400-26500 ms, 65 packets
+- duration: 0.1
+  rate_kbps: 2732
+  delay_ms: 20
+  loss:
+    model: none
+  label: 26500-26600 ms, 69 packets
+- duration: 0.1
+  rate_kbps: 2693
+  delay_ms: 20
+  loss:
+    model: none
+  label: 26600-26700 ms, 68 packets
+- duration: 0.1
+  rate_kbps: 2732
+  delay_ms: 20
+  loss:
+    model: none
+  label: 26700-26800 ms, 69 packets
+- duration: 0.1
+  rate_kbps: 2732
+  delay_ms: 20
+  loss:
+    model: none
+  label: 26800-26900 ms, 69 packets
+- duration: 0.1
+  rate_kbps: 2732
+  delay_ms: 20
+  loss:
+    model: none
+  label: 26900-27000 ms, 69 packets
+- duration: 0.1
+  rate_kbps: 2772
+  delay_ms: 20
+  loss:
+    model: none
+  label: 27000-27100 ms, 70 packets
+- duration: 0.1
+  rate_kbps: 2812
+  delay_ms: 20
+  loss:
+    model: none
+  label: 27100-27200 ms, 71 packets
+- duration: 0.1
+  rate_kbps: 2812
+  delay_ms: 20
+  loss:
+    model: none
+  label: 27200-27300 ms, 71 packets
+- duration: 0.1
+  rate_kbps: 2812
+  delay_ms: 20
+  loss:
+    model: none
+  label: 27300-27400 ms, 71 packets
+- duration: 0.1
+  rate_kbps: 2812
+  delay_ms: 20
+  loss:
+    model: none
+  label: 27400-27500 ms, 71 packets
+- duration: 0.1
+  rate_kbps: 2930
+  delay_ms: 20
+  loss:
+    model: none
+  label: 27500-27600 ms, 74 packets
+- duration: 0.1
+  rate_kbps: 2930
+  delay_ms: 20
+  loss:
+    model: none
+  label: 27600-27700 ms, 74 packets
+- duration: 0.1
+  rate_kbps: 2930
+  delay_ms: 20
+  loss:
+    model: none
+  label: 27700-27800 ms, 74 packets
+- duration: 0.1
+  rate_kbps: 2930
+  delay_ms: 20
+  loss:
+    model: none
+  label: 27800-27900 ms, 74 packets
+- duration: 0.1
+  rate_kbps: 2930
+  delay_ms: 20
+  loss:
+    model: none
+  label: 27900-28000 ms, 74 packets
+- duration: 0.1
+  rate_kbps: 2534
+  delay_ms: 20
+  loss:
+    model: none
+  label: 28000-28100 ms, 64 packets
+- duration: 0.1
+  rate_kbps: 2534
+  delay_ms: 20
+  loss:
+    model: none
+  label: 28100-28200 ms, 64 packets
+- duration: 0.1
+  rate_kbps: 2574
+  delay_ms: 20
+  loss:
+    model: none
+  label: 28200-28300 ms, 65 packets
+- duration: 0.1
+  rate_kbps: 2534
+  delay_ms: 20
+  loss:
+    model: none
+  label: 28300-28400 ms, 64 packets
+- duration: 0.1
+  rate_kbps: 2534
+  delay_ms: 20
+  loss:
+    model: none
+  label: 28400-28500 ms, 64 packets
+- duration: 0.1
+  rate_kbps: 2455
+  delay_ms: 20
+  loss:
+    model: none
+  label: 28500-28600 ms, 62 packets
+- duration: 0.1
+  rate_kbps: 2455
+  delay_ms: 20
+  loss:
+    model: none
+  label: 28600-28700 ms, 62 packets
+- duration: 0.1
+  rate_kbps: 2455
+  delay_ms: 20
+  loss:
+    model: none
+  label: 28700-28800 ms, 62 packets
+- duration: 0.1
+  rate_kbps: 2455
+  delay_ms: 20
+  loss:
+    model: none
+  label: 28800-28900 ms, 62 packets
+- duration: 0.1
+  rate_kbps: 2495
+  delay_ms: 20
+  loss:
+    model: none
+  label: 28900-29000 ms, 63 packets
+- duration: 0.1
+  rate_kbps: 2534
+  delay_ms: 20
+  loss:
+    model: none
+  label: 29000-29100 ms, 64 packets
+- duration: 0.1
+  rate_kbps: 2574
+  delay_ms: 20
+  loss:
+    model: none
+  label: 29100-29200 ms, 65 packets
+- duration: 0.1
+  rate_kbps: 2534
+  delay_ms: 20
+  loss:
+    model: none
+  label: 29200-29300 ms, 64 packets
+- duration: 0.1
+  rate_kbps: 2574
+  delay_ms: 20
+  loss:
+    model: none
+  label: 29300-29400 ms, 65 packets
+- duration: 0.1
+  rate_kbps: 2534
+  delay_ms: 20
+  loss:
+    model: none
+  label: 29400-29500 ms, 64 packets
+- duration: 0.1
+  rate_kbps: 1822
+  delay_ms: 20
+  loss:
+    model: none
+  label: 29500-29600 ms, 46 packets
+- duration: 0.1
+  rate_kbps: 1782
+  delay_ms: 20
+  loss:
+    model: none
+  label: 29600-29700 ms, 45 packets
+- duration: 0.1
+  rate_kbps: 1782
+  delay_ms: 20
+  loss:
+    model: none
+  label: 29700-29800 ms, 45 packets
+- duration: 0.1
+  rate_kbps: 1822
+  delay_ms: 20
+  loss:
+    model: none
+  label: 29800-29900 ms, 46 packets
+- duration: 0.1
+  rate_kbps: 1782
+  delay_ms: 20
+  loss:
+    model: none
+  label: 29900-30000 ms, 45 packets
+- duration: 0.1
+  rate_kbps: 1228
+  delay_ms: 20
+  loss:
+    model: none
+  label: 30000-30100 ms, 31 packets
+- duration: 0.1
+  rate_kbps: 1228
+  delay_ms: 20
+  loss:
+    model: none
+  label: 30100-30200 ms, 31 packets
+- duration: 0.1
+  rate_kbps: 1228
+  delay_ms: 20
+  loss:
+    model: none
+  label: 30200-30300 ms, 31 packets
+- duration: 0.1
+  rate_kbps: 1188
+  delay_ms: 20
+  loss:
+    model: none
+  label: 30300-30400 ms, 30 packets
+- duration: 0.099
+  rate_kbps: 1240
+  delay_ms: 20
+  loss:
+    model: none
+  label: 30400-30499 ms, 31 packets
+viewer_steps: []

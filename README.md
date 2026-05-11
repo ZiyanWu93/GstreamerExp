@@ -5,8 +5,9 @@ Testbed for real-time video congestion control. Compares
 a GStreamer 1.24 / VP8 / RTP / UDP pipeline, with declarative
 network impairment via `tc`.
 
-Configurations run either locally over loopback or distributed
-across two Linux hosts (camera + viewer) connected by SSH.
+Configurations run either locally over loopback or in controller/worker
+mode: this machine is the controller, and two Linux workers (camera +
+viewer) execute the media pipelines over SSH.
 
 For the *philosophy* of the project (what gets added, how
 experiments are structured, the five-dimension evaluation framework),
@@ -15,9 +16,8 @@ see [`docs/DESIGN.md`](docs/DESIGN.md). The rest of this file is
 
 ## Prerequisites
 
-- Linux (tested on Ubuntu 20.04). Distributed mode needs two hosts
-  on the same LAN with SSH key-based access between them and to your
-  local machine.
+- Linux (tested on Ubuntu 20.04). Controller/worker mode needs two
+  Linux workers reachable by SSH from the controller.
 - Python 3.8+ (`python3`, `pip3`)
 - `git`, `gcc`, `make`, `cmake`, `meson >= 1.3`, `ninja`
 - A free network interface on each host that the testbed can shape
@@ -38,13 +38,17 @@ pip install -r requirements.txt
 # 3. Tell the testbed about your machines.
 cp hosts.example.yaml hosts.yaml
 # Then edit hosts.yaml:
-#   - actors.camera.host       — IP/hostname of the camera machine
+#   - actors.camera.host       — default camera endpoint
+#   - actors.camera.ssh_host   — SSH/rsync endpoint; defaults to host
+#   - actors.camera.media_host — RTP/RTCP endpoint; defaults to host
 #   - actors.camera.network_env.NIC — interface name on that machine
 #                                     that carries camera → viewer
-#   - actors.viewer.host       — IP/hostname of the viewer machine
-#   - both project_root        — path on each remote machine where
-#                                the runner rsyncs this tree (default
-#                                ~/gstexp works fine)
+#   - actors.viewer.host       — default viewer endpoint
+#   - actors.viewer.ssh_host   — SSH/rsync endpoint; defaults to host
+#   - actors.viewer.media_host — RTP/RTCP endpoint; defaults to host
+#   - both project_root        — path on each worker where the runner
+#                                syncs the minimal runtime payload
+#                                (default ~/gstexp works fine)
 
 # 4. Build GStreamer 1.24 + clone & build SCReAM, on each host.
 #    This downloads the SCReAM source tree from upstream
@@ -60,7 +64,7 @@ python3 cli.py 1
 ```
 
 If the loopback run prints a `=== 1 (...): PASS ===` block, you're
-set. Distributed runs (configs 11, 12, …) need both hosts set up.
+set. Controller/worker runs (configs 11, 12, …) need both workers set up.
 
 ## Running experiments
 
@@ -83,17 +87,19 @@ Run results write to `runs/<config_id>/<timestamp>/` (gitignored).
 
 ## Hypothesis pages
 
-Open `analysis/hypotheses/h1.html` and `analysis/hypotheses/h4.html`
-in a browser after running an experiment, served from a local HTTP
-server (`fetch()` doesn't work over `file://`):
+Open the hypothesis pages under `analysis/hypotheses/` in a browser
+after running an experiment, served from a local HTTP server
+(`fetch()` doesn't work over `file://`):
 
 ```bash
 cd analysis/hypotheses && python3 -m http.server 8765
-# then visit http://localhost:8765/h1.html
+# then visit http://localhost:8765/h1.html through h4.html
 ```
 
 The presentation principles those pages follow are documented in
 [`analysis/hypotheses/PRESENTATION_PRINCIPLES.md`](analysis/hypotheses/PRESENTATION_PRINCIPLES.md).
+Paper-style result figure conventions are documented in
+[`docs/FIGURE_STYLE_PRINCIPLES.md`](docs/FIGURE_STYLE_PRINCIPLES.md).
 
 ## Layout
 
@@ -101,7 +107,7 @@ The presentation principles those pages follow are documented in
 .
 ├── cli.py              # run a single configuration
 ├── experiment.py       # run a multi-rep, multi-arm sweep
-├── runner.py           # local + distributed worker spawn / cleanup
+├── runner.py           # local + controller/worker spawn / cleanup
 ├── camera.py viewer.py # the GStreamer pipelines
 ├── pipeline_config.py  # typed config dataclasses
 ├── validation.py       # YAML schema validators + hosts.yaml merge

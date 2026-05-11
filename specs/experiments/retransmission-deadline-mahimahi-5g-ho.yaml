@@ -1,0 +1,35 @@
+name: retransmission-deadline-mahimahi-5g-ho
+description: H4-style retransmission deadline experiment on the 5G Mahimahi handover trace.
+  8-arm 2x2x2 over CC algorithm, NACK on/off, and latency budget 0/100 ms. Uses the full ~30.5s
+  trace via ball-720p30-30s.
+reps: 5
+varies:
+- congestion_control.algorithm
+- recovery.nack
+- recovery.rtx_buffer_ms
+- latency_budget_ms
+configurations:
+- id: 61
+  label: SCReAM no-NACK budget=0
+  color: '#fcae91'
+- id: 62
+  label: SCReAM NACK budget=0
+  color: '#de2d26'
+- id: 63
+  label: GCC no-NACK budget=0
+  color: '#bdd7e7'
+- id: 64
+  label: GCC NACK budget=0
+  color: '#3182bd'
+- id: 65
+  label: SCReAM no-NACK budget=100
+  color: '#a50f15'
+- id: 66
+  label: SCReAM NACK budget=100
+  color: '#67000d'
+- id: 67
+  label: GCC no-NACK budget=100
+  color: '#08519c'
+- id: 68
+  label: GCC NACK budget=100
+  color: '#08306b'
