@@ -107,11 +107,7 @@ Paper-style result figure conventions are documented in
 .
 ├── cli.py              # run a single configuration
 ├── experiment.py       # run a multi-rep, multi-arm sweep
-├── runner.py           # local + controller/worker spawn / cleanup
-├── camera.py viewer.py # the GStreamer pipelines
-├── pipeline_config.py  # typed config dataclasses
-├── validation.py       # YAML schema validators + hosts.yaml merge
-├── metrics.py          # per-rep instrumentation (frame_count, late_drops, …)
+├── gstexp/             # runner, pipeline builders, validators, metrics, plotting
 ├── specs/              # YAML configs (configurations/, networks/, videos/, experiments/)
 ├── analysis/           # post-run analysis (dimensions/, hypotheses/)
 ├── runs/               # experiment outputs, gitignored

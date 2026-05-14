@@ -108,6 +108,35 @@
       }
     }
   ],
+  "trace_characteristics": [
+    {
+      "trace": "CQI",
+      "network": "mahimahi-5g-cqi-100ms-x0p33",
+      "role": "fixed realistic CQI-like high-capacity control trace",
+      "median_capacity_kbps": 3683.0,
+      "p10_capacity_kbps": 2645.4,
+      "bins_below_1000_kbps_pct": 0.0,
+      "sentence": "CQI x0.33 is a high-capacity control trace with no sub-1 Mbit/s bins and 3.68 Mbit/s median capacity."
+    },
+    {
+      "trace": "HO",
+      "network": "mahimahi-5g-ho-100ms-x0p33",
+      "role": "fixed realistic handover-like stressed trace",
+      "median_capacity_kbps": 2059.0,
+      "p10_capacity_kbps": 238.0,
+      "bins_below_1000_kbps_pct": 18.688524590163933,
+      "sentence": "HO x0.33 is a handover-like trace with sharp fades: 18.7% of 100 ms bins below 1 Mbit/s and 2.06 Mbit/s median capacity."
+    },
+    {
+      "trace": "RB",
+      "network": "mahimahi-5g-rb-100ms-x0p33",
+      "role": "fixed realistic RB-like stressed trace",
+      "median_capacity_kbps": 1703.0,
+      "p10_capacity_kbps": 752.0,
+      "bins_below_1000_kbps_pct": 18.360655737704917,
+      "sentence": "RB x0.33 is a resource-block scarcity trace with 18.4% of 100 ms bins below 1 Mbit/s and 1.70 Mbit/s median capacity."
+    }
+  ],
   "claim_structure": {
     "conclusion": "SCReAM wins on the stressed HO/RB traces because its post-payload RTP pacing turns congestion-control decisions into lower camera egress, while GCC lowers its estimator target but this pipeline still emits multi-Mbit/s RTP that the trace cannot carry, leaving fewer complete frames decodable at the viewer.",
     "subclaims": [

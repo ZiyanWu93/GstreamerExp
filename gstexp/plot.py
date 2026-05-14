@@ -7,8 +7,8 @@ Usage:
 
 experiment.py writes the experiment record at runs/experiments/<name>.json
 after every individual run lands; it carries the experiment spec's
-configurations + the shared network's steps + the list of completed
-runs, so plot.py is self-contained against this single file.
+configurations, the shared directional network spec, and the list of
+completed runs, so plot.py is self-contained against this single file.
 
 Renders bitrate, latency, and frame-arrival ribbons (faint per-run +
 bold mean) per configuration, overlaid on the impairment-step shading
@@ -34,10 +34,10 @@ EXPT_DIR = RUNS_ROOT / "experiments"
 FIG_DIR = RUNS_ROOT / "figures"
 
 # Network steps, labels, and colors all come from the experiment record:
-# experiment.py copies the shared network spec's `steps` block in as
-# `network_steps`, and the configurations' label/color from the
-# experiment spec. plot.py is generic across experiments — no
-# scenario-specific constants live here.
+# experiment.py copies the shared network spec's directional
+# `camera_steps`/`viewer_steps` blocks into `network`, and the
+# configurations' label/color from the experiment spec. plot.py is
+# generic across experiments: no scenario-specific constants live here.
 
 
 def _steps_to_intervals(steps: list[dict]) -> list[tuple]:
@@ -51,6 +51,14 @@ def _steps_to_intervals(steps: list[dict]) -> list[tuple]:
         out.append((t, t_end, int(s["rate_kbps"]), s["label"]))
         t = t_end
     return out
+
+
+def _forward_network_steps(experiment: dict) -> list[dict]:
+    """Return camera-to-viewer shaping steps, with old-record fallback."""
+    network = experiment.get("network")
+    if isinstance(network, dict):
+        return network.get("camera_steps") or []
+    return experiment.get("network_steps") or []
 
 
 def _load_bitrate_traj(run_dir: Path) -> np.ndarray | None:
@@ -283,7 +291,7 @@ def main():
     if not bitrate_by_cfg:
         sys.exit(f"no usable trajectories in {record_path.name}")
 
-    intervals = _steps_to_intervals(experiment.get("network_steps") or [])
+    intervals = _steps_to_intervals(_forward_network_steps(experiment))
 
     # Common time grid based on the longest trajectory's range, extended
     # to cover the network steps if any are declared.

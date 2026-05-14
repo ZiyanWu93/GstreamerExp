@@ -234,24 +234,24 @@ record (spec contents + completed runs) to `runs/experiments/<name>.json`.
 `plot.py` reads that record and renders bitrate / latency / arrival-rate
 trajectories per configuration, with labels and colors carried through
 from the spec and the impairment shading derived from the network spec's
-`steps` block.
+forward `camera_steps` block copied into the experiment record.
 
 ## What's in the repo
 
 | File / folder | Purpose |
 |---|---|
 | `cli.py` | configuration runner — entry point |
-| `runner.py` | local + distributed run orchestration, SSH primitives, hooks |
-| `validation.py` | spec resolution, validation, projection to per-role dataclasses |
-| `reporting.py` | summary computation + terminal report |
-| `worker.py` | per-role process that builds the pipeline and runs the GLib main loop |
-| `pipeline_config.py` | dataclasses for the per-role pipeline specs |
-| `sender.py`, `receiver.py` | three pipeline shapes each: bare / SCReAM / GCC |
-| `metrics.py` | metric plugins that attach pad probes and finalize JSON |
+| `gstexp/runner.py` | local + distributed run orchestration, SSH primitives, hooks |
+| `gstexp/validation.py` | spec resolution, validation, projection to per-role dataclasses |
+| `gstexp/reporting.py` | summary computation + terminal report |
+| `gstexp/worker.py` | per-role process that builds the pipeline and runs the GLib main loop |
+| `gstexp/pipeline_config.py` | dataclasses for the per-role pipeline specs |
+| `gstexp/camera.py`, `gstexp/viewer.py` | camera and viewer pipeline builders |
+| `gstexp/metrics.py` | metric plugins that attach pad probes and finalize JSON |
 | `experiment.py` | spec-driven repeat runner; writes the experiment record |
-| `expo.py` | spec-driven visual demo runner; same measurement plus a render branch |
-| `analyze.py` | cross-run summary table |
-| `plot.py` | overlay plots from an experiment record |
+| `gstexp/expo.py` | spec-driven visual demo runner; same measurement plus a render branch |
+| `gstexp/analyze.py` | cross-run summary table |
+| `gstexp/plot.py` | overlay plots from an experiment record |
 | `specs/experiments/` | named experiments — see `experiment.py --list` |
 | `specs/expos/` | named visual demos — see `expo.py --list` |
 | `specs/configurations/` | per-run configurations — see `cli.py --list` |
@@ -282,21 +282,24 @@ comparison of multiple configurations plus the paths that may differ.
 
 ## Network impairment is declarative
 
-A network spec is a list of steps; the runner compiles each step into
-the `tc qdisc` invocations that produce that impairment.
+A network spec has directional step lists. `camera_steps` shape the
+camera to viewer media path; `viewer_steps` shape the viewer to camera
+feedback path. The runner compiles each step into the `tc qdisc`
+invocations that produce that impairment.
 
 ```yaml
 # specs/networks/fluctuating-5mbps-300kbps.yaml
-steps:
+camera_steps:
   - { duration: 7, rate_kbps: 5000, delay_ms:  20, loss_pct: 0, label: "5 Mbps · 20 ms" }
   - { duration: 6, rate_kbps:  300, delay_ms: 100, loss_pct: 2, label: "300 kbps · 100 ms · 2% loss" }
   - { duration: 7, rate_kbps: 5000, delay_ms:  20, loss_pct: 0, label: "5 Mbps · 20 ms" }
+viewer_steps: []
 ```
 
-Configurations using this spec set `network_env: { NIC: <ifname> }` to
-specify which interface the bash should target. `plot.py` reads the
-same `steps` block from the experiment record and uses it to shade the
-impaired window and draw the link-capacity panel.
+Hosts using this spec declare the shaped interface in `hosts.yaml` under
+the relevant actor's `network_env.NIC`. `plot.py` reads the copied
+`network.camera_steps` block from the experiment record and uses it to
+shade the impaired window and draw the link-capacity panel.
 
 ## Metrics
 

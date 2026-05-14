@@ -48,6 +48,7 @@ def _matplotlib():
         "legend.fontsize": 7,
         "axes.linewidth": 0.7,
         "svg.fonttype": "none",
+        "svg.hashsalt": "gstexp",
     })
     return plt
 
@@ -88,6 +89,19 @@ def _network_capacity_intervals(network_name: str) -> list[tuple[float, float, f
     return intervals
 
 
+def _capacity_distribution(network_name: str) -> dict[str, float]:
+    rates = [rate for _t, rate in _network_capacity_series(network_name)]
+    quantiles = statistics.quantiles(rates, n=100)
+    return {
+        "min_kbps": min(rates),
+        "p10_kbps": quantiles[9],
+        "median_kbps": statistics.median(rates),
+        "mean_kbps": statistics.mean(rates),
+        "max_kbps": max(rates),
+        "bins_below_1000_kbps_pct": 100.0 * sum(1 for rate in rates if rate < 1000.0) / len(rates),
+    }
+
+
 def _run_metric_samples(config_id: str, run_id: str, role: str, metric: str) -> list[tuple[float, float]]:
     path = PROJECT_ROOT / "runs" / config_id / run_id / f"{role}.json"
     if not path.is_file():
@@ -113,17 +127,16 @@ def _mean_series_by_second(name: str, config_id: str, role: str, metric: str) ->
 
 
 def _capacity_stats(network_name: str, media_kbps: float) -> dict[str, float]:
-    rates = [rate for _t, rate in _network_capacity_series(network_name)]
-    quantiles = statistics.quantiles(rates, n=100)
+    distribution = _capacity_distribution(network_name)
     return {
-        "min_kbps": min(rates),
-        "p10_kbps": quantiles[9],
-        "median_kbps": statistics.median(rates),
-        "mean_kbps": statistics.mean(rates),
-        "max_kbps": max(rates),
-        "median_headroom": statistics.median(rates) / media_kbps if media_kbps else 0.0,
-        "p10_headroom": quantiles[9] / media_kbps if media_kbps else 0.0,
-        "bins_below_1000_kbps_pct": 100.0 * sum(1 for rate in rates if rate < 1000.0) / len(rates),
+        "min_kbps": distribution["min_kbps"],
+        "p10_kbps": distribution["p10_kbps"],
+        "median_kbps": distribution["median_kbps"],
+        "mean_kbps": distribution["mean_kbps"],
+        "max_kbps": distribution["max_kbps"],
+        "median_headroom": distribution["median_kbps"] / media_kbps if media_kbps else 0.0,
+        "p10_headroom": distribution["p10_kbps"] / media_kbps if media_kbps else 0.0,
+        "bins_below_1000_kbps_pct": distribution["bins_below_1000_kbps_pct"],
     }
 
 
@@ -584,7 +597,7 @@ def _h4_trace_timeseries_svg(
     plt.close(fig)
 
 
-def build_h3() -> dict[str, Any]:
+def build_h3(out_dir: Path = OUT_DIR) -> dict[str, Any]:
     experiments = [
         "scream-vs-gcc-mahimahi-5g-cqi",
         "scream-vs-gcc-mahimahi-5g-ho",
@@ -610,7 +623,7 @@ def build_h3() -> dict[str, Any]:
         "H3 capacity headroom over emitted media",
         "kbit/s",
         groups,
-        OUT_DIR / "h3_capacity_headroom.svg",
+        out_dir / "h3_capacity_headroom.svg",
         "Capacity is from translated 100 ms trace bins; media wire bitrate is the mean camera-side observed RTP bitrate.",
     )
     _line_svg(
@@ -621,7 +634,7 @@ def build_h3() -> dict[str, Any]:
             {"label": "SCReAM wire", "color": "#d62728", "width": 2, "points": _mean_series_by_second("scream-vs-gcc-mahimahi-5g-ho", "57", "camera", "wire_bytes")},
             {"label": "GCC wire", "color": "#1f77b4", "width": 2, "points": _mean_series_by_second("scream-vs-gcc-mahimahi-5g-ho", "58", "camera", "wire_bytes")},
         ],
-        OUT_DIR / "h3_ho_headroom_timeseries.svg",
+        out_dir / "h3_ho_headroom_timeseries.svg",
         footnote="The handover trace has brief fades, but the typical headroom remains much larger than the emitted stream.",
         log_scale=True,
     )
@@ -642,34 +655,82 @@ def build_h3() -> dict[str, Any]:
     }
 
 
-H4_CASES = [
-    {
-        "trace": "CQI",
-        "name": "scream-vs-gcc-mahimahi-5g-cqi-x0p33-snow-384x216",
-        "network": "mahimahi-5g-cqi-100ms-x0p33",
-        "scream": "81",
-        "gcc": "82",
-    },
-    {
-        "trace": "HO",
-        "name": "scream-vs-gcc-mahimahi-5g-ho-x0p33-snow-384x216",
-        "network": "mahimahi-5g-ho-100ms-x0p33",
-        "scream": "79",
-        "gcc": "80",
-    },
-    {
-        "trace": "RB",
-        "name": "scream-vs-gcc-mahimahi-5g-rb-x0p33-snow-384x216",
-        "network": "mahimahi-5g-rb-100ms-x0p33",
-        "scream": "83",
-        "gcc": "84",
-    },
-]
+def _trace_label_for_network(network_name: str) -> str:
+    for token in ("cqi", "ho", "rb"):
+        if f"-{token}-" in network_name:
+            return token.upper()
+    return network_name.replace("mahimahi-5g-", "").replace("-100ms", "").upper()
 
 
-def _h4_rows() -> list[dict[str, Any]]:
+def _h4_cases() -> list[dict[str, str]]:
+    spec = _load_yaml(PROJECT_ROOT / "specs" / "hypotheses" / "h4.yaml")
+    cases = []
+    for entry in ((spec.get("setup") or {}).get("experiments") or []):
+        name = str(entry["name"])
+        exp_spec = _load_yaml(PROJECT_ROOT / "specs" / "experiments" / f"{name}.yaml")
+        config_ids = [str(c["id"]) for c in exp_spec.get("configurations", [])]
+        by_algorithm = {
+            _config_algorithm(config_id).lower(): config_id
+            for config_id in config_ids
+        }
+        if "scream" not in by_algorithm or "gcc" not in by_algorithm:
+            raise RuntimeError(f"{name}: H4 expects one SCReAM arm and one GCC arm")
+
+        network = _config_network(by_algorithm["scream"])
+        if _config_network(by_algorithm["gcc"]) != network:
+            raise RuntimeError(f"{name}: H4 expects both arms to use the same network trace")
+
+        cases.append({
+            "trace": _trace_label_for_network(network),
+            "name": name,
+            "network": network,
+            "scream": by_algorithm["scream"],
+            "gcc": by_algorithm["gcc"],
+            "role": str(entry.get("role") or ""),
+        })
+    return cases
+
+
+def _h4_trace_characteristics(cases: list[dict[str, str]]) -> list[dict[str, Any]]:
+    descriptions = {
+        "CQI": "high-capacity control trace",
+        "HO": "handover-like trace with sharp fades",
+        "RB": "resource-block scarcity trace",
+    }
+    out = []
+    for case in cases:
+        stats = _capacity_distribution(case["network"])
+        low_bins = (
+            "no sub-1 Mbit/s bins"
+            if stats["bins_below_1000_kbps_pct"] == 0.0
+            else f"{stats['bins_below_1000_kbps_pct']:.1f}% of 100 ms bins below 1 Mbit/s"
+        )
+        phrase = descriptions.get(case["trace"], "translated realistic trace")
+        if case["trace"] == "HO":
+            sentence = (
+                f"{case['trace']} x0.33 is a {phrase}: {low_bins} "
+                f"and {stats['median_kbps'] / 1000.0:.2f} Mbit/s median capacity."
+            )
+        else:
+            sentence = (
+                f"{case['trace']} x0.33 is a {phrase} with {low_bins} "
+                f"and {stats['median_kbps'] / 1000.0:.2f} Mbit/s median capacity."
+            )
+        out.append({
+            "trace": case["trace"],
+            "network": case["network"],
+            "role": case["role"],
+            "median_capacity_kbps": stats["median_kbps"],
+            "p10_capacity_kbps": stats["p10_kbps"],
+            "bins_below_1000_kbps_pct": stats["bins_below_1000_kbps_pct"],
+            "sentence": sentence,
+        })
+    return out
+
+
+def _h4_rows(cases: list[dict[str, str]]) -> list[dict[str, Any]]:
     rows = []
-    for case in H4_CASES:
+    for case in cases:
         for key, label in (("scream", "SCReAM"), ("gcc", "GCC")):
             config_id = case[key]
             summaries = _run_summaries(case["name"], config_id)
@@ -727,9 +788,12 @@ def _h4_rows() -> list[dict[str, Any]]:
     return rows
 
 
-def _h4_comparison_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _h4_comparison_rows(
+    rows: list[dict[str, Any]],
+    cases: list[dict[str, str]],
+) -> list[dict[str, Any]]:
     out = []
-    for case in H4_CASES:
+    for case in cases:
         trace_rows = [r for r in rows if r["trace"] == case["trace"]]
         by_alg = {row["algorithm"]: row for row in trace_rows}
         scream = by_alg["SCReAM"]
@@ -764,9 +828,10 @@ def _h4_comparison_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return out
 
 
-def build_h4() -> dict[str, Any]:
-    rows = _h4_rows()
-    comparisons = _h4_comparison_rows(rows)
+def build_h4(out_dir: Path = OUT_DIR) -> dict[str, Any]:
+    cases = _h4_cases()
+    rows = _h4_rows(cases)
+    comparisons = _h4_comparison_rows(rows, cases)
     by_trace_alg = {(row["trace"], row["algorithm"]): row for row in rows}
     comparison_by_trace = {row["trace"]: row for row in comparisons}
 
@@ -793,9 +858,9 @@ def build_h4() -> dict[str, Any]:
                     },
                 ],
             }
-            for case in H4_CASES
+            for case in cases
         ],
-        OUT_DIR / "h4_frame_delivery_by_trace.svg",
+        out_dir / "h4_frame_delivery_by_trace.svg",
         "S/G is the SCReAM/GCC frame ratio; higher is better.",
     )
     _trace_grouped_bar_svg(
@@ -821,24 +886,25 @@ def build_h4() -> dict[str, Any]:
                     },
                 ],
             }
-            for case in H4_CASES
+            for case in cases
         ],
-        OUT_DIR / "h4_camera_egress_by_trace.svg",
+        out_dir / "h4_camera_egress_by_trace.svg",
         "S/G is the SCReAM/GCC camera-egress ratio; lower is not alone better.",
         value_precision=2,
     )
-    for case in H4_CASES:
+    for case in cases:
         _h4_trace_timeseries_svg(
             case,
             comparison_by_trace[case["trace"]],
-            OUT_DIR / f"h4_{case['trace'].lower()}_timeseries.svg",
+            out_dir / f"h4_{case['trace'].lower()}_timeseries.svg",
         )
 
     return {
         "hypothesis": "H4",
         "status": "supported",
         "environment": _environment(),
-        "experiments": [_experiment_setup(case["name"], None) for case in H4_CASES],
+        "experiments": [_experiment_setup(case["name"], None) for case in cases],
+        "trace_characteristics": _h4_trace_characteristics(cases),
         "claim_structure": {
             "conclusion": (
                 "SCReAM wins on the stressed HO/RB traces because its post-payload "
@@ -881,12 +947,12 @@ def _environment() -> dict[str, Any]:
     }
 
 
-def write_reports() -> dict[str, Any]:
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
-    reports = {"H3": build_h3(), "H4": build_h4()}
+def write_reports(out_dir: Path = OUT_DIR) -> dict[str, Any]:
+    out_dir.mkdir(parents=True, exist_ok=True)
+    reports = {"H3": build_h3(out_dir), "H4": build_h4(out_dir)}
     for hid, report in reports.items():
-        (OUT_DIR / f"{hid.lower()}_report.json").write_text(json.dumps(report, indent=2) + "\n")
-    framework.write_registry(OUT_DIR / "index.json", PROJECT_ROOT)
+        (out_dir / f"{hid.lower()}_report.json").write_text(json.dumps(report, indent=2) + "\n")
+    framework.write_registry(out_dir / "index.json", PROJECT_ROOT)
     return reports
 
 

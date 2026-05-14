@@ -43,26 +43,46 @@ class TestHypothesisFramework(unittest.TestCase):
             self.assertEqual(len(loaded["hypotheses"]), len(registry["hypotheses"]))
 
     def test_workload_calibration_report_includes_figures_and_setup(self):
-        reports = build_reports.write_reports()
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        out_dir = Path(tmp.name) / "results"
+        reports = build_reports.write_reports(out_dir)
+        h3_svg_path = out_dir / "h3_capacity_headroom.svg"
+        h3_timeseries_path = out_dir / "h3_ho_headroom_timeseries.svg"
+
         h3 = reports["H3"]
         self.assertEqual(h3["environment"]["camera_worker"], "aum")
         self.assertEqual(h3["environment"]["viewer_worker"], "veda")
         self.assertEqual(len(h3["experiments"]), 3)
-        self.assertTrue((PROJECT_ROOT / "analysis/hypotheses/results/h3_capacity_headroom.svg").is_file())
-        self.assertTrue((PROJECT_ROOT / "analysis/hypotheses/results/h3_ho_headroom_timeseries.svg").is_file())
-        h3_svg = (PROJECT_ROOT / "analysis/hypotheses/results/h3_capacity_headroom.svg").read_text()
+        self.assertTrue(h3_svg_path.is_file())
+        self.assertTrue(h3_timeseries_path.is_file())
+        h3_svg = h3_svg_path.read_text()
         self.assertIn('width="241.2pt" height="123.84pt"', h3_svg)
         self.assertIn("Matplotlib", h3_svg)
         ho_rows = [r for r in h3["tables"]["headroom"] if r["network"] == "mahimahi-5g-ho-100ms"]
         self.assertGreater(min(r["median_headroom"] for r in ho_rows), 10.0)
 
     def test_realistic_trace_scream_advantage_report_includes_comparison(self):
-        reports = build_reports.write_reports()
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        out_dir = Path(tmp.name) / "results"
+        reports = build_reports.write_reports(out_dir)
+        frame_svg_path = out_dir / "h4_frame_delivery_by_trace.svg"
+        egress_svg_path = out_dir / "h4_camera_egress_by_trace.svg"
+        cqi_svg_path = out_dir / "h4_cqi_timeseries.svg"
+        ho_svg_path = out_dir / "h4_ho_timeseries.svg"
+        rb_svg_path = out_dir / "h4_rb_timeseries.svg"
+
         h4 = reports["H4"]
         self.assertTrue((PROJECT_ROOT / "docs/FIGURE_STYLE_PRINCIPLES.md").is_file())
         self.assertEqual(h4["environment"]["camera_worker"], "aum")
         self.assertEqual(h4["environment"]["viewer_worker"], "veda")
         self.assertEqual(len(h4["experiments"]), 3)
+        self.assertEqual(len(h4["trace_characteristics"]), 3)
+        trace_sentences = [row["sentence"] for row in h4["trace_characteristics"]]
+        self.assertTrue(any("high-capacity control trace" in s for s in trace_sentences))
+        self.assertTrue(any("handover-like trace" in s for s in trace_sentences))
+        self.assertTrue(any("resource-block scarcity trace" in s for s in trace_sentences))
         self.assertIn("post-payload RTP pacing", h4["claim_structure"]["conclusion"])
         self.assertEqual(len(h4["claim_structure"]["subclaims"]), 5)
         self.assertIn("GCC's target falls", h4["claim_structure"]["subclaims"][-1])
@@ -72,25 +92,29 @@ class TestHypothesisFramework(unittest.TestCase):
         self.assertIn("Findings and Limitations", h4_page)
         self.assertIn("Main claim", h4_page)
         self.assertIn("Supporting evidence", h4_page)
+        self.assertIn("Trace Characteristics", h4_page)
+        self.assertIn("high-capacity control trace", h4_page)
+        self.assertIn("handover-like trace", h4_page)
+        self.assertIn("resource-block scarcity trace", h4_page)
         self.assertNotIn("Conclusion Boundaries", h3_page)
         self.assertNotIn("Conclusion Boundaries", h4_page)
         for experiment in h4["experiments"]:
             self.assertEqual(experiment["varies"], ["congestion_control.algorithm"])
             self.assertEqual(experiment["arms"][0]["network"], experiment["arms"][1]["network"])
-        self.assertTrue((PROJECT_ROOT / "analysis/hypotheses/results/h4_frame_delivery_by_trace.svg").is_file())
-        self.assertTrue((PROJECT_ROOT / "analysis/hypotheses/results/h4_camera_egress_by_trace.svg").is_file())
-        self.assertTrue((PROJECT_ROOT / "analysis/hypotheses/results/h4_cqi_timeseries.svg").is_file())
-        self.assertTrue((PROJECT_ROOT / "analysis/hypotheses/results/h4_ho_timeseries.svg").is_file())
-        self.assertTrue((PROJECT_ROOT / "analysis/hypotheses/results/h4_rb_timeseries.svg").is_file())
+        self.assertTrue(frame_svg_path.is_file())
+        self.assertTrue(egress_svg_path.is_file())
+        self.assertTrue(cqi_svg_path.is_file())
+        self.assertTrue(ho_svg_path.is_file())
+        self.assertTrue(rb_svg_path.is_file())
         captions = [figure["caption"] for figure in h4["figures"]]
         self.assertIn("Figure H4-1", captions[0])
         self.assertIn("S/G labels", captions[0])
         self.assertIn("Left:", captions[2])
-        frame_svg = (PROJECT_ROOT / "analysis/hypotheses/results/h4_frame_delivery_by_trace.svg").read_text()
+        frame_svg = frame_svg_path.read_text()
         self.assertIn('width="241.2pt" height="123.84pt"', frame_svg)
         self.assertIn("Matplotlib", frame_svg)
         self.assertIn("S/G=2.74x", frame_svg)
-        ho_svg = (PROJECT_ROOT / "analysis/hypotheses/results/h4_ho_timeseries.svg").read_text()
+        ho_svg = ho_svg_path.read_text()
         self.assertIn('width="374.4pt" height="133.2pt"', ho_svg)
         self.assertIn("Matplotlib", ho_svg)
         self.assertIn("(a) Camera egress vs. trace capacity", ho_svg)

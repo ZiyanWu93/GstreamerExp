@@ -103,7 +103,7 @@ class TestExperimentVariesValidator(unittest.TestCase):
                 "name": "fixture",
                 "description": "diverging fixture",
                 "reps": 1,
-                "varies": ["congestion_control.algorithm", "transport.port",
+                "varies": ["congestion_control.algorithm",
                            "congestion_control.gcc", "congestion_control.scream"],
                 "configurations": [
                     {"id": "a", "label": "A", "color": "#ff0000"},
@@ -129,7 +129,7 @@ class TestExperimentVariesValidator(unittest.TestCase):
                 "name": "fixture",
                 "description": "matching fixture",
                 "reps": 1,
-                "varies": ["congestion_control.algorithm", "transport.port",
+                "varies": ["congestion_control.algorithm",
                            "congestion_control.gcc", "congestion_control.scream"],
                 "configurations": [
                     {"id": "a", "label": "A", "color": "#ff0000"},

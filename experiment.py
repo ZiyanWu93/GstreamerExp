@@ -9,7 +9,7 @@ A spec is `specs/experiments/<name>.yaml` and defines:
     name           : record base name
     description    : free text
     reps           : repetitions per configuration
-    shared         : optional {video, network} that every configuration must agree on
+    varies         : configuration paths that intentionally differ
     configurations : list of {id, label, color}
 
 The runner interleaves runs round-robin across the listed configurations
@@ -43,10 +43,9 @@ EXPERIMENTS_DIR = PROJECT_ROOT / "specs" / "experiments"
 CONFIGURATIONS_DIR = PROJECT_ROOT / "specs" / "configurations"
 
 # Paths that may differ between configurations in the same experiment
-# without affecting comparison validity. `meta.*` is documentation;
-# `transport.port` is varied to avoid socket collision when the user
-# wants to run configurations concurrently. Anything else that differs
-# must be in the experiment spec's `varies` list.
+# without affecting comparison validity. `meta.*` is documentation.
+# Anything else that differs must be in the experiment spec's `varies`
+# list.
 _COMPARE_IGNORE = {"meta.name", "meta.description"}
 _COMPARE_IGNORE_PREFIXES = ("meta.flags",)
 
@@ -109,7 +108,7 @@ def _load_and_validate_spec(spec_path: Path) -> dict:
     if not isinstance(spec["varies"], list) or not all(
             isinstance(v, str) for v in spec["varies"]):
         sys.exit(f"{where}: varies must be a list of dotted paths "
-                 f"(e.g. ['congestion_control.algorithm', 'transport.port'])")
+                 f"(e.g. ['congestion_control.algorithm'])")
 
     cfgs = spec["configurations"]
     if not isinstance(cfgs, list) or not cfgs:
@@ -187,6 +186,27 @@ def _new_run_for_config(config_id: str, before: set[str]) -> str | None:
     return new[-1]
 
 
+def _network_record_for_config(config_id: str) -> dict | None:
+    """Return the directional network spec copied into experiment records."""
+    cfg_path = CONFIGURATIONS_DIR / f"{config_id}.yaml"
+    if not cfg_path.is_file():
+        return None
+    cfg = yaml.safe_load(cfg_path.read_text()) or {}
+    net_ref = cfg.get("network")
+    if not net_ref:
+        return None
+    net_path = PROJECT_ROOT / "specs" / "networks" / f"{net_ref}.yaml"
+    if not net_path.is_file():
+        return None
+    net_spec = yaml.safe_load(net_path.read_text()) or {}
+    return {
+        "name": str(net_ref),
+        "spec_path": str(net_path.relative_to(PROJECT_ROOT)),
+        "camera_steps": net_spec.get("camera_steps") or [],
+        "viewer_steps": net_spec.get("viewer_steps") or [],
+    }
+
+
 def _list_specs() -> int:
     rows = []
     for p in sorted(EXPERIMENTS_DIR.glob("*.yaml")):
@@ -234,22 +254,11 @@ def main():
     configurations = spec["configurations"]
     config_ids = [c["id"] for c in configurations]
 
-    # Pull network steps from the configurations' network ref so plot.py
-    # can shade the impairment window. The varies validator already
-    # guarantees every listed configuration uses the same network (any
-    # divergence in `network` would have failed the deep-compare unless
-    # explicitly declared in `varies`), so taking the first config's ref
-    # is sufficient.
-    network_steps: list = []
-    first_cfg_path = CONFIGURATIONS_DIR / f"{config_ids[0]}.yaml"
-    if first_cfg_path.is_file():
-        first_cfg = yaml.safe_load(first_cfg_path.read_text()) or {}
-        net_ref = first_cfg.get("network")
-        if net_ref:
-            net_path = PROJECT_ROOT / "specs" / "networks" / f"{net_ref}.yaml"
-            if net_path.is_file():
-                net_spec = yaml.safe_load(net_path.read_text()) or {}
-                network_steps = net_spec.get("steps") or []
+    # Copy the directional network ref into the record so analysis
+    # tools can read the self-contained artifact instead of re-opening
+    # the specs. The validator guarantees the network is shared unless
+    # the experiment explicitly declares otherwise.
+    network_record = _network_record_for_config(config_ids[0])
 
     expt_dir = RUNS_ROOT / "experiments"
     expt_dir.mkdir(parents=True, exist_ok=True)
@@ -280,14 +289,14 @@ def main():
                 "exit_code":  r.returncode,
             })
             # Persist after every run so a partial experiment is still
-            # analyzable. Configurations + network_steps are copied here
-            # so plot.py and analyze.py don't need to re-read the spec —
-            # the record is self-contained.
+            # analyzable. Configurations + the directional network spec
+            # are copied here so plot.py and analyze.py don't need to
+            # re-read the specs.
             record_path.write_text(json.dumps({
                 "name":           name,
                 "spec_path":      str(spec_path.relative_to(PROJECT_ROOT)),
                 "configurations": configurations,
-                "network_steps":  network_steps,
+                "network":        network_record,
                 "reps":           reps,
                 "started_at":     started_at,
                 "runs":           runs,

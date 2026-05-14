@@ -72,6 +72,13 @@
   <tr><td>Repetitions</td><td>3 per arm, round-robin</td></tr>
 </table>
 
+<h2>Trace Characteristics</h2>
+<ul>
+  <li><strong>CQI x0.33:</strong> high-capacity control trace with no sub-1 Mbit/s 100 ms bins and 3.68 Mbit/s median capacity, used to confirm that SCReAM and GCC converge when the path is not the bottleneck.</li>
+  <li><strong>HO x0.33:</strong> handover-like trace with sharp capacity fades and 18.7% of 100 ms bins below 1 Mbit/s, used to test controller behavior during sudden capacity collapse and recovery.</li>
+  <li><strong>RB x0.33:</strong> resource-block scarcity trace with 1.70 Mbit/s median capacity and 18.4% of 100 ms bins below 1 Mbit/s, used to test behavior under sustained scheduler-constrained capacity.</li>
+</ul>
+
 <h2>Figures</h2>
 <figure class="compact">
   <img src="results/h4_frame_delivery_by_trace.svg" alt="H4 frame delivery by trace">

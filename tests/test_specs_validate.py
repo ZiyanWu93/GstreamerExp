@@ -20,6 +20,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from gstexp.validation import resolve_includes, validate_doc, project_to_roles
 from experiment import _load_and_validate_spec as load_experiment
+from experiment import _network_record_for_config
 from gstexp.expo import _load_and_validate_spec as load_expo
 
 
@@ -77,6 +78,15 @@ class TestExperiments(unittest.TestCase):
         for p in sorted((PROJECT_ROOT / "specs/experiments").glob("*.yaml")):
             with self.subTest(experiment=p.name):
                 load_experiment(p)
+
+    def test_experiment_records_use_directional_network_shape(self):
+        record = _network_record_for_config("79")
+        self.assertIsNotNone(record)
+        self.assertEqual(record["name"], "mahimahi-5g-ho-100ms-x0p33")
+        self.assertIn("camera_steps", record)
+        self.assertIn("viewer_steps", record)
+        self.assertNotIn("steps", record)
+        self.assertGreater(len(record["camera_steps"]), 0)
 
 
 class TestExpos(unittest.TestCase):
