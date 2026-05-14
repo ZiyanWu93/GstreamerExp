@@ -1,0 +1,128 @@
+{
+  "hypothesis": "H1",
+  "status": "regime-dependent",
+  "environment": {
+    "topology": "controller-worker",
+    "controller": "local workstation",
+    "camera_worker": "aum",
+    "viewer_worker": "veda",
+    "transport": "Tailscale FQDNs for media/control addressing where configured",
+    "hosts_source": "hosts.yaml, with hosts.example.yaml documenting the expected keys",
+    "sync_scope": "allowlisted project files only; run outputs are collected from workers"
+  },
+  "experiments": [
+    {
+      "name": "scream-vs-gcc-720p",
+      "description": "SCReAM vs GCC head-to-head at 720p30 + fluctuating-5mbps-300kbps.\nThe encoder workload (~180-500 kbps actual wire rate) exceeds the\n300 kbps impairment cap, so the controllers' queue-management\nbehavior actually has work to do. Designed as the successor to\nscream-vs-gcc-N10, which used a content-bound 480p15 workload that\ndid not bind on the cap.\n",
+      "spec_path": "specs/experiments/scream-vs-gcc-720p.yaml",
+      "record_path": "runs/experiments/scream-vs-gcc-720p.json",
+      "log_path": null,
+      "command": "python3 experiment.py scream-vs-gcc-720p",
+      "reps": 10,
+      "varies": [
+        "congestion_control.algorithm"
+      ],
+      "arms": [
+        {
+          "config_id": "11",
+          "label": "SCReAM",
+          "algorithm": "scream",
+          "network": "fluctuating-5mbps-300kbps"
+        },
+        {
+          "config_id": "12",
+          "label": "GCC",
+          "algorithm": "gcc",
+          "network": "fluctuating-5mbps-300kbps"
+        }
+      ],
+      "record_status": {
+        "started_at": "2026-05-07T00:24:18.835545",
+        "total_runs": 20,
+        "completed_runs": 19,
+        "failed_runs": 1
+      }
+    },
+    {
+      "name": "scream-vs-gcc-720p-fast",
+      "description": "SCReAM vs GCC at 720p30 against fluctuating-fast-5mbps-300kbps \u2014\nthe same workload as scream-vs-gcc-720p but the network alternates\nbetween 5 Mbps clean and 300 kbps + 2% loss every 2 seconds (10\nphases instead of 3). Companion to scream-vs-gcc-720p; pair the\ntwo to separate steady-state utilization (sparse impairment regime)\nfrom adaptation responsiveness (frequent impairment regime).\n",
+      "spec_path": "specs/experiments/scream-vs-gcc-720p-fast.yaml",
+      "record_path": "runs/experiments/scream-vs-gcc-720p-fast.json",
+      "log_path": null,
+      "command": "python3 experiment.py scream-vs-gcc-720p-fast",
+      "reps": 10,
+      "varies": [
+        "congestion_control.algorithm"
+      ],
+      "arms": [
+        {
+          "config_id": "27",
+          "label": "SCReAM",
+          "algorithm": "scream",
+          "network": "fluctuating-fast-5mbps-300kbps"
+        },
+        {
+          "config_id": "28",
+          "label": "GCC",
+          "algorithm": "gcc",
+          "network": "fluctuating-fast-5mbps-300kbps"
+        }
+      ],
+      "record_status": {
+        "started_at": "2026-05-07T02:58:14.051187",
+        "total_runs": 20,
+        "completed_runs": 16,
+        "failed_runs": 4
+      }
+    }
+  ],
+  "claim_structure": {
+    "conclusion": "Zhang 2019's bottleneck-phase comparison reproduces on the slow-changing capacity-step network, where SCReAM under-uses the bottleneck cap relative to GCC and GCC's rate variance is markedly higher. The same comparison flips on the fast-changing network because neither controller reaches steady state between transitions.",
+    "subclaims": [
+      "Both experiments hold the workload, codec, and bitrate bounds fixed; only the network transition cadence varies.",
+      "On the slow regime, util_gap exceeds the 5 pp threshold and var_ratio exceeds the 1.2 threshold, so the predicted SCReAM under-use signature reproduces.",
+      "On the fast regime, both thresholds fail: SCReAM over-shoots the cap more than GCC and rate variance converges across algorithms.",
+      "The result is therefore regime-dependent, not a universal claim about either algorithm."
+    ]
+  },
+  "tables": {
+    "h1_regime_comparison": [
+      {
+        "regime": "Slow regime \u2014 capacity holds each level ~7 s before flipping",
+        "experiment": "scream-vs-gcc-720p",
+        "scream_util_mean": 2.5619135802469137,
+        "gcc_util_mean": 2.948888888888889,
+        "util_gap": 0.38697530864197516,
+        "scream_rate_stddev_kbps": 124.04188671772866,
+        "gcc_rate_stddev_kbps": 587.0785801400518,
+        "var_ratio": 4.732905921336198,
+        "verdict": "supported"
+      },
+      {
+        "regime": "Fast regime \u2014 capacity flips every 2 s, no time to settle",
+        "experiment": "scream-vs-gcc-720p-fast",
+        "scream_util_mean": 3.0892857142857144,
+        "gcc_util_mean": 2.9334074074074072,
+        "util_gap": -0.15587830687830717,
+        "scream_rate_stddev_kbps": 577.4199751749956,
+        "gcc_rate_stddev_kbps": 653.8783157191227,
+        "var_ratio": 1.1324137436030948,
+        "verdict": "refuted"
+      }
+    ]
+  },
+  "figures": [
+    {
+      "path": "analysis/hypotheses/results/h1_regime_summary.svg",
+      "caption": "Figure H1-1. Slow vs fast regime: util_gap and var_ratio against the predicted thresholds. Green bars exceed the threshold; orange bars do not."
+    },
+    {
+      "path": "analysis/hypotheses/results/h1_slow_timeseries.svg",
+      "caption": "Figure H1-2a. Slow regime (scream-vs-gcc-720p): encoder rate over time, averaged across reps, against the capacity step."
+    },
+    {
+      "path": "analysis/hypotheses/results/h1_fast_timeseries.svg",
+      "caption": "Figure H1-2b. Fast regime (scream-vs-gcc-720p-fast): the same view; transitions are frequent enough that neither controller settles."
+    }
+  ]
+}

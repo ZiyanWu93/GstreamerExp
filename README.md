@@ -1,105 +1,114 @@
 # GstreamerExp
 
-Testbed for real-time video congestion control. Compares
-**SCReAM** and **Google Congestion Control** (`rtpgccbwe` + TWCC) on
-a GStreamer 1.24 / VP8 / RTP / UDP pipeline, with declarative
-network impairment via `tc`.
+A testbed that builds a real-time video pipeline (GStreamer 1.24 ·
+VP8 · RTP · UDP), runs it under declarative `tc` impairment, and
+treats every claim about the pipeline as a falsifiable hypothesis
+backed by a verifier script. Two congestion-control algorithms —
+**SCReAM** and **Google Congestion Control** — are wired in side-by-side
+so the comparison is a matter of one spec field. The five-dimension
+evaluation framework (throughput, quality, latency, adaptation,
+stability) is the structural shape every metric and hypothesis fits in.
 
-Configurations run either locally over loopback or in controller/worker
-mode: this machine is the controller, and two Linux workers (camera +
-viewer) execute the media pipelines over SSH.
+## 5-minute quickstart
 
-For the *philosophy* of the project (what gets added, how
-experiments are structured, the five-dimension evaluation framework),
-see [`docs/DESIGN.md`](docs/DESIGN.md). The rest of this file is
-**how to get it running**.
+The smoke test runs camera and viewer on this machine over loopback.
+No SSH, no `tc`, no remote workers.
 
-## Prerequisites
-
-- Linux (tested on Ubuntu 20.04). Controller/worker mode needs two
-  Linux workers reachable by SSH from the controller.
-- Python 3.8+ (`python3`, `pip3`)
-- `git`, `gcc`, `make`, `cmake`, `meson >= 1.3`, `ninja`
-- A free network interface on each host that the testbed can shape
-  with `tc` (this NIC must carry the camera→viewer flow; see
-  `hosts.yaml` setup below).
-- Sudo on each host (only `tc` and apt installs use it).
-
-## Setup
-
-```bash
-# 1. Clone
-git clone https://github.com/<user>/GstreamerExp.git
-cd GstreamerExp
-
-# 2. Local Python deps
+```sh
 pip install -r requirements.txt
+python3 cli.py 1
+```
 
-# 3. Tell the testbed about your machines.
+If you see `=== 1 (bare): PASS ===`, the testbed works. The run wrote
+its record to `runs/1/<timestamp>/summary.json`. Try `python3 cli.py 3`
+next for the SCReAM-over-loopback variant.
+
+For real network impairment between two hosts, see [Distributed
+setup](#distributed-setup) below.
+
+## Where to go from here
+
+| I want to… | Read |
+|---|---|
+| Understand the project's operating principles | [`docs/DESIGN.md`](docs/DESIGN.md) |
+| Browse the architecture, pipeline shapes, recovery features | [`features.html`](features.html) (serve locally) |
+| Read a hypothesis result with figures and tables | [`analysis/hypotheses/h1.ipynb`](analysis/hypotheses/h1.ipynb) – [`h4.ipynb`](analysis/hypotheses/h4.ipynb) (render on GitHub) |
+| See the catalog of claims and their sources | [`docs/HYPOTHESES.md`](docs/HYPOTHESES.md) |
+| See the gap list against a real teleoperation stack | [`docs/TODO.md`](docs/TODO.md) |
+| Add a new hypothesis | [`specs/hypotheses/`](specs/hypotheses/) + [`docs/HYPOTHESES.md`](docs/HYPOTHESES.md) + a verifier script |
+| Add a new configuration / network / video / experiment | [`specs/`](specs/) (validated at load time; see [`docs/DESIGN.md`](docs/DESIGN.md) §3) |
+| Tune the figure conventions | [`docs/FIGURE_STYLE_PRINCIPLES.md`](docs/FIGURE_STYLE_PRINCIPLES.md), [`analysis/hypotheses/PRESENTATION_PRINCIPLES.md`](analysis/hypotheses/PRESENTATION_PRINCIPLES.md) |
+
+## Hypothesis results
+
+Each hypothesis is rendered as a Jupyter notebook (GitHub displays
+it directly) and an HTML page (open it via a local HTTP server).
+Both come from `specs/hypotheses/<slug>.yaml`; do not hand-edit the
+generated files. Rebuild after the underlying specs or runs change:
+
+```sh
+python3 analysis/hypotheses/build_reports.py    # report JSON + figures
+python3 analysis/hypotheses/build_pages.py      # HTML + notebooks
+```
+
+| Id | Verdict | Question | Notebook | HTML page |
+|---|---|---|---|---|
+| **H1** | regime-dependent | Does SCReAM under-use the bottleneck cap vs GCC on capacity-step networks? | [h1.ipynb](analysis/hypotheses/h1.ipynb) | [h1.html](analysis/hypotheses/h1.html) |
+| **H2** | supported | Does GCC stay ahead across latency-deadline and retransmission cells? | [h2.ipynb](analysis/hypotheses/h2.ipynb) | [h2.html](analysis/hypotheses/h2.html) |
+| **H3** | supported | Does the original realistic-trace workload under-drive the network? | [h3.ipynb](analysis/hypotheses/h3.ipynb) | [h3.html](analysis/hypotheses/h3.html) |
+| **H4** | supported | Does SCReAM preserve more decodable video on stressed 5G traces? | [h4.ipynb](analysis/hypotheses/h4.ipynb) | [h4.html](analysis/hypotheses/h4.html) |
+
+## Running experiments
+
+A configuration is a YAML at [`specs/configurations/<id>.yaml`](specs/configurations/)
+that declares the whole pipeline (codec, encoder, transport,
+congestion control, sink) at the top level. An experiment at
+[`specs/experiments/<name>.yaml`](specs/experiments/) names a comparison
+of configurations with a rep count and a `varies` allowlist.
+
+```sh
+python3 cli.py --list                # one-line per configuration
+python3 cli.py 11                    # one configuration, one run
+
+python3 experiment.py --list         # one-line per experiment
+python3 experiment.py scream-vs-gcc-720p
+```
+
+Run results write to `runs/<config_id>/<timestamp>/` (gitignored).
+`experiment.py` interleaves reps round-robin so cross-traffic noise
+distributes evenly across arms.
+
+## Distributed setup
+
+Loopback (config 1) needs none of this. The distributed configs
+(11, 12, …) run camera and viewer on two Linux workers over SSH.
+
+```sh
+# 1. Tell the testbed about your machines.
 cp hosts.example.yaml hosts.yaml
 # Then edit hosts.yaml:
-#   - actors.camera.host       — default camera endpoint
-#   - actors.camera.ssh_host   — SSH/rsync endpoint; defaults to host
-#   - actors.camera.media_host — RTP/RTCP endpoint; defaults to host
-#   - actors.camera.network_env.NIC — interface name on that machine
-#                                     that carries camera → viewer
-#   - actors.viewer.host       — default viewer endpoint
-#   - actors.viewer.ssh_host   — SSH/rsync endpoint; defaults to host
-#   - actors.viewer.media_host — RTP/RTCP endpoint; defaults to host
-#   - both project_root        — path on each worker where the runner
-#                                syncs the minimal runtime payload
-#                                (default ~/gstexp works fine)
+#   actors.camera.host       — default camera endpoint
+#   actors.camera.ssh_host   — SSH/rsync endpoint; defaults to host
+#   actors.camera.media_host — RTP/RTCP endpoint; defaults to host
+#   actors.camera.network_env.NIC — interface name carrying camera→viewer
+#   actors.viewer.host / ssh_host / media_host — same shape on the viewer side
+#   both project_root        — path on each worker where the runner
+#                              syncs the minimal runtime payload
 
-# 4. Build GStreamer 1.24 + clone & build SCReAM, on each host.
-#    This downloads the SCReAM source tree from upstream
-#    (EricssonResearch/scream) into ./scream/ — that directory is
-#    gitignored. Compile takes ~30 minutes on a 24-core host.
+# 2. Build GStreamer 1.24 + SCReAM on each worker.
+#    setup_remote.sh clones EricssonResearch/scream into ./scream/
+#    (gitignored). Compile takes ~30 minutes on a 24-core host.
 scp scripts/build_gstreamer.sh scripts/setup_remote.sh scripts/scream-eos-fix.patch <camera-host>:/tmp/
 ssh <camera-host> "bash /tmp/build_gstreamer.sh && cd ~/gstexp && bash /tmp/setup_remote.sh"
 # Repeat for <viewer-host>.
 
-# 5. Smoke test on loopback (config 1 doesn't need any of the above
-#    — it runs camera and viewer on your local machine).
-python3 cli.py 1
+# 3. Verify by running a distributed config.
+python3 cli.py 11
 ```
 
-If the loopback run prints a `=== 1 (...): PASS ===` block, you're
-set. Controller/worker runs (configs 11, 12, …) need both workers set up.
-
-## Running experiments
-
-Single configuration:
-```bash
-python3 cli.py <config_id>     # e.g. python3 cli.py 11
-```
-
-Multi-rep, multi-arm experiment:
-```bash
-python3 experiment.py <experiment_name>
-```
-
-Configuration files live in `specs/configurations/` (one YAML per
-config, identified by id), `specs/networks/` (impairment profiles),
-`specs/videos/` (camera source profiles), and
-`specs/experiments/` (multi-config sweeps with rep counts).
-
-Run results write to `runs/<config_id>/<timestamp>/` (gitignored).
-
-## Hypothesis pages
-
-Open the hypothesis pages under `analysis/hypotheses/` in a browser
-after running an experiment, served from a local HTTP server
-(`fetch()` doesn't work over `file://`):
-
-```bash
-cd analysis/hypotheses && python3 -m http.server 8765
-# then visit http://localhost:8765/h1.html through h4.html
-```
-
-The presentation principles those pages follow are documented in
-[`analysis/hypotheses/PRESENTATION_PRINCIPLES.md`](analysis/hypotheses/PRESENTATION_PRINCIPLES.md).
-Paper-style result figure conventions are documented in
-[`docs/FIGURE_STYLE_PRINCIPLES.md`](docs/FIGURE_STYLE_PRINCIPLES.md).
+Prerequisites: Linux on each host (tested on Ubuntu 20.04), Python 3.8+,
+`git`, `gcc`, `make`, `cmake`, `meson >= 1.3`, `ninja`, sudo on each
+host (only `tc` and apt installs use it).
 
 ## Layout
 
@@ -108,13 +117,14 @@ Paper-style result figure conventions are documented in
 ├── cli.py              # run a single configuration
 ├── experiment.py       # run a multi-rep, multi-arm sweep
 ├── gstexp/             # runner, pipeline builders, validators, metrics, plotting
-├── specs/              # YAML configs (configurations/, networks/, videos/, experiments/)
+├── specs/              # YAML configs (configurations/, networks/, videos/, experiments/, hypotheses/)
 ├── analysis/           # post-run analysis (dimensions/, hypotheses/)
 ├── runs/               # experiment outputs, gitignored
 ├── tests/              # validator + spec test suite
 ├── tools/              # ancillary scripts (network_probe, fetch_test_video, …)
 ├── scripts/            # build/setup shell scripts + scream-eos-fix.patch
 ├── docs/               # design notes, hypothesis catalog, todo
+├── reference/          # GStreamer concept notes
 ├── scream/             # SCReAM source — cloned by setup_remote.sh, gitignored
 └── hosts.yaml          # YOUR machine config — gitignored, copy from .example
 ```

@@ -1,0 +1,193 @@
+{
+  "hypothesis": "H2",
+  "status": "supported",
+  "environment": {
+    "topology": "controller-worker",
+    "controller": "local workstation",
+    "camera_worker": "aum",
+    "viewer_worker": "veda",
+    "transport": "Tailscale FQDNs for media/control addressing where configured",
+    "hosts_source": "hosts.yaml, with hosts.example.yaml documenting the expected keys",
+    "sync_scope": "allowlisted project files only; run outputs are collected from workers"
+  },
+  "experiments": [
+    {
+      "name": "nack-latency-budget",
+      "description": "H4 experiment \u2014 does enforcing an operational latency budget reverse\nNACK's apparent benefit?\n\n8-arm 2\u00d72\u00d72 over (CC algorithm) \u00d7 (NACK on/off) \u00d7 (latency budget\n0 ms / 100 ms), all on the same constant network: 5 Mbps + 20 ms\n+ 2% uniform loss for the full 20 s. Constant rate and constant\nloss isolate the recovery \u00d7 budget interaction.\n\nPredictions:\n1. Without budget enforcement, NACK arms deliver \u2265 5% more frames\n   than no-recovery arms (NACK's textbook wire-level benefit).\n2. With a 100 ms budget, NACK arms deliver fewer frames inside\n   the budget than no-recovery arms \u2014 NACK's added latency\n   (RTX timer + jitter buffer) pushes more frames past the\n   deadline than NACK rescues.\n\nHolding constant: video (ball-720p30), pipeline structure, encoder\nknobs, CC bitrate bounds, network. Varying: CC algorithm, NACK\non/off, latency budget. CC algorithm is included so we can see\nwhether NACK's reversal under the budget is mechanism-specific\n(SCReAM vs GCC).\n",
+      "spec_path": "specs/experiments/nack-latency-budget.yaml",
+      "record_path": "runs/experiments/nack-latency-budget.json",
+      "log_path": null,
+      "command": "python3 experiment.py nack-latency-budget",
+      "reps": 10,
+      "varies": [
+        "congestion_control.algorithm",
+        "recovery.nack",
+        "recovery.rtx_buffer_ms",
+        "latency_budget_ms"
+      ],
+      "arms": [
+        {
+          "config_id": "29",
+          "label": "SCReAM no-NACK budget=0",
+          "algorithm": "scream",
+          "network": "clean-5mbps-50ms-3pct-uniform"
+        },
+        {
+          "config_id": "30",
+          "label": "SCReAM NACK budget=0",
+          "algorithm": "scream",
+          "network": "clean-5mbps-50ms-3pct-uniform"
+        },
+        {
+          "config_id": "31",
+          "label": "SCReAM no-NACK budget=100",
+          "algorithm": "scream",
+          "network": "clean-5mbps-50ms-3pct-uniform"
+        },
+        {
+          "config_id": "32",
+          "label": "SCReAM NACK budget=100",
+          "algorithm": "scream",
+          "network": "clean-5mbps-50ms-3pct-uniform"
+        },
+        {
+          "config_id": "33",
+          "label": "GCC no-NACK budget=0",
+          "algorithm": "gcc",
+          "network": "clean-5mbps-50ms-3pct-uniform"
+        },
+        {
+          "config_id": "34",
+          "label": "GCC NACK budget=0",
+          "algorithm": "gcc",
+          "network": "clean-5mbps-50ms-3pct-uniform"
+        },
+        {
+          "config_id": "35",
+          "label": "GCC no-NACK budget=100",
+          "algorithm": "gcc",
+          "network": "clean-5mbps-50ms-3pct-uniform"
+        },
+        {
+          "config_id": "36",
+          "label": "GCC NACK budget=100",
+          "algorithm": "gcc",
+          "network": "clean-5mbps-50ms-3pct-uniform"
+        }
+      ],
+      "record_status": {
+        "started_at": "2026-05-07T08:59:59.947050",
+        "total_runs": 37,
+        "completed_runs": 36,
+        "failed_runs": 1
+      }
+    },
+    {
+      "name": "nack-latency-budget-tight",
+      "description": "Follow-up to `nack-latency-budget`: same network and same workload,\nbut with the latency budget set to 50 ms (tighter than the network's\n100 ms RTT). Tests whether SCReAM's advantage over GCC, observed at\nbudget=0 and budget=100, persists, shrinks, or reverses when the\ndeadline is tight enough that NACK retransmissions can't fit.\n\n4 arms \u00d7 5 reps = 20 runs. Combined with the budget=0 and budget=100\narms from `nack-latency-budget`, the H4 page covers three budget\npoints across all (CC \u00d7 NACK) combinations.\n",
+      "spec_path": "specs/experiments/nack-latency-budget-tight.yaml",
+      "record_path": "runs/experiments/nack-latency-budget-tight.json",
+      "log_path": null,
+      "command": "python3 experiment.py nack-latency-budget-tight",
+      "reps": 5,
+      "varies": [
+        "congestion_control.algorithm",
+        "recovery.nack",
+        "recovery.rtx_buffer_ms"
+      ],
+      "arms": [
+        {
+          "config_id": "37",
+          "label": "SCReAM no-NACK budget=50",
+          "algorithm": "scream",
+          "network": "clean-5mbps-50ms-3pct-uniform"
+        },
+        {
+          "config_id": "38",
+          "label": "SCReAM NACK budget=50",
+          "algorithm": "scream",
+          "network": "clean-5mbps-50ms-3pct-uniform"
+        },
+        {
+          "config_id": "39",
+          "label": "GCC no-NACK budget=50",
+          "algorithm": "gcc",
+          "network": "clean-5mbps-50ms-3pct-uniform"
+        },
+        {
+          "config_id": "40",
+          "label": "GCC NACK budget=50",
+          "algorithm": "gcc",
+          "network": "clean-5mbps-50ms-3pct-uniform"
+        }
+      ],
+      "record_status": {
+        "started_at": "2026-05-07T09:44:28.754745",
+        "total_runs": 20,
+        "completed_runs": 18,
+        "failed_runs": 2
+      }
+    }
+  ],
+  "claim_structure": {
+    "conclusion": "GCC leads SCReAM in every tested latency-budget x NACK cell on the fluctuating capacity-step network. Neither deadline enforcement nor retransmission changes the ranking.",
+    "subclaims": [
+      "1 of 6 cells have GCC ahead of SCReAM by median delivered frames.",
+      "Smallest SCReAM\u2212GCC delta: -26 (budget=50ms, nack=on).",
+      "Largest SCReAM\u2212GCC delta: 25 (budget=0ms, nack=off).",
+      "The fluctuating-network ranking is stable across deadline enforcement (0/50/100 ms) and across NACK on/off."
+    ]
+  },
+  "tables": {
+    "h2_cell_comparison": [
+      {
+        "budget_ms": 0,
+        "nack": false,
+        "scream_median": 575,
+        "gcc_median": 550.0,
+        "delta_scream_minus_gcc": 25.0
+      },
+      {
+        "budget_ms": 0,
+        "nack": true,
+        "scream_median": 580,
+        "gcc_median": 571.0,
+        "delta_scream_minus_gcc": 9.0
+      },
+      {
+        "budget_ms": 50,
+        "nack": false,
+        "scream_median": 579,
+        "gcc_median": 578,
+        "delta_scream_minus_gcc": 1
+      },
+      {
+        "budget_ms": 50,
+        "nack": true,
+        "scream_median": 555,
+        "gcc_median": 581,
+        "delta_scream_minus_gcc": -26
+      },
+      {
+        "budget_ms": 100,
+        "nack": false,
+        "scream_median": 577,
+        "gcc_median": 572.0,
+        "delta_scream_minus_gcc": 5.0
+      },
+      {
+        "budget_ms": 100,
+        "nack": true,
+        "scream_median": 581,
+        "gcc_median": 575.0,
+        "delta_scream_minus_gcc": 6.0
+      }
+    ]
+  },
+  "figures": [
+    {
+      "path": "analysis/hypotheses/results/h2_cell_comparison.svg",
+      "caption": "Figure H2-1. SCReAM vs GCC median viewer frames delivered, per (latency budget, NACK) cell. The \u0394 label is SCReAM \u2212 GCC; negative means GCC is ahead."
+    }
+  ]
+}

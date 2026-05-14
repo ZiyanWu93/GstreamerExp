@@ -2,129 +2,232 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>H4 - SCReAM Realistic Trace Advantage</title>
+<title>H4 — SCReAM preserves more decodable video than GCC on calibrated stressed realistic 5G traces</title>
 <style>
-  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; max-width: 1120px; margin: 24px auto; padding: 0 16px 56px; color: #222; line-height: 1.5; }
-  h1 { margin: 0 0 4px; font-size: 30px; }
-  h2 { margin: 28px 0 10px; font-size: 21px; }
-  a { color: #2563eb; text-decoration: none; }
+  :root {
+    --bg: #ffffff;
+    --ink: #1f2328;
+    --muted: #5f6b7a;
+    --rule: #d9dde5;
+    --accent: #2563eb;
+    --good-bg: #ecf7ec; --good-fg: #1d6f1d;
+    --warn-bg: #fdf3e7; --warn-fg: #a14a02;
+    --info-bg: #f0f4fa; --info-fg: #1e3a73;
+    --panel-bg: #fafbfc;
+    --table-head: #f4f6f9;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                 Helvetica, Arial, sans-serif;
+    max-width: 880px; margin: 32px auto; padding: 0 18px 60px;
+    color: var(--ink); line-height: 1.55; background: var(--bg);
+  }
+  h1 { font-size: 22px; margin: 0 0 4px 0; }
+  h2 { font-size: 17px; margin: 28px 0 8px 0;
+       border-bottom: 1px solid var(--rule); padding-bottom: 4px; }
+  p { margin: 8px 0; }
+  a { color: var(--accent); text-decoration: none; }
   a:hover { text-decoration: underline; }
-  table { border-collapse: collapse; width: 100%; margin: 10px 0 16px; font-size: 14px; }
-  th, td { border: 1px solid #d9dde5; padding: 7px 8px; text-align: left; vertical-align: top; }
-  th { background: #f4f6f9; font-weight: 700; }
-  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
-  pre { background: #f4f5f7; border: 1px solid #e1e4e8; border-radius: 6px; padding: 10px 12px; overflow-x: auto; }
-  figure { margin: 14px 0 8px; }
-  figure img { display: block; width: 100%; max-width: 980px; border: 0; border-radius: 0; }
-  figure.compact img { width: auto; max-width: 100%; }
-  figcaption { color: #5f6b7a; font-size: 13px; margin-top: 6px; }
-  .tag { color: #5f6b7a; font-size: 14px; margin: 0 0 14px; }
-  .panel { border: 1px solid #d9dde5; border-radius: 6px; padding: 14px 16px; background: #fafbfc; margin: 14px 0; }
-  .status { display: inline-block; background: #ecf7ec; color: #1d6f1d; border-radius: 10px; padding: 2px 8px; font-size: 12px; font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; }
-  .small { color: #5f6b7a; font-size: 13px; }
+  .nav { font-size: 13px; margin-bottom: 14px; }
+  .tag { display: inline-block; font-size: 12px; padding: 2px 8px;
+         border-radius: 10px; background: var(--info-bg);
+         color: var(--info-fg); margin-right: 6px; }
+  .tag.supported    { background: var(--good-bg); color: var(--good-fg); }
+  .tag.refuted      { background: var(--warn-bg); color: var(--warn-fg); }
+  .tag.regime-dependent { background: var(--warn-bg); color: var(--warn-fg); }
+  .panel { background: var(--panel-bg); border: 1px solid var(--rule);
+           border-radius: 6px; padding: 12px 16px; margin: 14px 0; }
+  .panel strong.label { display: block; font-size: 12px;
+                        text-transform: uppercase; letter-spacing: 0.5px;
+                        color: var(--muted); margin-bottom: 4px; }
+  ul { padding-left: 22px; margin: 8px 0; }
+  ul li { margin-bottom: 4px; }
+  figure { margin: 14px 0; }
+  figure img { max-width: 100%; height: auto;
+               border: 1px solid var(--rule); border-radius: 4px;
+               background: white; padding: 6px; }
+  figure figcaption { font-size: 13px; color: var(--muted);
+                      margin-top: 6px; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px;
+          margin: 10px 0 18px 0; }
+  th, td { border: 1px solid var(--rule); padding: 4px 8px;
+           text-align: left; vertical-align: top; }
+  th { background: var(--table-head); font-weight: 600; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  pre, code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+              font-size: 13px; }
+  pre { background: var(--panel-bg); border: 1px solid var(--rule);
+        padding: 8px 10px; border-radius: 4px; overflow-x: auto; }
+  .meta { font-size: 13px; color: var(--muted); }
+  .source { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .footer { font-size: 12px; color: var(--muted); margin-top: 36px;
+            border-top: 1px solid var(--rule); padding-top: 10px; }
 </style>
 </head>
 <body>
 
-<p class="small"><a href="../../index.html">&larr; Back to GstreamerExp hub</a></p>
+<p class="nav"><a href="../../index.html">← GstreamerExp hub</a> · <a href="../../README.md">README</a> · <a href="../../docs/HYPOTHESES.md">Hypothesis catalog</a></p>
 
-<h1>H4 - SCReAM Realistic Trace Advantage</h1>
-<p class="tag">Claim: SCReAM preserves more decodable video than GCC on calibrated stressed realistic 5G traces.</p>
+<h1>H4 — SCReAM preserves more decodable video than GCC on calibrated stressed realistic 5G traces</h1>
+<p><span class="tag supported">supported</span><span class="meta">Project-internal realistic-trace SCReAM/GCC experiment</span></p>
 
+<h2>Claim</h2>
+<p>SCReAM preserves more decodable video than GCC on calibrated stressed realistic 5G traces.</p>
+
+<h2>Prediction</h2>
+<p>On fixed translated 5G Mahimahi traces scaled to 33% capacity, a calibrated high-entropy 384x216x30 VP8 workload should show where the controller matters. CQI is expected to act as a high-capacity control where both controllers deliver nearly all frames. On the stressed HO and RB traces, SCReAM should deliver more viewer-depayloaded frames than GCC while using no more than 85% of GCC's camera egress bitrate and reaching a similar viewer-side ingress bitrate.
+</p>
+
+<h2>Verdict rule</h2>
+<p>Supported if all experiment runs pass, both stressed traces show SCReAM/GCC viewer-frame ratio >=1.25, both stressed traces show camera egress mean bitrate <=85% of GCC, viewer-side mean wire bitrate is within 10% of GCC on stressed traces, and at least one stressed trace shows >=2x viewer-frame ratio. Refuted if completed records fail those thresholds; untested if required records or summaries are missing.
+</p>
+
+
+<h2>Main claim</h2>
 <div class="panel">
-  <strong>Current verdict:</strong> <span class="status">supported</span>
-  <p>
-    Each trace compares SCReAM and GCC with the trace, video workload,
-    bitrate bounds, recovery settings, workers, and sink held fixed. CQI is
-    the high-capacity control where both controllers deliver nearly all
-    frames; HO and RB are the stressed traces where SCReAM delivers more
-    decodable video with lower camera egress.
-  </p>
+<strong class="label">Mechanism</strong>
+<p>SCReAM wins on the stressed HO/RB traces because its post-payload RTP pacing turns congestion-control decisions into lower camera egress, while GCC lowers its estimator target but this pipeline still emits multi-Mbit/s RTP that the trace cannot carry, leaving fewer complete frames decodable at the viewer.</p>
 </div>
 
-<div class="panel">
-  <strong>Main claim:</strong>
-  <p>
-    SCReAM wins on the stressed HO/RB traces because its post-payload RTP
-    pacing turns congestion-control decisions into lower camera egress,
-    while GCC lowers its estimator target but this pipeline still emits
-    multi-Mbit/s RTP that the trace cannot carry, leaving fewer complete
-    frames decodable at the viewer.
-  </p>
-  <strong>Supporting evidence:</strong>
-  <ul>
-    <li><strong>Controlled comparison:</strong> within each trace pair, the trace, video, codec, bitrate bounds, recovery settings, sink, workers, and run length are fixed; only <code>congestion_control.algorithm</code> varies.</li>
-    <li><strong>Stress condition:</strong> CQI is the high-capacity control and both controllers deliver nearly all frames, so the advantage appears only when HO/RB capacity actually stresses the stream.</li>
-    <li><strong>Outcome:</strong> on HO, SCReAM delivers 2.74x GCC's viewer frames; on RB, it delivers 1.39x GCC's viewer frames.</li>
-    <li><strong>Efficiency:</strong> the advantage is not from sending more traffic; SCReAM uses 0.72x GCC's camera egress on HO and 0.64x on RB.</li>
-    <li><strong>Mechanism evidence:</strong> GCC's target falls on the stressed traces, but its measured camera egress remains about 2.35 Mbit/s on HO and 2.32 Mbit/s on RB.</li>
-  </ul>
-</div>
 
-<h2>Experiment Setup</h2>
-<table>
-  <tr><th>Dimension</th><th>Value</th></tr>
-  <tr><td>Experiments</td><td><code>scream-vs-gcc-mahimahi-5g-cqi-x0p33-snow-384x216</code><br><code>scream-vs-gcc-mahimahi-5g-ho-x0p33-snow-384x216</code><br><code>scream-vs-gcc-mahimahi-5g-rb-x0p33-snow-384x216</code></td></tr>
-  <tr><td>Network traces</td><td><code>mahimahi-5g-cqi-100ms-x0p33</code>, <code>mahimahi-5g-ho-100ms-x0p33</code>, <code>mahimahi-5g-rb-100ms-x0p33</code>; fixed within each SCReAM/GCC pair</td></tr>
-  <tr><td>Video workload</td><td><code>snow-384x216-30s</code>, 30 fps, 915 frames</td></tr>
-  <tr><td>Varied field</td><td><code>congestion_control.algorithm</code> only</td></tr>
-  <tr><td>Configurations</td><td>CQI: <code>81</code> SCReAM, <code>82</code> GCC<br>HO: <code>79</code> SCReAM, <code>80</code> GCC<br>RB: <code>83</code> SCReAM, <code>84</code> GCC</td></tr>
-  <tr><td>Repetitions</td><td>3 per arm, round-robin</td></tr>
-</table>
+
+<h2>Supporting evidence</h2>
+<ul>
+<li>Within each trace pair, the trace, video, codec, bitrate bounds, recovery settings, sink, workers, and run length are fixed; only congestion_control.algorithm varies.</li>
+<li>CQI is the high-capacity control and both controllers deliver nearly all frames, so the advantage appears only when HO/RB capacity actually stresses the stream.</li>
+<li>On HO, SCReAM delivers 2.74x GCC's viewer frames; on RB, it delivers 1.39x GCC's viewer frames.</li>
+<li>The advantage is not from sending more traffic; SCReAM uses 0.72x GCC's camera egress on HO and 0.64x on RB.</li>
+<li>GCC's target falls on the stressed traces, but its measured camera egress remains about 2.35 Mbit/s on HO and 2.32 Mbit/s on RB.</li>
+</ul>
+
+
 
 <h2>Trace Characteristics</h2>
 <ul>
-  <li><strong>CQI x0.33:</strong> high-capacity control trace with no sub-1 Mbit/s 100 ms bins and 3.68 Mbit/s median capacity, used to confirm that SCReAM and GCC converge when the path is not the bottleneck.</li>
-  <li><strong>HO x0.33:</strong> handover-like trace with sharp capacity fades and 18.7% of 100 ms bins below 1 Mbit/s, used to test controller behavior during sudden capacity collapse and recovery.</li>
-  <li><strong>RB x0.33:</strong> resource-block scarcity trace with 1.70 Mbit/s median capacity and 18.4% of 100 ms bins below 1 Mbit/s, used to test behavior under sustained scheduler-constrained capacity.</li>
+<li>CQI x0.33 is a high-capacity control trace with no sub-1 Mbit/s bins and 3.68 Mbit/s median capacity.</li>
+<li>HO x0.33 is a handover-like trace with sharp fades: 18.7% of 100 ms bins below 1 Mbit/s and 2.06 Mbit/s median capacity.</li>
+<li>RB x0.33 is a resource-block scarcity trace with 18.4% of 100 ms bins below 1 Mbit/s and 1.70 Mbit/s median capacity.</li>
 </ul>
 
-<h2>Figures</h2>
-<figure class="compact">
-  <img src="results/h4_frame_delivery_by_trace.svg" alt="H4 frame delivery by trace">
-  <figcaption><strong>Figure H4-1.</strong> Mean viewer-depayloaded frames by trace. Each grouped pair compares SCReAM and GCC under the same translated trace and video workload; S/G labels show the SCReAM/GCC frame ratio.</figcaption>
-</figure>
-<figure class="compact">
-  <img src="results/h4_camera_egress_by_trace.svg" alt="H4 camera egress bitrate by trace">
-  <figcaption><strong>Figure H4-2.</strong> Mean camera egress bitrate by trace. S/G labels show whether the delivered-frame advantage came from sending more traffic; on HO and RB, SCReAM produces lower camera egress than GCC.</figcaption>
-</figure>
-<figure class="compact">
-  <img src="results/h4_cqi_timeseries.svg" alt="H4 CQI time-series comparison">
-  <figcaption><strong>Figure H4-3a.</strong> CQI fixed-trace time series. Left: shared capacity and camera egress bitrate. Right: cumulative viewer-depayloaded frames. This is the high-capacity control where both controllers deliver nearly all frames.</figcaption>
-</figure>
-<figure class="compact">
-  <img src="results/h4_ho_timeseries.svg" alt="H4 HO time-series comparison">
-  <figcaption><strong>Figure H4-3b.</strong> HO fixed-trace time series. The same trace is used for both controllers; the right panel shows the SCReAM delivered-frame curve separating from GCC.</figcaption>
-</figure>
-<figure class="compact">
-  <img src="results/h4_rb_timeseries.svg" alt="H4 RB time-series comparison">
-  <figcaption><strong>Figure H4-3c.</strong> RB fixed-trace time series. The same trace is used for both controllers; the right panel shows the moderate SCReAM frame-delivery advantage.</figcaption>
-</figure>
 
-<h2>Result Summary</h2>
-<table>
-  <tr><th>Trace</th><th>SCReAM frames</th><th>GCC frames</th><th>Frame ratio</th><th>SCReAM/GCC camera egress</th><th>Interpretation</th></tr>
-  <tr><td>CQI x0.33</td><td>903.7</td><td>901.3</td><td>1.00x</td><td>2861.2 / 2446.4 kbit/s</td><td>High-capacity control; both deliver nearly all frames.</td></tr>
-  <tr><td>HO x0.33</td><td>544.7</td><td>199.0</td><td>2.74x</td><td>1696.0 / 2353.0 kbit/s</td><td>Strong SCReAM advantage with lower measured camera egress; GCC target falls but actual egress stays high.</td></tr>
-  <tr><td>RB x0.33</td><td>445.3</td><td>319.3</td><td>1.39x</td><td>1480.8 / 2324.9 kbit/s</td><td>Moderate SCReAM advantage with lower measured camera egress; GCC target falls but actual egress stays high.</td></tr>
-</table>
 
 <h2>Findings and Limitations</h2>
+
+<p class="meta"><strong>Findings</strong></p>
 <ul>
-  <li><strong>Finding:</strong> on the stressed HO and RB traces, SCReAM preserves more decodable video than GCC.</li>
-  <li><strong>Finding:</strong> on HO and RB, GCC produces higher camera egress, but that extra traffic does not become more decodable video at the viewer.</li>
-  <li><strong>Finding:</strong> GCC's estimator target is not enough to explain camera output here; the measured encoded and egress rates remain high on stressed traces.</li>
-  <li><strong>Finding:</strong> on CQI, both controllers deliver nearly all frames, so the trace is not discriminating for this workload.</li>
-  <li><strong>Limitation:</strong> this is a fixed-trace, fixed-workload result; it should not be generalized to every trace or every video workload.</li>
-  <li><strong>Limitation:</strong> latency metrics still carry clock-skew artifacts, so H4 uses frame delivery and camera egress as the primary evidence.</li>
+<li>On the calibrated fixed CQI x0.33 trace, both controllers delivered nearly all frames, so this trace is a high-capacity control rather than evidence of a SCReAM advantage.</li>
+<li>On the calibrated fixed HO x0.33 trace, SCReAM delivered roughly 2.7x as many viewer-depayloaded frames as GCC while producing lower camera egress.</li>
+<li>On the calibrated fixed RB x0.33 trace, SCReAM delivered about 1.4x as many viewer-depayloaded frames as GCC while producing lower camera egress.</li>
+<li>GCC's estimator target does drop on the stressed traces, but in this pipeline that target is not equivalent to lower post-encoder RTP egress.</li>
+<li>{'The result is meaningful because the workload is no longer under-driving the stressed traces': 'observed media bitrate is in the same range as the scaled trace capacities.'}</li>
 </ul>
 
-<h2>Reproduce</h2>
-<pre><code>python3 experiment.py scream-vs-gcc-mahimahi-5g-cqi-x0p33-snow-384x216
-python3 experiment.py scream-vs-gcc-mahimahi-5g-ho-x0p33-snow-384x216
-python3 experiment.py scream-vs-gcc-mahimahi-5g-rb-x0p33-snow-384x216
-python3 analysis/hypotheses/h4_scream_realistic_trace_advantage.py
-python3 analysis/hypotheses/build_reports.py</code></pre>
+
+<p class="meta"><strong>Limitations</strong></p>
+<ul>
+<li>This is a fixed-trace, fixed-workload result; CQI shows that SCReAM does not produce a visible frame-delivery advantage when the trace has enough capacity for both controllers.</li>
+<li>The current latency metric still has clock-skew artifacts; H4's primary claim is decodable frame delivery and camera egress.</li>
+</ul>
+
+
+
+
+<h2>Figures</h2>
+<figure>
+  <img src="results/h4_frame_delivery_by_trace.svg" alt="Figure H4-1. Mean viewer-depayloaded frames by trace. Each grouped pair compares SCReAM and GCC under the same trace and workload; S/G labels show the SCReAM/GCC frame ratio.">
+  <figcaption>Figure H4-1. Mean viewer-depayloaded frames by trace. Each grouped pair compares SCReAM and GCC under the same trace and workload; S/G labels show the SCReAM/GCC frame ratio.</figcaption>
+</figure>
+<figure>
+  <img src="results/h4_camera_egress_by_trace.svg" alt="Figure H4-2. Mean camera egress bitrate by trace. S/G labels show whether the delivered-frame improvement came from simply sending more traffic; GCC's lower estimator target on stressed traces is not the same as lower emitted RTP rate.">
+  <figcaption>Figure H4-2. Mean camera egress bitrate by trace. S/G labels show whether the delivered-frame improvement came from simply sending more traffic; GCC's lower estimator target on stressed traces is not the same as lower emitted RTP rate.</figcaption>
+</figure>
+<figure>
+  <img src="results/h4_cqi_timeseries.svg" alt="Figure H4-3a. CQI fixed-trace time series. Left: shared capacity and camera egress. Right: cumulative delivered frames.">
+  <figcaption>Figure H4-3a. CQI fixed-trace time series. Left: shared capacity and camera egress. Right: cumulative delivered frames.</figcaption>
+</figure>
+<figure>
+  <img src="results/h4_ho_timeseries.svg" alt="Figure H4-3b. HO fixed-trace time series. The wide two-panel layout holds the trace fixed and shows where SCReAM's delivered-frame curve separates from GCC.">
+  <figcaption>Figure H4-3b. HO fixed-trace time series. The wide two-panel layout holds the trace fixed and shows where SCReAM's delivered-frame curve separates from GCC.</figcaption>
+</figure>
+<figure>
+  <img src="results/h4_rb_timeseries.svg" alt="Figure H4-3c. RB fixed-trace time series. The wide two-panel layout holds the trace fixed and shows the moderate SCReAM frame-delivery advantage.">
+  <figcaption>Figure H4-3c. RB fixed-trace time series. The wide two-panel layout holds the trace fixed and shows the moderate SCReAM frame-delivery advantage.</figcaption>
+</figure>
+
+
+
+<h2>Tables</h2>
+<h3 style="font-size:14px;margin:14px 0 4px 0;">h4_arm_summary</h3>
+<table>
+<thead><tr><th>trace</th><th>experiment</th><th>network</th><th>algorithm</th><th>config_id</th><th>pass_runs</th><th>viewer_frames_mean</th><th>camera_wire_mean_kbps</th><th>viewer_wire_mean_kbps</th><th>encoded_mean_kbps</th><th>encoder_target_mean_kbps</th><th>latency_p95_mean_ms</th></tr></thead>
+<tbody>
+<tr><td>CQI</td><td>scream-vs-gcc-mahimahi-5g-cqi-x0p33-snow-384x216</td><td>mahimahi-5g-cqi-100ms-x0p33</td><td>SCReAM</td><td>81</td><td class="num">3</td><td class="num">903.7</td><td class="num">2,861.2</td><td class="num">2,483.1</td><td class="num">2,878.6</td><td class="num">3,267.6</td><td class="num">-81.57</td></tr>
+<tr><td>CQI</td><td>scream-vs-gcc-mahimahi-5g-cqi-x0p33-snow-384x216</td><td>mahimahi-5g-cqi-100ms-x0p33</td><td>GCC</td><td>82</td><td class="num">3</td><td class="num">901.3</td><td class="num">2,446.4</td><td class="num">2,097.9</td><td class="num">2,416.2</td><td class="num">2,460.0</td><td class="num">-96.90</td></tr>
+<tr><td>HO</td><td>scream-vs-gcc-mahimahi-5g-ho-x0p33-snow-384x216</td><td>mahimahi-5g-ho-100ms-x0p33</td><td>SCReAM</td><td>79</td><td class="num">3</td><td class="num">544.7</td><td class="num">1,696.0</td><td class="num">1,398.5</td><td class="num">2,448.9</td><td class="num">1,351.9</td><td class="num">-108.8</td></tr>
+<tr><td>HO</td><td>scream-vs-gcc-mahimahi-5g-ho-x0p33-snow-384x216</td><td>mahimahi-5g-ho-100ms-x0p33</td><td>GCC</td><td>80</td><td class="num">3</td><td class="num">199.0</td><td class="num">2,353.0</td><td class="num">1,427.7</td><td class="num">2,319.4</td><td class="num">331.3</td><td class="num">-101.5</td></tr>
+<tr><td>RB</td><td>scream-vs-gcc-mahimahi-5g-rb-x0p33-snow-384x216</td><td>mahimahi-5g-rb-100ms-x0p33</td><td>SCReAM</td><td>83</td><td class="num">3</td><td class="num">445.3</td><td class="num">1,480.8</td><td class="num">1,236.0</td><td class="num">2,416.5</td><td class="num">1,096.8</td><td class="num">-132.4</td></tr>
+<tr><td>RB</td><td>scream-vs-gcc-mahimahi-5g-rb-x0p33-snow-384x216</td><td>mahimahi-5g-rb-100ms-x0p33</td><td>GCC</td><td>84</td><td class="num">3</td><td class="num">319.3</td><td class="num">2,324.9</td><td class="num">1,302.5</td><td class="num">2,290.8</td><td class="num">177.5</td><td class="num">-122.7</td></tr>
+</tbody>
+</table>
+<h3 style="font-size:14px;margin:14px 0 4px 0;">h4_trace_comparison</h3>
+<table>
+<thead><tr><th>trace</th><th>network</th><th>scream_viewer_frames_mean</th><th>gcc_viewer_frames_mean</th><th>viewer_frame_ratio_scream_over_gcc</th><th>viewer_frame_delta</th><th>scream_camera_wire_mean_kbps</th><th>gcc_camera_wire_mean_kbps</th><th>camera_wire_ratio_scream_over_gcc</th><th>scream_encoder_target_mean_kbps</th><th>gcc_encoder_target_mean_kbps</th><th>gcc_target_to_camera_egress_ratio</th><th>scream_viewer_wire_mean_kbps</th><th>gcc_viewer_wire_mean_kbps</th><th>viewer_wire_delta_pct</th></tr></thead>
+<tbody>
+<tr><td>CQI</td><td>mahimahi-5g-cqi-100ms-x0p33</td><td class="num">903.7</td><td class="num">901.3</td><td class="num">1.00</td><td class="num">2.33</td><td class="num">2,861.2</td><td class="num">2,446.4</td><td class="num">1.17</td><td class="num">3,267.6</td><td class="num">2,460.0</td><td class="num">1.01</td><td class="num">2,483.1</td><td class="num">2,097.9</td><td class="num">15.51</td></tr>
+<tr><td>HO</td><td>mahimahi-5g-ho-100ms-x0p33</td><td class="num">544.7</td><td class="num">199.0</td><td class="num">2.74</td><td class="num">345.7</td><td class="num">1,696.0</td><td class="num">2,353.0</td><td class="num">0.721</td><td class="num">1,351.9</td><td class="num">331.3</td><td class="num">0.141</td><td class="num">1,398.5</td><td class="num">1,427.7</td><td class="num">2.04</td></tr>
+<tr><td>RB</td><td>mahimahi-5g-rb-100ms-x0p33</td><td class="num">445.3</td><td class="num">319.3</td><td class="num">1.39</td><td class="num">126.0</td><td class="num">1,480.8</td><td class="num">2,324.9</td><td class="num">0.637</td><td class="num">1,096.8</td><td class="num">177.5</td><td class="num">0.076</td><td class="num">1,236.0</td><td class="num">1,302.5</td><td class="num">5.10</td></tr>
+</tbody>
+</table>
+
+
+<h2>Experimental setup</h2>
+<div class="panel">
+<strong class="label">scream-vs-gcc-mahimahi-5g-cqi-x0p33-snow-384x216</strong>
+<p>SCReAM vs GCC on one fixed translated 5G Mahimahi CQI-like trace scaled to 33% capacity, using calibrated high-entropy 384x216x30 snow video. The trace is fixed; the comparison varies only the congestion controller.
+</p>
+<p class="meta">Configurations: <code>81</code> (scream), <code>82</code> (gcc) · reps: 3</p>
+<p class="meta">Spec: <code>specs/experiments/scream-vs-gcc-mahimahi-5g-cqi-x0p33-snow-384x216.yaml</code> · Record: <code>runs/experiments/scream-vs-gcc-mahimahi-5g-cqi-x0p33-snow-384x216.json</code> · Run: <code>python3 experiment.py scream-vs-gcc-mahimahi-5g-cqi-x0p33-snow-384x216</code></p>
+<p class="meta">Status: 6 of 6 runs completed.</p>
+</div>
+<div class="panel">
+<strong class="label">scream-vs-gcc-mahimahi-5g-ho-x0p33-snow-384x216</strong>
+<p>SCReAM vs GCC on one fixed translated 5G Mahimahi handover-like trace scaled to 33% capacity, using calibrated high-entropy 384x216x30 snow video. The trace is fixed; the comparison varies only the congestion controller.
+</p>
+<p class="meta">Configurations: <code>79</code> (scream), <code>80</code> (gcc) · reps: 3</p>
+<p class="meta">Spec: <code>specs/experiments/scream-vs-gcc-mahimahi-5g-ho-x0p33-snow-384x216.yaml</code> · Record: <code>runs/experiments/scream-vs-gcc-mahimahi-5g-ho-x0p33-snow-384x216.json</code> · Run: <code>python3 experiment.py scream-vs-gcc-mahimahi-5g-ho-x0p33-snow-384x216</code></p>
+<p class="meta">Status: 6 of 6 runs completed.</p>
+</div>
+<div class="panel">
+<strong class="label">scream-vs-gcc-mahimahi-5g-rb-x0p33-snow-384x216</strong>
+<p>SCReAM vs GCC on one fixed translated 5G Mahimahi RB-like trace scaled to 33% capacity, using calibrated high-entropy 384x216x30 snow video. The trace is fixed; the comparison varies only the congestion controller.
+</p>
+<p class="meta">Configurations: <code>83</code> (scream), <code>84</code> (gcc) · reps: 3</p>
+<p class="meta">Spec: <code>specs/experiments/scream-vs-gcc-mahimahi-5g-rb-x0p33-snow-384x216.yaml</code> · Record: <code>runs/experiments/scream-vs-gcc-mahimahi-5g-rb-x0p33-snow-384x216.json</code> · Run: <code>python3 experiment.py scream-vs-gcc-mahimahi-5g-rb-x0p33-snow-384x216</code></p>
+<p class="meta">Status: 6 of 6 runs completed.</p>
+</div>
+
+
+<h2>Required metrics</h2>
+<ul>
+<li><code>frame_count</code></li>
+<li><code>encoder_target_kbps</code></li>
+<li><code>frame_latency</code></li>
+<li><code>wire_bytes</code></li>
+<li><code>encoded_bitrate</code></li>
+<li><code>decoder_errors</code></li>
+<li><code>late_drops</code></li>
+</ul>
+
+<h2>Reproducibility</h2>
+<p>This page is generated from <code>specs/hypotheses/h4.yaml</code> + <code>analysis/hypotheses/results/h4_report.json</code> + figures under <code>analysis/hypotheses/results/</code>.</p>
+<pre>python3 analysis/hypotheses/build_reports.py
+python3 analysis/hypotheses/build_pages.py
+python3 analysis/hypotheses/h4_scream_realistic_trace_advantage.py</pre>
+
+<p class="source">Source: Project-internal realistic-trace SCReAM/GCC experiment</p>
+
+<p class="footer">Generated by <code>analysis/hypotheses/build_pages.py</code>. Do not hand-edit; modify <code>specs/hypotheses/h4.yaml</code> or the template instead.</p>
 
 </body>
 </html>

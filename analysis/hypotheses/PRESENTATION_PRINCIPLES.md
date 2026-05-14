@@ -133,16 +133,30 @@ claims were incomplete.
 
 ## 5. Mechanics
 
-### 5.1 The page is a single self-contained HTML file
-Lives at `analysis/hypotheses/<hid>.html`. Plotly via CDN. Reads
-JSON snapshots from sibling files. Snapshots are emitted by a sibling
-Python script. No build step beyond `python3 -m http.server`.
+### 5.1 Pages are generated from a declarative spec
+Each page lives at `analysis/hypotheses/<slug>.html` (served locally)
+and `analysis/hypotheses/<slug>.ipynb` (browsable on GitHub). Both
+come from `specs/hypotheses/<slug>.yaml` plus the report JSON at
+`analysis/hypotheses/results/<slug>_report.json` plus the SVG figures
+in the same directory. The orchestrator is
+`python3 analysis/hypotheses/build_pages.py`; the renderer module is
+`analysis/hypotheses/render.py`; the HTML template is
+`analysis/hypotheses/templates/page.html.j2`. **Do not hand-edit the
+generated `<slug>.html` or `<slug>.ipynb` files** — the next build
+will overwrite them. Modify the YAML (for prose), `build_reports.py`
+(for figures and tables), or the template (for layout).
 
-### 5.2 The verifier and the page share the snapshot
-The CLI verifier and the page consume the same JSON snapshot, so
-numbers agree by construction. If they disagree, the snapshot is
-wrong, not the page.
+### 5.2 The verifier and the page share the report
+The CLI verifier and the page consume the same report JSON, so
+numbers agree by construction. If they disagree, the report JSON
+is wrong, not the page.
 
-### 5.3 New tests don't require new experiments when the data is already there
-Add a new aggregation to the snapshot script. Re-runs only when a
-new metric requires a new probe in the pipeline.
+### 5.3 The principles in §1–§4 are enforced by the template
+Section labels, ordering, and styling live in `page.html.j2`. Adding
+a new principle ideally lands as a template change, so every page
+picks it up at the next `build_pages.py` run rather than drifting
+page by page.
+
+### 5.4 New tests don't require new experiments when the data is already there
+Add a new aggregation to `build_reports.py`. Re-runs only when a new
+metric requires a new probe in the pipeline.

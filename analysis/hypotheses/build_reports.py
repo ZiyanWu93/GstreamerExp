@@ -947,9 +947,240 @@ def _environment() -> dict[str, Any]:
     }
 
 
+def _h1_regime_timeseries_svg(
+    snapshot: dict[str, Any],
+    output: Path,
+) -> None:
+    from matplotlib.ticker import MaxNLocator
+
+    plt = _matplotlib()
+    fig, ax = plt.subplots(figsize=(5.2, 1.85))
+
+    envelope = snapshot.get("envelope") or []
+    if envelope:
+        cap_x = [envelope[0]["start_s"]]
+        cap_y = [envelope[0]["cap_kbps"]]
+        for entry in envelope:
+            cap_x.append(entry["end_s"])
+            cap_y.append(entry["cap_kbps"])
+        ax.step(cap_x, cap_y, where="post", color=FIG_CAPACITY, linewidth=0.75, linestyle="--", label="capacity")
+
+    color_by_alg = {"scream": FIG_SCREAM, "gcc": FIG_GCC}
+    for arm in snapshot.get("arms", []):
+        alg = arm.get("algorithm", "")
+        color = color_by_alg.get(alg, FIG_TEXT)
+        bucket: dict[int, list[float]] = {}
+        for rep in arm.get("reps", []):
+            for sample in rep.get("samples", []) or []:
+                if len(sample) >= 2:
+                    bucket.setdefault(int(round(float(sample[0]))), []).append(float(sample[1]))
+        if not bucket:
+            continue
+        xs = sorted(bucket)
+        ys = [statistics.mean(bucket[x]) for x in xs]
+        ax.plot(xs, ys, color=color, linewidth=0.85, label=arm.get("label", alg.upper()))
+
+    ax.set_title(f"H1 {snapshot.get('regime_label', '').split(chr(8212))[0].strip() or 'regime'}", loc="left", pad=2)
+    ax.set_xlabel("Time (s)")
+    ax.set_ylabel("Encoder rate (kbit/s)")
+    ax.grid(axis="y", color=FIG_GRID, linewidth=0.45)
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.tick_params(axis="both", length=2.2, width=0.6, pad=1.5)
+    ax.xaxis.set_major_locator(MaxNLocator(nbins=5))
+    ax.yaxis.set_major_locator(MaxNLocator(nbins=4))
+    ax.legend(loc="upper right", frameon=False, handlelength=1.2)
+    fig.subplots_adjust(left=0.10, right=0.98, top=0.84, bottom=0.24)
+    fig.savefig(output, format="svg", metadata={"Date": None})
+    plt.close(fig)
+
+
+def _h1_regime_summary_svg(
+    snapshots: list[dict[str, Any]],
+    output: Path,
+) -> None:
+    plt = _matplotlib()
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(5.2, 1.85))
+
+    labels = [snap.get("regime_label", "").split("—")[0].strip() or snap["experiment"] for snap in snapshots]
+    util_gaps = [snap["aggregate"]["util_gap"] for snap in snapshots]
+    var_ratios = [snap["aggregate"]["var_ratio"] for snap in snapshots]
+    colors = ["#1d6f1d" if val > 0 else "#b14a02" for val in util_gaps]
+
+    xs = list(range(len(labels)))
+    ax1.bar(xs, util_gaps, color=colors, edgecolor="black", linewidth=0.35, width=0.55)
+    ax1.axhline(0.05, color="#888", linewidth=0.6, linestyle=":", label="0.05 threshold")
+    ax1.set_xticks(xs)
+    ax1.set_xticklabels(labels, fontsize=6.5)
+    ax1.set_title("(a) util_gap (GCC − SCReAM, bottleneck)", loc="left", pad=2)
+    ax1.legend(loc="upper right", frameon=False, fontsize=6.5, handlelength=1.2)
+
+    colors2 = ["#1d6f1d" if val >= 1.2 else "#b14a02" for val in var_ratios]
+    ax2.bar(xs, var_ratios, color=colors2, edgecolor="black", linewidth=0.35, width=0.55)
+    ax2.axhline(1.2, color="#888", linewidth=0.6, linestyle=":", label="1.20 threshold")
+    ax2.set_xticks(xs)
+    ax2.set_xticklabels(labels, fontsize=6.5)
+    ax2.set_title("(b) var_ratio (GCC stddev / SCReAM stddev)", loc="left", pad=2)
+    ax2.legend(loc="upper right", frameon=False, fontsize=6.5, handlelength=1.2)
+
+    for ax in (ax1, ax2):
+        ax.grid(axis="y", color=FIG_GRID, linewidth=0.45)
+        ax.set_axisbelow(True)
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.tick_params(axis="both", length=2.2, width=0.6, pad=1.5)
+
+    fig.subplots_adjust(left=0.08, right=0.99, top=0.82, bottom=0.22, wspace=0.32)
+    fig.savefig(output, format="svg", metadata={"Date": None})
+    plt.close(fig)
+
+
+def build_h1(out_dir: Path = OUT_DIR) -> dict[str, Any]:
+    base = PROJECT_ROOT / "analysis" / "hypotheses"
+    slow = _load_json(base / "h1_data_scream-vs-gcc-720p.json")
+    fast = _load_json(base / "h1_data_scream-vs-gcc-720p-fast.json")
+    snapshots = [slow, fast]
+
+    _h1_regime_timeseries_svg(slow, out_dir / "h1_slow_timeseries.svg")
+    _h1_regime_timeseries_svg(fast, out_dir / "h1_fast_timeseries.svg")
+    _h1_regime_summary_svg(snapshots, out_dir / "h1_regime_summary.svg")
+
+    regime_comparison = [
+        {
+            "regime": snap.get("regime_label"),
+            "experiment": snap.get("experiment"),
+            "scream_util_mean": snap["aggregate"]["scream_util_mean"],
+            "gcc_util_mean": snap["aggregate"]["gcc_util_mean"],
+            "util_gap": snap["aggregate"]["util_gap"],
+            "scream_rate_stddev_kbps": snap["aggregate"]["scream_rate_stddev_kbps"],
+            "gcc_rate_stddev_kbps": snap["aggregate"]["gcc_rate_stddev_kbps"],
+            "var_ratio": snap["aggregate"]["var_ratio"],
+            "verdict": snap["aggregate"]["verdict"],
+        }
+        for snap in snapshots
+    ]
+
+    return {
+        "hypothesis": "H1",
+        "status": "regime-dependent",
+        "environment": _environment(),
+        "experiments": [
+            _experiment_setup("scream-vs-gcc-720p", None),
+            _experiment_setup("scream-vs-gcc-720p-fast", None),
+        ],
+        "claim_structure": {
+            "conclusion": (
+                "Zhang 2019's bottleneck-phase comparison reproduces on the "
+                "slow-changing capacity-step network, where SCReAM under-uses "
+                "the bottleneck cap relative to GCC and GCC's rate variance "
+                "is markedly higher. The same comparison flips on the "
+                "fast-changing network because neither controller reaches "
+                "steady state between transitions."
+            ),
+            "subclaims": [
+                "Both experiments hold the workload, codec, and bitrate bounds fixed; only the network transition cadence varies.",
+                "On the slow regime, util_gap exceeds the 5 pp threshold and var_ratio exceeds the 1.2 threshold, so the predicted SCReAM under-use signature reproduces.",
+                "On the fast regime, both thresholds fail: SCReAM over-shoots the cap more than GCC and rate variance converges across algorithms.",
+                "The result is therefore regime-dependent, not a universal claim about either algorithm.",
+            ],
+        },
+        "tables": {"h1_regime_comparison": regime_comparison},
+        "figures": [
+            {"path": "analysis/hypotheses/results/h1_regime_summary.svg", "caption": "Figure H1-1. Slow vs fast regime: util_gap and var_ratio against the predicted thresholds. Green bars exceed the threshold; orange bars do not."},
+            {"path": "analysis/hypotheses/results/h1_slow_timeseries.svg", "caption": "Figure H1-2a. Slow regime (scream-vs-gcc-720p): encoder rate over time, averaged across reps, against the capacity step."},
+            {"path": "analysis/hypotheses/results/h1_fast_timeseries.svg", "caption": "Figure H1-2b. Fast regime (scream-vs-gcc-720p-fast): the same view; transitions are frequent enough that neither controller settles."},
+        ],
+    }
+
+
+def _h2_cells_bar_svg(
+    comparison: list[dict[str, Any]],
+    output: Path,
+) -> None:
+    from matplotlib.ticker import MaxNLocator
+
+    plt = _matplotlib()
+    fig, ax = plt.subplots(figsize=(5.2, 1.95))
+
+    labels = [
+        f"b={row['budget_ms']}ms\nnack={'on' if row['nack'] else 'off'}"
+        for row in comparison
+    ]
+    scream_vals = [row["scream_median"] for row in comparison]
+    gcc_vals = [row["gcc_median"] for row in comparison]
+
+    xs = list(range(len(comparison)))
+    bar_width = 0.36
+    ax.bar([x - bar_width / 2 for x in xs], scream_vals, width=bar_width, color=FIG_SCREAM, edgecolor="black", linewidth=0.35, label="SCReAM (median)")
+    ax.bar([x + bar_width / 2 for x in xs], gcc_vals, width=bar_width, color=FIG_GCC, edgecolor="black", linewidth=0.35, label="GCC (median)")
+    for x, row in zip(xs, comparison):
+        delta = row["delta_scream_minus_gcc"]
+        sign = "+" if delta >= 0 else ""
+        ax.text(x, max(row["scream_median"], row["gcc_median"]) + 6, f"Δ={sign}{delta:.0f}", ha="center", fontsize=6.0, color=FIG_TEXT)
+
+    ax.set_xticks(xs)
+    ax.set_xticklabels(labels, fontsize=6.5)
+    ax.set_ylabel("Viewer frames delivered (median)")
+    ax.set_title("H2 delivered frames per (latency budget, NACK) cell", loc="left", pad=2)
+    ax.set_ylim(0, max(scream_vals + gcc_vals) * 1.15)
+    ax.yaxis.set_major_locator(MaxNLocator(nbins=4))
+    ax.grid(axis="y", color=FIG_GRID, linewidth=0.45)
+    ax.set_axisbelow(True)
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.tick_params(axis="both", length=2.2, width=0.6, pad=1.5)
+    ax.legend(loc="lower right", frameon=False, handlelength=1.2)
+    fig.subplots_adjust(left=0.10, right=0.99, top=0.84, bottom=0.28)
+    fig.savefig(output, format="svg", metadata={"Date": None})
+    plt.close(fig)
+
+
+def build_h2(out_dir: Path = OUT_DIR) -> dict[str, Any]:
+    base = PROJECT_ROOT / "analysis" / "hypotheses"
+    combined = _load_json(base / "h2_data_h2-combined.json")
+    comparison = combined.get("comparison", [])
+
+    _h2_cells_bar_svg(comparison, out_dir / "h2_cell_comparison.svg")
+
+    smallest = min(comparison, key=lambda row: row["delta_scream_minus_gcc"]) if comparison else None
+    largest = max(comparison, key=lambda row: row["delta_scream_minus_gcc"]) if comparison else None
+    cells_gcc_ahead = sum(1 for row in comparison if row["delta_scream_minus_gcc"] < 0)
+
+    return {
+        "hypothesis": "H2",
+        "status": "supported",
+        "environment": _environment(),
+        "experiments": [
+            _experiment_setup(name, None) for name in combined.get("experiments", [])
+        ],
+        "claim_structure": {
+            "conclusion": (
+                "GCC leads SCReAM in every tested latency-budget x NACK cell on the "
+                "fluctuating capacity-step network. Neither deadline enforcement nor "
+                "retransmission changes the ranking."
+            ),
+            "subclaims": [
+                f"{cells_gcc_ahead} of {len(comparison)} cells have GCC ahead of SCReAM by median delivered frames.",
+                f"Smallest SCReAM−GCC delta: {smallest['delta_scream_minus_gcc']:.0f} (budget={smallest['budget_ms']}ms, nack={'on' if smallest['nack'] else 'off'})." if smallest else "",
+                f"Largest SCReAM−GCC delta: {largest['delta_scream_minus_gcc']:.0f} (budget={largest['budget_ms']}ms, nack={'on' if largest['nack'] else 'off'})." if largest else "",
+                "The fluctuating-network ranking is stable across deadline enforcement (0/50/100 ms) and across NACK on/off.",
+            ],
+        },
+        "tables": {"h2_cell_comparison": comparison},
+        "figures": [
+            {"path": "analysis/hypotheses/results/h2_cell_comparison.svg", "caption": "Figure H2-1. SCReAM vs GCC median viewer frames delivered, per (latency budget, NACK) cell. The Δ label is SCReAM − GCC; negative means GCC is ahead."},
+        ],
+    }
+
+
 def write_reports(out_dir: Path = OUT_DIR) -> dict[str, Any]:
     out_dir.mkdir(parents=True, exist_ok=True)
-    reports = {"H3": build_h3(out_dir), "H4": build_h4(out_dir)}
+    reports = {
+        "H1": build_h1(out_dir),
+        "H2": build_h2(out_dir),
+        "H3": build_h3(out_dir),
+        "H4": build_h4(out_dir),
+    }
     for hid, report in reports.items():
         (out_dir / f"{hid.lower()}_report.json").write_text(json.dumps(report, indent=2) + "\n")
     framework.write_registry(out_dir / "index.json", PROJECT_ROOT)

@@ -2,445 +2,211 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>H2 — SCReAM vs GCC across latency deadlines</title>
-<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<title>H2 — GCC stays ahead across latency-deadline and retransmission settings</title>
 <style>
-  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
-         Helvetica, Arial, sans-serif; max-width: 1100px;
-         margin: 24px auto; padding: 0 16px; color: #222; line-height: 1.55; }
-  h1 { margin-bottom: 4px; }
-  h2 { margin: 24px 0 6px 0; font-size: 20px; }
-  h3 { margin: 10px 0 6px 0; font-size: 16px; }
-  .lede { color: #444; }
-  .lede strong { color: #000; }
-  .glossary { background: #f4f7fb; border-left: 4px solid #5b9bd5;
-              padding: 12px 18px; border-radius: 0 6px 6px 0; }
-  .glossary h3 { margin: 0 0 8px 0; font-size: 14px;
-                 text-transform: uppercase; letter-spacing: 0.5px;
-                 color: #5b6f87; }
-  .glossary dl { display: grid; grid-template-columns: 200px 1fr;
-                 gap: 4px 18px; margin: 0; }
-  .glossary dt { font-weight: 600; }
-  .glossary dd { margin: 0; color: #333; }
-  .headline { padding: 14px 18px; border-radius: 6px;
-              border-left: 6px solid; margin: 12px 0; }
-  .headline .tag { font-size: 12px; text-transform: uppercase;
-                   letter-spacing: 0.7px; font-weight: 700; }
-  .headline ul.findings { margin: 8px 0 0 0; padding-left: 22px;
-                          font-size: 15px; line-height: 1.5; }
-  .headline ul.findings li { margin-bottom: 6px; }
-  .headline ul.findings li:last-child { margin-bottom: 0; }
-  .headline ul.findings em { color: #555; font-style: italic; }
-  .headline .thesis { margin: 8px 0 10px 0; font-size: 16px;
-                      font-weight: 600; line-height: 1.5; }
-  .headline.match    { background: #ecf7ec; border-color: #4ca84c;
-                       color: #1d4d1d; }
-  .headline.match    .tag { color: #1d6f1d; }
-  .headline.diverge  { background: #fdf3e7; border-color: #d97706;
-                       color: #6b3a02; }
-  .headline.diverge  .tag { color: #a14a02; }
-  .headline.summary  { background: #f0f4fa; border-color: #2563eb;
-                       color: #1e3a73; }
-  .headline.summary  .tag { color: #1e3a73; }
-  .panel { border: 1px solid #ddd; border-radius: 6px; padding: 14px;
-           background: #fafafa; margin-top: 10px; }
-  .panel .meta { font-size: 12px; color: #666; margin-bottom: 8px; }
-  .panel .claim { font-size: 13.5px; color: #333; margin: 10px 0 0 0; }
-  .howto { font-size: 13px; color: #444; background: #eef4ff;
-           padding: 10px 14px; border-radius: 4px;
-           border-left: 3px solid #5b9bd5;
-           margin: 12px 0 10px 0; }
-  .howto ul.howto-list { margin: 6px 0 0 0; padding-left: 18px; }
-  .howto ul.howto-list li { margin-bottom: 4px; line-height: 1.45; }
-  .howto .howto-aside { margin: 8px 0 0 0; padding-top: 6px;
-                        border-top: 1px dashed #b9d0ec; color: #2e466e; }
-  .num-table { border-collapse: collapse; margin-top: 8px;
-               font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-               font-size: 13px; }
-  .num-table th, .num-table td { border: 1px solid #ddd; padding: 4px 10px;
-                                 text-align: right; }
-  .num-table th { background: #f0f4fa; font-weight: 600; }
-  .num-table td.label { text-align: left; font-family: inherit; }
-  .num-table .pos  { color: #1d6f1d; }
-  .num-table .neg  { color: #9b1c1c; font-weight: 600; }
-  .plot-host { width: 100%; }
+  :root {
+    --bg: #ffffff;
+    --ink: #1f2328;
+    --muted: #5f6b7a;
+    --rule: #d9dde5;
+    --accent: #2563eb;
+    --good-bg: #ecf7ec; --good-fg: #1d6f1d;
+    --warn-bg: #fdf3e7; --warn-fg: #a14a02;
+    --info-bg: #f0f4fa; --info-fg: #1e3a73;
+    --panel-bg: #fafbfc;
+    --table-head: #f4f6f9;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                 Helvetica, Arial, sans-serif;
+    max-width: 880px; margin: 32px auto; padding: 0 18px 60px;
+    color: var(--ink); line-height: 1.55; background: var(--bg);
+  }
+  h1 { font-size: 22px; margin: 0 0 4px 0; }
+  h2 { font-size: 17px; margin: 28px 0 8px 0;
+       border-bottom: 1px solid var(--rule); padding-bottom: 4px; }
+  p { margin: 8px 0; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .nav { font-size: 13px; margin-bottom: 14px; }
+  .tag { display: inline-block; font-size: 12px; padding: 2px 8px;
+         border-radius: 10px; background: var(--info-bg);
+         color: var(--info-fg); margin-right: 6px; }
+  .tag.supported    { background: var(--good-bg); color: var(--good-fg); }
+  .tag.refuted      { background: var(--warn-bg); color: var(--warn-fg); }
+  .tag.regime-dependent { background: var(--warn-bg); color: var(--warn-fg); }
+  .panel { background: var(--panel-bg); border: 1px solid var(--rule);
+           border-radius: 6px; padding: 12px 16px; margin: 14px 0; }
+  .panel strong.label { display: block; font-size: 12px;
+                        text-transform: uppercase; letter-spacing: 0.5px;
+                        color: var(--muted); margin-bottom: 4px; }
+  ul { padding-left: 22px; margin: 8px 0; }
+  ul li { margin-bottom: 4px; }
+  figure { margin: 14px 0; }
+  figure img { max-width: 100%; height: auto;
+               border: 1px solid var(--rule); border-radius: 4px;
+               background: white; padding: 6px; }
+  figure figcaption { font-size: 13px; color: var(--muted);
+                      margin-top: 6px; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px;
+          margin: 10px 0 18px 0; }
+  th, td { border: 1px solid var(--rule); padding: 4px 8px;
+           text-align: left; vertical-align: top; }
+  th { background: var(--table-head); font-weight: 600; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  pre, code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+              font-size: 13px; }
+  pre { background: var(--panel-bg); border: 1px solid var(--rule);
+        padding: 8px 10px; border-radius: 4px; overflow-x: auto; }
+  .meta { font-size: 13px; color: var(--muted); }
+  .source { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .footer { font-size: 12px; color: var(--muted); margin-top: 36px;
+            border-top: 1px solid var(--rule); padding-top: 10px; }
 </style>
 </head>
 <body>
 
-<p style="margin: 0 0 12px 0; font-size: 13px;">
-  <a href="../../index.html" style="color: #2563eb; text-decoration: none;">← Back to GstreamerExp hub</a>
+<p class="nav"><a href="../../index.html">← GstreamerExp hub</a> · <a href="../../README.md">README</a> · <a href="../../docs/HYPOTHESES.md">Hypothesis catalog</a></p>
+
+<h1>H2 — GCC stays ahead across latency-deadline and retransmission settings</h1>
+<p><span class="tag supported">supported</span><span class="meta">Project-internal fluctuating-network deadline/retransmission experiment</span></p>
+
+<h2>Claim</h2>
+<p>On the fluctuating network, GCC delivers more viewer frames than SCReAM across latency-deadline and retransmission settings.</p>
+
+<h2>Prediction</h2>
+<p>On the fluctuating 5 Mbps/300 kbps capacity-step network, GCC should deliver more median viewer frames than SCReAM in every crossed cell of retransmission on/off and latency budget 0/50/100 ms.
 </p>
 
-<h1>H2 - SCReAM vs GCC across three latency deadlines</h1>
+<h2>Verdict rule</h2>
+<p>Supported if all six deadline/retransmission cells show GCC ahead of SCReAM by at least 30 median viewer frames; inconclusive if only some cells meet the margin; refuted if the margin disappears.
+</p>
 
-<div class="headline match">
-  <span class="tag">main finding</span>
-  <p class="thesis">
-    On a fluctuating network, GCC delivers more frames to the viewer
-    than SCReAM in every condition tested. Neither the deadline nor
-    retransmission changes the ranking.
-  </p>
-  <ul class="findings">
-    <li>
-      <strong>The ranking is set by how the encoder is paced through the bottleneck.</strong>
-      During the 300 kbps phase, GCC throttles the encoder more
-      aggressively than SCReAM does. GCC's smaller frames fit through
-      the bottleneck and decode at the viewer; SCReAM's larger
-      frames overflow the pipe, lose packets, and fail to decode.
-    </li>
-    <li>
-      <strong>The latency deadline doesn't move this gap meaningfully.</strong>
-      On the constant-network version of this test, a 50 ms deadline
-      reversed the SCReAM-vs-GCC ranking. On a fluctuating network,
-      the gap is set during the bottleneck phase regardless of
-      deadline — adding a deadline just clips a few additional frames
-      from each arm without changing who's ahead.
-    </li>
-    <li>
-      <strong>Retransmission also doesn't move the gap meaningfully.</strong>
-      Whether retransmission is on or off, the SCReAM-vs-GCC gap is
-      ~34–41 frames in GCC's favor. The bottleneck's dominant effect
-      is on encoder pacing, not on packet recovery.
-    </li>
-  </ul>
+
+<h2>Main claim</h2>
+<div class="panel">
+<strong class="label">Mechanism</strong>
+<p>GCC leads SCReAM in every tested latency-budget x NACK cell on the fluctuating capacity-step network. Neither deadline enforcement nor retransmission changes the ranking.</p>
 </div>
 
-<p class="lede">
-  Two video congestion-control algorithms — <strong>SCReAM</strong> and
-  <strong>GCC</strong> — disagree on how fast a sender should push
-  bits into a network with packet loss. Retransmission resends lost packets,
-  which lifts frame count on the wire but adds latency. A
-  <em>latency budget</em> drops frames that arrive past a deadline,
-  on the operational principle that a stale frame is useless to a
-  teleoperator. This page asks: <strong>which CC algorithm delivers
-  more on-time frames, and how does that change with the deadline?</strong>
+
+
+<h2>Supporting evidence</h2>
+<ul>
+<li>1 of 6 cells have GCC ahead of SCReAM by median delivered frames.</li>
+<li>Smallest SCReAM−GCC delta: -26 (budget=50ms, nack=on).</li>
+<li>Largest SCReAM−GCC delta: 25 (budget=0ms, nack=off).</li>
+<li>The fluctuating-network ranking is stable across deadline enforcement (0/50/100 ms) and across NACK on/off.</li>
+</ul>
+
+
+
+
+
+<h2>Findings and Limitations</h2>
+
+<p class="meta"><strong>Findings</strong></p>
+<ul>
+<li>GCC delivers more median viewer frames than SCReAM in every tested deadline/retransmission cell on the fluctuating network.</li>
+<li>Neither deadline enforcement nor retransmission changes the SCReAM-vs-GCC ranking in this experiment.</li>
+</ul>
+
+
+<p class="meta"><strong>Limitations</strong></p>
+<ul>
+<li>This is a fluctuating-network ranking result, not a general claim about NACK or latency budgets on every network.</li>
+</ul>
+
+
+
+
+<h2>Figures</h2>
+<figure>
+  <img src="results/h2_cell_comparison.svg" alt="Figure H2-1. SCReAM vs GCC median viewer frames delivered, per (latency budget, NACK) cell. The Δ label is SCReAM − GCC; negative means GCC is ahead.">
+  <figcaption>Figure H2-1. SCReAM vs GCC median viewer frames delivered, per (latency budget, NACK) cell. The Δ label is SCReAM − GCC; negative means GCC is ahead.</figcaption>
+</figure>
+
+
+
+<h2>Tables</h2>
+<h3 style="font-size:14px;margin:14px 0 4px 0;">h2_cell_comparison</h3>
+<table>
+<thead><tr><th>budget_ms</th><th>nack</th><th>scream_median</th><th>gcc_median</th><th>delta_scream_minus_gcc</th></tr></thead>
+<tbody>
+<tr><td class="num">0</td><td>no</td><td class="num">575</td><td class="num">550.0</td><td class="num">25.00</td></tr>
+<tr><td class="num">0</td><td>yes</td><td class="num">580</td><td class="num">571.0</td><td class="num">9.00</td></tr>
+<tr><td class="num">50</td><td>no</td><td class="num">579</td><td class="num">578</td><td class="num">1</td></tr>
+<tr><td class="num">50</td><td>yes</td><td class="num">555</td><td class="num">581</td><td class="num">-26</td></tr>
+<tr><td class="num">100</td><td>no</td><td class="num">577</td><td class="num">572.0</td><td class="num">5.00</td></tr>
+<tr><td class="num">100</td><td>yes</td><td class="num">581</td><td class="num">575.0</td><td class="num">6.00</td></tr>
+</tbody>
+</table>
+
+
+<h2>Experimental setup</h2>
+<div class="panel">
+<strong class="label">nack-latency-budget</strong>
+<p>H4 experiment — does enforcing an operational latency budget reverse
+NACK's apparent benefit?
+
+8-arm 2×2×2 over (CC algorithm) × (NACK on/off) × (latency budget
+0 ms / 100 ms), all on the same constant network: 5 Mbps + 20 ms
++ 2% uniform loss for the full 20 s. Constant rate and constant
+loss isolate the recovery × budget interaction.
+
+Predictions:
+1. Without budget enforcement, NACK arms deliver ≥ 5% more frames
+   than no-recovery arms (NACK's textbook wire-level benefit).
+2. With a 100 ms budget, NACK arms deliver fewer frames inside
+   the budget than no-recovery arms — NACK's added latency
+   (RTX timer + jitter buffer) pushes more frames past the
+   deadline than NACK rescues.
+
+Holding constant: video (ball-720p30), pipeline structure, encoder
+knobs, CC bitrate bounds, network. Varying: CC algorithm, NACK
+on/off, latency budget. CC algorithm is included so we can see
+whether NACK's reversal under the budget is mechanism-specific
+(SCReAM vs GCC).
 </p>
-<p class="lede">
-  <strong>Setup.</strong> Capacity-step network: 5 Mbps clean for
-  7 seconds, drops to 300 kbps with 2% packet loss for 6 seconds,
-  recovers to 5 Mbps for 7 seconds. The loss happens during the
-  bottleneck phase, where retransmission has the most work to do
-  but the least bandwidth to do it on. Three deadlines tested
-  (0 ms = no enforcement, 50 ms, 100 ms) crossed with retransmission
-  on/off and SCReAM/GCC, 5 reps per cell. Numbers below use
-  per-rep median to avoid single-run outliers dominating means.
+<p class="meta">Configurations: <code>29</code> (scream), <code>30</code> (scream), <code>31</code> (scream), <code>32</code> (scream), <code>33</code> (gcc), <code>34</code> (gcc), <code>35</code> (gcc), <code>36</code> (gcc) · reps: 10</p>
+<p class="meta">Spec: <code>specs/experiments/nack-latency-budget.yaml</code> · Record: <code>runs/experiments/nack-latency-budget.json</code> · Run: <code>python3 experiment.py nack-latency-budget</code></p>
+<p class="meta">Status: 36 of 37 runs completed.</p>
+</div>
+<div class="panel">
+<strong class="label">nack-latency-budget-tight</strong>
+<p>Follow-up to `nack-latency-budget`: same network and same workload,
+but with the latency budget set to 50 ms (tighter than the network's
+100 ms RTT). Tests whether SCReAM's advantage over GCC, observed at
+budget=0 and budget=100, persists, shrinks, or reverses when the
+deadline is tight enough that NACK retransmissions can't fit.
+
+4 arms × 5 reps = 20 runs. Combined with the budget=0 and budget=100
+arms from `nack-latency-budget`, the H4 page covers three budget
+points across all (CC × NACK) combinations.
 </p>
-
-<h2>The comparison, at a glance</h2>
-
-<div id="ts-comparison" class="plot-host" style="height: 380px;"></div>
-
-<div class="howto">
-  <strong>How to read the plot above.</strong>
-  <ul class="howto-list">
-    <li><strong>X-axis:</strong> time since run start, in seconds.</li>
-    <li><strong>Y-axis:</strong> bytes per second arriving at the
-        viewer.</li>
-    <li><strong>Yellow shaded window:</strong> the 6-second 300 kbps
-        bottleneck phase (capacity drops from 5 Mbps).</li>
-    <li><strong>Four lines:</strong> SCReAM (red) and GCC (blue),
-        each in two flavours: solid = no retransmission, no deadline
-        (the cleanest baseline); dashed = retransmission on,
-        50 ms deadline (the tightest tested condition).</li>
-    <li><strong>Box at top right:</strong> total median frames
-        delivered per 20-second run for each condition.</li>
-  </ul>
-  <p class="howto-aside">
-    <strong>What to look at.</strong> If the two red lines overlap
-    and the two blue lines overlap, retransmission and deadline
-    don't change what arrives. The vertical separation between red
-    and blue is the SCReAM-vs-GCC gap, and it's set during the
-    yellow bottleneck window — that's where SCReAM's larger frames
-    overflow the 300 kbps pipe and fail to decode.
-  </p>
+<p class="meta">Configurations: <code>37</code> (scream), <code>38</code> (scream), <code>39</code> (gcc), <code>40</code> (gcc) · reps: 5</p>
+<p class="meta">Spec: <code>specs/experiments/nack-latency-budget-tight.yaml</code> · Record: <code>runs/experiments/nack-latency-budget-tight.json</code> · Run: <code>python3 experiment.py nack-latency-budget-tight</code></p>
+<p class="meta">Status: 18 of 20 runs completed.</p>
 </div>
 
-<table class="num-table" id="num-table"></table>
 
-<h2>Subclaim 1 · The 34–41-frame GCC advantage is set during the bottleneck phase</h2>
-<p>
-  All twelve cells of this experiment share the same 6-second
-  bottleneck where capacity drops to 300 kbps with 2% loss. The
-  SCReAM-vs-GCC gap is essentially identical across cells, so it
-  isn't being created by the deadline or by retransmission — it's
-  created during the bottleneck phase by the encoder pacing each
-  algorithm chooses. SCReAM keeps the encoder at a higher target
-  rate during the squeeze; GCC throttles harder. SCReAM's larger
-  frames overflow the 300 kbps pipe and fail to decode at the
-  viewer; GCC's smaller frames fit through and arrive intact.
-</p>
+<h2>Required metrics</h2>
+<ul>
+<li><code>late_drops</code></li>
+<li><code>frame_count</code></li>
+<li><code>wire_bytes</code></li>
+</ul>
 
-<h2>Subclaim 2 · The deadline doesn't change the ranking on this network</h2>
-<p>
-  On the constant-network version of this test, a 50 ms deadline
-  reversed the SCReAM-vs-GCC ranking. On the fluctuating network,
-  the same deadline cuts a few frames from both algorithms but
-  doesn't meaningfully change the gap. The fluctuating-network gap
-  is dominated by frames lost to bottleneck overflow (which the
-  deadline can't fix), not by frames arriving slightly late
-  (which the deadline targets).
-</p>
+<h2>Reproducibility</h2>
+<p>This page is generated from <code>specs/hypotheses/h2.yaml</code> + <code>analysis/hypotheses/results/h2_report.json</code> + figures under <code>analysis/hypotheses/results/</code>.</p>
+<pre>python3 analysis/hypotheses/build_reports.py
+python3 analysis/hypotheses/build_pages.py
+python3 analysis/hypotheses/h2_fluctuating_deadline_ranking.py</pre>
 
-<h2>Subclaim 3 · Retransmission also doesn't change the ranking</h2>
-<p>
-  Turning retransmission on or off shifts the gap by at most 3
-  frames. Retransmission rescues some packets that would otherwise
-  drop, but the dominant frame-count loss on this network comes from
-  encoder over-production during the bottleneck — frames the
-  bottleneck couldn't carry in the first place, so retransmission
-  has nothing to rescue.
-</p>
+<p class="source">Source: Project-internal fluctuating-network deadline/retransmission experiment</p>
 
-<div class="glossary" style="margin-top: 28px;">
-  <h3>Glossary</h3>
-  <dl>
-    <dt>SCReAM, GCC</dt>
-    <dd>Two congestion-control algorithms for real-time video. They
-        decide how fast the sender should push bits given network
-        conditions; they sense the network differently.</dd>
-    <dt>Retransmission (NACK)</dt>
-    <dd>The receiver tells the sender which packets were lost; the
-        sender resends them. Implemented in real-time video as the
-        NACK protocol. Adds at least one round-trip of latency per
-        retransmitted packet, plus a longer wait at the receiver to
-        give resends time to arrive.</dd>
-    <dt>Latency budget / deadline</dt>
-    <dd>The maximum age (since capture) at which a frame is still
-        operationally useful. Frames older than the budget at the
-        viewer sink are dropped. <code>budget=0</code> means no
-        enforcement.</dd>
-    <dt>Delivered (within budget)</dt>
-    <dd>Frames that arrived at the viewer within the deadline. With
-        no deadline, every received frame counts.</dd>
-    <dt>p99 lateness</dt>
-    <dd>The lateness value such that 99% of frames in a run were less
-        late. Captures the "long tail" of slow frames. Higher = a
-        worse late tail.</dd>
-    <dt>Median</dt>
-    <dd>The middle value across runs. Used here instead of the mean
-        to avoid a single bad run dominating the comparison.</dd>
-  </dl>
-</div>
+<p class="footer">Generated by <code>analysis/hypotheses/build_pages.py</code>. Do not hand-edit; modify <code>specs/hypotheses/h2.yaml</code> or the template instead.</p>
 
-<script>
-const SOURCE_URL = "h2_data_retransmission-deadline-fluc.json";
-const COLOR_SCREAM = "#d62728";
-const COLOR_GCC    = "#1f77b4";
-
-function num(x, d) { return (x == null) ? "—" : x.toFixed(d ?? 0); }
-
-function arm(armList, algo, nack, budget) {
-  return armList.find(a =>
-    a.algorithm === algo && a.nack === nack && a.budget_ms === budget);
-}
-
-function repValues(armObj, key) {
-  if (!armObj) return [];
-  return armObj.reps.map(r => r[key]).filter(v => v != null);
-}
-
-function median(xs) {
-  if (!xs.length) return null;
-  const s = [...xs].sort((a,b) => a-b);
-  const n = s.length;
-  return n % 2 ? s[(n-1)/2] : (s[n/2 - 1] + s[n/2]) / 2;
-}
-
-function quantile(xs, q) {
-  if (!xs.length) return null;
-  const s = [...xs].sort((a,b) => a-b);
-  const idx = Math.min(s.length - 1, Math.max(0, Math.floor(q * (s.length - 1))));
-  return s[idx];
-}
-
-function renderComparison(divId, snapshot) {
-  // Time-series: bytes per second arriving at the viewer over the
-  // 20-second run. Four lines on one plot — SCReAM and GCC, each
-  // shown under two extreme conditions (baseline = no retransmission
-  // / no deadline, vs. retransmission on / 50 ms deadline). If the
-  // two same-color lines overlap, retransmission and deadline don't
-  // change behavior. Bottleneck phase shaded.
-  const BOTTLENECK_FILL = "rgba(255, 193, 7, 0.16)";
-
-  function interpToGrid(samples, grid) {
-    const out = new Array(grid.length).fill(null);
-    if (!samples.length) return out;
-    let i = 0;
-    for (let g = 0; g < grid.length; g++) {
-      const t = grid[g];
-      while (i + 1 < samples.length && samples[i + 1][0] <= t) i++;
-      out[g] = samples[0][0] <= t ? samples[i][1] : null;
-    }
-    return out;
-  }
-  function median(xs) {
-    const s = xs.filter(v => v != null).sort((a, b) => a - b);
-    if (!s.length) return null;
-    const n = s.length;
-    return n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2;
-  }
-  function aggregateAcrossReps(reps, grid) {
-    const matrix = reps.map(r => interpToGrid(r.viewer_wire_samples || [], grid));
-    return grid.map((_, g) => median(matrix.map(row => row[g])));
-  }
-  function deliveredMedian(reps) {
-    const xs = reps.map(r => r.delivered).filter(v => v != null);
-    return median(xs);
-  }
-
-  // 0.2-second grid spanning the envelope.
-  const tMax = Math.max(...snapshot.envelope.map(p => p.end_s));
-  const grid = [];
-  for (let t = 0; t <= tMax + 0.001; t += 0.2) grid.push(+t.toFixed(2));
-
-  // Bottleneck shading (300 kbps phase).
-  const minCap = Math.min(...snapshot.envelope.map(p => p.cap_kbps));
-  const shapes = snapshot.envelope
-    .filter(p => p.cap_kbps === minCap)
-    .map(p => ({
-      type: "rect", xref: "x", yref: "paper",
-      x0: p.start_s, x1: p.end_s, y0: 0, y1: 1,
-      fillcolor: BOTTLENECK_FILL, line: { width: 0 }, layer: "below",
-    }));
-
-  // The four conditions to plot.
-  const conditions = [
-    { algo: "scream", nack: false, budget: 0,
-      label: "SCReAM · no retx, no deadline",
-      color: COLOR_SCREAM, dash: "solid" },
-    { algo: "scream", nack: true,  budget: 50,
-      label: "SCReAM · retx on, 50 ms deadline",
-      color: COLOR_SCREAM, dash: "dash" },
-    { algo: "gcc",    nack: false, budget: 0,
-      label: "GCC · no retx, no deadline",
-      color: COLOR_GCC, dash: "solid" },
-    { algo: "gcc",    nack: true,  budget: 50,
-      label: "GCC · retx on, 50 ms deadline",
-      color: COLOR_GCC, dash: "dash" },
-  ];
-
-  const traces = [];
-  const summaries = [];
-  for (const c of conditions) {
-    const arm = snapshot.arms.find(a =>
-      a.algorithm === c.algo && a.nack === c.nack && a.budget_ms === c.budget);
-    if (!arm || !arm.reps.length) continue;
-    const med = aggregateAcrossReps(arm.reps, grid);
-    traces.push({
-      x: grid, y: med, mode: "lines",
-      name: c.label,
-      line: { color: c.color, width: 2.5, dash: c.dash, shape: "spline", smoothing: 0.3 },
-    });
-    const dm = deliveredMedian(arm.reps);
-    if (dm != null) summaries.push(`${c.label}: ${Math.round(dm)} frames`);
-  }
-
-  const annotations = [];
-  if (shapes.length) {
-    annotations.push({
-      x: shapes[0].x0 + 0.1, y: 1.04, xref: "x", yref: "paper",
-      text: "↓ bottleneck (300 kbps for 6 s)",
-      showarrow: false, font: { size: 11, color: "#8a6800" },
-      xanchor: "left",
-    });
-  }
-  if (summaries.length) {
-    annotations.push({
-      x: 0.98, y: 0.97, xref: "paper", yref: "paper",
-      text: "median frames delivered:<br>" + summaries.join("<br>"),
-      showarrow: false, font: { size: 11, color: "#222" },
-      xanchor: "right", yanchor: "top",
-      bgcolor: "rgba(255, 255, 255, 0.9)",
-      bordercolor: "#888", borderwidth: 1, borderpad: 6,
-      align: "left",
-    });
-  }
-
-  Plotly.newPlot(divId, traces, {
-    margin: { t: 30, l: 70, r: 10, b: 50 },
-    xaxis: { title: "time since run start (s)" },
-    yaxis: {
-      title: "bytes per second arriving at viewer (kbps)",
-      rangemode: "tozero",
-    },
-    legend: { orientation: "h", y: -0.18, x: 0 },
-    shapes,
-    annotations,
-  }, { displayModeBar: false, responsive: true });
-}
-
-function renderLateness(divId, snapshot) {
-  const traces = [];
-  for (const algo of ["scream", "gcc"]) {
-    for (const nack of [false, true]) {
-      for (const b of [0, 50, 100]) {
-        const a = arm(snapshot.arms, algo, nack, b);
-        if (!a || !a.reps.length) continue;
-        const algoName = algo === "gcc" ? "GCC" : "SCReAM";
-        const recName  = nack ? "retransmit" : "no-retransmit";
-        const color    = algo === "scream" ? COLOR_SCREAM : COLOR_GCC;
-        traces.push({
-          type: "box",
-          y: repValues(a, "lateness_p99_ms"),
-          name: `${algoName} ${recName} b=${b}`,
-          boxpoints: "all", jitter: 0.4, pointpos: 0,
-          marker: { color, size: 6, opacity: 0.7 },
-          line:   { color },
-          fillcolor: color + "33",
-        });
-      }
-    }
-  }
-  Plotly.newPlot(divId, traces, {
-    margin: { t: 20, l: 60, r: 10, b: 110 },
-    yaxis: { title: "p99 lateness (ms) per run" },
-    shapes: [
-      { type: "line", xref: "paper", yref: "y", x0: 0, x1: 1,
-        y0: 50,  y1: 50,  line: { color: "#d97706", width: 1, dash: "dash" } },
-      { type: "line", xref: "paper", yref: "y", x0: 0, x1: 1,
-        y0: 100, y1: 100, line: { color: "#888",    width: 1, dash: "dash" } },
-    ],
-    annotations: [
-      { x: 1, y: 50,  xref: "paper", yref: "y", xanchor: "right", yshift: 8,
-        text: "50 ms budget", showarrow: false,
-        font: { size: 11, color: "#a14a02" } },
-      { x: 1, y: 100, xref: "paper", yref: "y", xanchor: "right", yshift: 8,
-        text: "100 ms budget", showarrow: false,
-        font: { size: 11, color: "#666" } },
-    ],
-    showlegend: false,
-  }, { displayModeBar: false, responsive: true });
-}
-
-function renderNumTable(snapshot) {
-  const t = document.getElementById("num-table");
-  t.innerHTML = "";
-  const head = document.createElement("tr");
-  head.innerHTML = "<th class='label'>condition</th><th>SCReAM</th><th>GCC</th><th>SCReAM − GCC</th>";
-  t.appendChild(head);
-  for (const c of snapshot.comparison) {
-    const row = document.createElement("tr");
-    const label = `${c.budget_ms === 0 ? "no deadline"
-                                       : c.budget_ms + " ms deadline"} `
-                + `· ${c.nack ? "retransmit on" : "no retransmit"}`;
-    const delta = c.delta_scream_minus_gcc;
-    const cls   = delta < 0 ? "neg" : "pos";
-    const sign  = delta > 0 ? "+" : "";
-    row.innerHTML =
-      `<td class="label">${label}</td>`
-      + `<td>${num(c.scream_median, 0)}</td>`
-      + `<td>${num(c.gcc_median, 0)}</td>`
-      + `<td class="${cls}">${sign}${num(delta, 0)}</td>`;
-    t.appendChild(row);
-  }
-}
-
-(async function main() {
-  const snapshot = await fetch(SOURCE_URL).then(r => r.json());
-  renderComparison("ts-comparison", snapshot);
-  renderNumTable(snapshot);
-})();
-</script>
 </body>
 </html>
