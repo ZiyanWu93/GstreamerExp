@@ -40,14 +40,29 @@ Direct feature-by-feature comparison. Legend: ✓ present, ◐ partial,
 
 ### Congestion control
 
+UMN has **no transport-level congestion control** — no SCReAM/GCC-class
+controller, no path feedback, no congestion window, no pacing. Its only
+rate-adaptation mechanism is the `BandwidthAllocator`, and it is
+**opt-in and off by default**: `adaptive_bitrate` is `false` in 84 of
+100 shipped configs (`shared/config.py:99`), and the 16 that enable it
+are all camera / 6-stream rigs. Default UMN is fully open-loop —
+fixed-CBR encode, the sender blasts packets, and the only response to
+congestion is UDP socket-buffer overflow causing packet drops
+(`transmitter/sender.py`). When `adaptive_bitrate` is on, the allocator
+adds a coarse 1 Hz application-level bitrate degrader driven by the
+*local* qdisc backlog — reactive rate adaptation, but not a congestion
+controller.
+
 | Feature | Ours | Our source | UMN | UMN source |
 |---|---|---|---|---|
+| Transport congestion controller (SCReAM/GCC-class) | ✓ | `gstexp/camera.py` | ✗ | — |
 | SCReAM | ✓ | `gstexp/camera.py` + `scream/` | ✗ | — |
 | Google CC (`rtpgccbwe`) | ✓ | `gstexp/camera.py` | ✗ | — |
-| Throughput-driven bandwidth allocator | ✗ | — | ✓ | `src/gopher_streamer/transmitter/bandwidth_allocator.py` |
-| qdisc-based capacity estimate | ✗ | — | ✓ | `src/gopher_streamer/transmitter/throughput.py` |
-| Multi-stream priority degradation ladder | ✗ | — | ✓ | `transmitter/bandwidth_allocator.py` |
-| Encoder-rate adaptation from the controller | ✓ | `gstexp/metrics.py` (`EncoderTargetKbps`) | ✓ | `transmitter/encoder.py` |
+| Path-feedback congestion signal (RTCP RTT / loss / delay) | ✓ | `gstexp/camera.py` | ✗ | — |
+| Packet pacing | ✓ | `gstexp/camera.py` (SCReAM / `rtpbin`) | ✗ blast; drop on socket-buffer overflow | `transmitter/sender.py` |
+| Application-level adaptive bitrate | ✗ | — | ◐ opt-in, off by default (`adaptive_bitrate`, 16/100 configs) | `src/gopher_streamer/transmitter/bandwidth_allocator.py` |
+| qdisc-backlog capacity estimate | ✗ | — | ◐ only when adaptive_bitrate on | `src/gopher_streamer/transmitter/throughput.py` |
+| Multi-stream priority degradation ladder | ✗ | — | ◐ only when adaptive_bitrate on | `transmitter/bandwidth_allocator.py` |
 
 ### Loss recovery
 
@@ -393,8 +408,19 @@ worth prototyping; the rest, we already do better.**
 ## Congestion control — not a TODO gap, but the core comparison
 
 This is the one axis where the comparison is not gap-driven: congestion
-control is our project's *existing core*, not a missing feature. But
-UMN's rate controller is too central to the comparison to omit.
+control is our project's *existing core*, not a missing feature.
+
+First the blunt fact: **UMN ships no transport congestion control, and
+by default no rate adaptation at all.** `adaptive_bitrate` is `false` in
+84 of 100 shipped configs; the default pipeline encodes at fixed CBR,
+blasts packets, and lets congestion show up as UDP socket-buffer
+overflow → packet drops. There is no SCReAM/GCC-class controller, no
+path feedback, no congestion window, no pacing — anywhere in the repo.
+
+What UMN *does* have, opt-in, is the `BandwidthAllocator`. It is the
+only thing comparable to a controller, so it is what the rest of this
+section compares against SCReAM and GCC — but keep in mind it is off in
+the common case.
 
 [`transmitter/bandwidth_allocator.py`](https://github.com/GopherNetLab/Teleop-Gopher-streamer/blob/7c585c2/src/gopher_streamer/transmitter/bandwidth_allocator.py)
 and
@@ -411,7 +437,9 @@ This is a different control philosophy from both of ours:
 
 | | UMN allocator | SCReAM | GCC |
 |---|---|---|---|
-| Congestion signal | qdisc backlog / drops | RTT + queue delay + loss | delay gradient + loss gradient |
+| Default state | off (`adaptive_bitrate=false`, 84/100 configs) | on when CC selected | on when CC selected |
+| Operates at | application layer (encoder bitrate/FPS) | transport layer (RTP rate) | transport layer (RTP rate) |
+| Congestion signal | local qdisc backlog / drops | RTT + queue delay + loss | delay gradient + loss gradient |
 | Loop style | reactive, throughput-driven | reactive, queue-delay-based | reactive, gradient-based |
 | Response time | ~1–2 s (1 Hz poll + EWMA) | ~100–500 ms | ~50–200 ms |
 | Multi-stream | priority-ordered degradation ladder | per-stream rate, shared signal | per-stream rate, shared signal |

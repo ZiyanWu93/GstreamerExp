@@ -168,14 +168,24 @@ report, no receiver-estimated-bitrate message. That directly sets up D4.
 This is the deepest point and the one most relevant to *our* project,
 so it gets the most space.
 
+First, the baseline: **by default UMN has no congestion control at
+all.** `adaptive_bitrate` is `false` in 84 of 100 shipped configs, so
+the default pipeline is open-loop — fixed-CBR encode, the sender blasts
+packets, and congestion surfaces only as UDP socket-buffer overflow
+turning into packet drops. There is no controller in the default
+configuration. The discussion below is about the *opt-in* path, where
+`adaptive_bitrate: true` activates the `BandwidthAllocator`; that is the
+only thing in UMN that could be called a controller, and it is the
+fair thing to compare against SCReAM and GCC.
+
 SCReAM and GCC are **path-feedback controllers**. They learn about the
 bottleneck from the receiver: RTCP carries acknowledgements, loss
 reports, and timing back to the sender, and the controller infers
 queue delay (SCReAM) or delay gradient (GCC) from that feedback. The
 controller sees the path.
 
-UMN's controller cannot see the path, because D3 left it with no
-feedback channel. So
+UMN's allocator — when enabled — cannot see the path, because D3 left it
+with no feedback channel. So
 [`throughput.py`](https://github.com/GopherNetLab/Teleop-Gopher-streamer/blob/7c585c2/src/gopher_streamer/transmitter/throughput.py)
 does the only thing still available: it reads the **local sender
 qdisc**. It polls `tc qdisc show` for bytes sent, drops, and backlog,
