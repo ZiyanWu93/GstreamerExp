@@ -41,3 +41,7 @@ This folder contains the GStreamer context needed to start experiments without d
 ## Long-Form Reference
 
 - [Software analysis reference](software-analysis-reference.md)
+
+## Comparisons
+
+- [GstreamerExp vs UMN Teleop-Gopher-streamer](umn-teleop-gopher-comparison.md) — gap-driven comparison against the UMN GopherNetLab teleoperation streamer

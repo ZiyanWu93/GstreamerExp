@@ -6,6 +6,11 @@ hosts.yaml
 # https://github.com/EricssonResearch/scream).
 scream/
 
+# Vendored external repos kept locally for comparison/reference only.
+# E.g. the UMN Teleop-Gopher-streamer clone behind
+# reference/umn-teleop-gopher-comparison.md. Each has its own upstream.
+reference/external/
+
 # Experiment run artifacts. Each `python3 cli.py <id>` writes a new
 # directory here (camera.json, viewer.json, summary.json, etc.).
 runs/
