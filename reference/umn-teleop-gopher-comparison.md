@@ -40,29 +40,31 @@ Direct feature-by-feature comparison. Legend: ✓ present, ◐ partial,
 
 ### Congestion control
 
-UMN has **no transport-level congestion control** — no SCReAM/GCC-class
-controller, no path feedback, no congestion window, no pacing. Its only
-rate-adaptation mechanism is the `BandwidthAllocator`, and it is
-**opt-in and off by default**: `adaptive_bitrate` is `false` in 84 of
-100 shipped configs (`shared/config.py:99`), and the 16 that enable it
-are all camera / 6-stream rigs. Default UMN is fully open-loop —
-fixed-CBR encode, the sender blasts packets, and the only response to
-congestion is UDP socket-buffer overflow causing packet drops
-(`transmitter/sender.py`). When `adaptive_bitrate` is on, the allocator
-adds a coarse 1 Hz application-level bitrate degrader driven by the
-*local* qdisc backlog — reactive rate adaptation, but not a congestion
-controller.
+This is the one table where UMN's `scream-integration` branch diverges
+from `main`, so it carries an extra column. On **`main`** (`7c585c2`),
+UMN has no transport congestion control: `adaptive_bitrate` is `false`
+in 84 of 100 configs, so the default pipeline is open-loop — fixed-CBR
+encode, the sender blasts packets, and congestion surfaces only as UDP
+socket-buffer overflow causing packet drops; the opt-in
+`BandwidthAllocator` is a coarse 1 Hz local-qdisc bitrate degrader, not
+a controller. The **`scream-integration`** branch (`502533c0`) adds
+hand-written, *SCReAM-inspired* and *GCC-style* controllers plus a
+receiver→sender feedback channel — UMN's own reimplementations, not the
+reference algorithms our project wires in.
 
-| Feature | Ours | Our source | UMN | UMN source |
-|---|---|---|---|---|
-| Transport congestion controller (SCReAM/GCC-class) | ✓ | `gstexp/camera.py` | ✗ | — |
-| SCReAM | ✓ | `gstexp/camera.py` + `scream/` | ✗ | — |
-| Google CC (`rtpgccbwe`) | ✓ | `gstexp/camera.py` | ✗ | — |
-| Path-feedback congestion signal (RTCP RTT / loss / delay) | ✓ | `gstexp/camera.py` | ✗ | — |
-| Packet pacing | ✓ | `gstexp/camera.py` (SCReAM / `rtpbin`) | ✗ blast; drop on socket-buffer overflow | `transmitter/sender.py` |
-| Application-level adaptive bitrate | ✗ | — | ◐ opt-in, off by default (`adaptive_bitrate`, 16/100 configs) | `src/gopher_streamer/transmitter/bandwidth_allocator.py` |
-| qdisc-backlog capacity estimate | ✗ | — | ◐ only when adaptive_bitrate on | `src/gopher_streamer/transmitter/throughput.py` |
-| Multi-stream priority degradation ladder | ✗ | — | ◐ only when adaptive_bitrate on | `transmitter/bandwidth_allocator.py` |
+| Feature | Ours | Our source | UMN `main` | UMN `scream-integration` | UMN source |
+|---|---|---|---|---|---|
+| Transport congestion controller (SCReAM/GCC-class) | ✓ | `gstexp/camera.py` | ✗ | ◐ own reimplementation | `transmitter/scream_controller.py` |
+| SCReAM | ✓ real (Ericsson, via `gstscream`) | `gstexp/camera.py` + `scream/` | ✗ | ◐ "SCReAM-inspired" Python AIMD loop, 100 ms | `transmitter/scream_controller.py` |
+| Google CC | ✓ real (`rtpgccbwe`) | `gstexp/camera.py` | ✗ | ◐ "GCC-style" Python reimplementation | `transmitter/google_congestion_controller.py` |
+| Path-feedback congestion signal (loss + one-way delay) | ✓ RTCP | `gstexp/camera.py` | ✗ | ✓ custom `RFBK` receiver feedback | `transmitter/receiver_feedback.py`, `shared/protocol.py` |
+| Packet pacing | ✓ | `gstexp/camera.py` (SCReAM / `rtpbin`) | ✗ blast; drop on socket overflow | ✗ still blast | `transmitter/sender.py` |
+| Application-level adaptive bitrate (allocator) | ✗ | — | ◐ opt-in (`adaptive_bitrate`, 16/100 configs) | ◐ opt-in, now one of `allocator` / `scream` / `gcc` / `fixed` | `transmitter/bandwidth_allocator.py` |
+| qdisc-backlog capacity estimate | ✗ | — | ◐ only when adaptive_bitrate on | ◐ a SCReAM-controller input signal | `transmitter/throughput.py` |
+| Multi-stream priority degradation ladder | ✗ | — | ◐ only when adaptive_bitrate on | ◐ only when adaptive_bitrate on | `transmitter/bandwidth_allocator.py` |
+
+`scream-integration` UMN source paths are at branch head `502533c0`;
+all other UMN paths in this document are at `main` / `7c585c2`.
 
 ### Loss recovery
 
