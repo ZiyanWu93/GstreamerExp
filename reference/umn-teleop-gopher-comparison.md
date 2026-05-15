@@ -1,13 +1,129 @@
 # GstreamerExp vs UMN Teleop-Gopher-streamer
 
-A gap-driven comparison: for each open item in [`docs/TODO.md`](../docs/TODO.md),
-how does the UMN GopherNetLab teleoperation streamer address it, and is
-their approach portable to our GStreamer pipeline?
+Two parts. First, a **feature matrix** — a direct, feature-by-feature
+table of what each implementation has and where in its source it lives.
+Then a **gap-driven comparison**: for each open item in
+[`docs/TODO.md`](../docs/TODO.md), how the UMN GopherNetLab
+teleoperation streamer addresses it and whether the approach is portable
+to our GStreamer pipeline.
 
 UMN repo: <https://github.com/GopherNetLab/Teleop-Gopher-streamer>.
 File links below are pinned to commit `7c585c2` ("Save teleop
 integration baseline"). The repo is vendored locally at
 `reference/external/teleop-gopher-streamer/` (gitignored).
+
+## Feature matrix
+
+Direct feature-by-feature comparison. Legend: ✓ present, ◐ partial,
+✗ absent. "Our source" paths are relative to `projects/GstreamerExp/`;
+"UMN source" paths are relative to the UMN repo root at commit
+`7c585c2`.
+
+### Media pipeline
+
+| Feature | Ours | Our source | UMN | UMN source |
+|---|---|---|---|---|
+| Media framework | ✓ GStreamer 1.24 | `gstexp/camera.py`, `gstexp/viewer.py` | ✓ PyAV / libav | `src/gopher_streamer/transmitter/encoder.py` |
+| VP8 codec | ✓ | `gstexp/camera.py` | ✓ | `transmitter/encoder.py` |
+| VP9 / H.264 / HEVC / AV1 | ✗ | — | ✓ | `transmitter/encoder.py` |
+| Hardware encode (NVENC / QSV / VAAPI) | ✗ | — | ✓ | `transmitter/encoder.py` |
+| Adaptive resolution | ✗ | — | ◐ policy-driven, not CC-driven | `transmitter/encoder.py` |
+
+### Transport
+
+| Feature | Ours | Our source | UMN | UMN source |
+|---|---|---|---|---|
+| Standard RTP / RTCP | ✓ | `gstexp/camera.py`, `gstexp/viewer.py` | ✗ | — |
+| Custom UDP framing | ✗ | — | ✓ | `src/gopher_streamer/shared/protocol.py` |
+| SRTP / DTLS encryption | ✗ | — | ✗ | — |
+| UDP socket buffer tuning | ✓ | `gstexp/camera.py` | ✓ | `src/gopher_streamer/shared/udp_buffers.py` |
+
+### Congestion control
+
+| Feature | Ours | Our source | UMN | UMN source |
+|---|---|---|---|---|
+| SCReAM | ✓ | `gstexp/camera.py` + `scream/` | ✗ | — |
+| Google CC (`rtpgccbwe`) | ✓ | `gstexp/camera.py` | ✗ | — |
+| Throughput-driven bandwidth allocator | ✗ | — | ✓ | `src/gopher_streamer/transmitter/bandwidth_allocator.py` |
+| qdisc-based capacity estimate | ✗ | — | ✓ | `src/gopher_streamer/transmitter/throughput.py` |
+| Multi-stream priority degradation ladder | ✗ | — | ✓ | `transmitter/bandwidth_allocator.py` |
+| Encoder-rate adaptation from the controller | ✓ | `gstexp/metrics.py` (`EncoderTargetKbps`) | ✓ | `transmitter/encoder.py` |
+
+### Loss recovery
+
+| Feature | Ours | Our source | UMN | UMN source |
+|---|---|---|---|---|
+| NACK + RTX | ✓ | `gstexp/camera.py` (`_make_rtprtxsend`), `gstexp/viewer.py` | ✗ | — |
+| PLI / keyframe request | ✓ | `gstexp/viewer.py` | ◐ KFRQ messages | `src/gopher_streamer/receiver/reassemble.py` |
+| ULPFEC | ✓ | `gstexp/camera.py` (`_make_rtpulpfecenc`) | ✗ | — |
+| Jitter buffer | ✓ | `gstexp/viewer.py` (`rtpjitterbuffer`) | ✓ | `receiver/reassemble.py` |
+| Partial-frame decode | ✗ | — | ✓ | `receiver/reassemble.py` |
+
+### Capture
+
+| Feature | Ours | Our source | UMN | UMN source |
+|---|---|---|---|---|
+| Synthetic source (`videotestsrc`) | ✓ | `gstexp/camera.py` | ✗ | — |
+| File-backed source | ✓ | `gstexp/camera.py` | ✓ | `src/gopher_streamer/shared/config.py` (`source_path`) |
+| Real camera | ✗ | — | ✓ | `src/gopher_streamer/cameras/spinnaker_capture.py` |
+| Multi-camera | ✗ | — | ✓ | `transmitter/main.py` |
+| Camera hardware-timestamp metadata | ✗ | — | ✓ | `src/gopher_streamer/shared/frame_metadata.py` |
+
+### Reception / display
+
+| Feature | Ours | Our source | UMN | UMN source |
+|---|---|---|---|---|
+| Measurement sink (`fakesink` / `filesink`) | ✓ | `gstexp/viewer.py` | n/a | — |
+| Real display sink | ◐ `autovideosink` (expo only) | `gstexp/expo.py` | ◐ Tkinter + Pillow | `src/gopher_streamer/receiver/display.py` |
+| Multi-window / multi-monitor layout | ✗ | — | ✓ | `receiver/display.py` |
+| Composited mosaic / picture-in-picture | ✗ | — | ✗ | — |
+
+### Metrics & measurement
+
+| Feature | Ours | Our source | UMN | UMN source |
+|---|---|---|---|---|
+| Frame count | ✓ | `gstexp/metrics.py` (`FrameCount`) | ✓ | `src/gopher_streamer/shared/metrics.py` |
+| Wire bytes / bitrate | ✓ | `gstexp/metrics.py` (`WireBytes`) | ✓ | `src/gopher_streamer/plotting/plot_throughput.py` |
+| Frame latency (RTP boundary) | ✓ | `gstexp/metrics.py` (`FrameLatency`) | ✗ | — |
+| Per-stage latency (8 probes) | ✓ | `gstexp/metrics.py` (`StageLatency`) | ✗ | — |
+| Source→decode latency | ◐ derivable | `gstexp/metrics.py` | ✓ | `src/gopher_streamer/receiver/decoder.py` |
+| Glass-to-glass latency | ✗ | — | ✗ | — |
+| Decoded PSNR | ✓ | `gstexp/metrics.py` (`DecodedPsnr`) | ✗ | — |
+| SSIM / VMAF | ✗ | — | ✗ | — |
+| Decoder-error accounting | ✓ | `gstexp/metrics.py` (`DecoderErrors`) | ◐ complete/partial/dropped | `src/gopher_streamer/plotting/analyze_receiver_log.py` |
+
+### Recording
+
+| Feature | Ours | Our source | UMN | UMN source |
+|---|---|---|---|---|
+| Dual-end forensic bitstream recording | ✗ | — | ✓ | `src/gopher_streamer/{transmitter,receiver}/save_encoded.py` |
+
+### Network impairment
+
+| Feature | Ours | Our source | UMN | UMN source |
+|---|---|---|---|---|
+| `tc` tbf + netem impairment | ✓ | `gstexp/validation.py` (compiler), `gstexp/runner.py` | ✗ | — |
+| Declarative network specs | ✓ | `specs/networks/` | ✗ | — |
+| mahimahi trace replay | ◐ translated into specs | `specs/networks/mahimahi-5g-*.yaml` | ✓ `mm-link` | `src/gopher_streamer/experiment/main.py`, `traces/` |
+
+### Experiment methodology
+
+| Feature | Ours | Our source | UMN | UMN source |
+|---|---|---|---|---|
+| Declarative validated specs | ✓ | `gstexp/validation.py`, `specs/` | ✗ | — |
+| Schema validation at load time | ✓ | `gstexp/validation.py` | ✗ dataclass only | `src/gopher_streamer/shared/config.py` |
+| Multi-rep experiment runner | ✓ | `experiment.py` | ◐ subprocess spawn | `src/gopher_streamer/experiment/main.py` |
+| Hypothesis framework + verifiers | ✓ | `analysis/hypotheses/` | ✗ | — |
+
+### Vehicle integration (out of scope for our testbed)
+
+| Feature | Ours | Our source | UMN | UMN source |
+|---|---|---|---|---|
+| Vehicle controls (joystick → cmd_vel) | ✗ | — | ✓ | `src/vehicle_controls/zenoh/` |
+| RAN telemetry | ✗ | — | ✓ | `src/ran/`, `src/telemetry/` |
+| GPS / GNSS | ✗ | — | ✓ | `src/gopher_streamer/transmitter/gps.py`, `ros_gps.py` |
+| Trajectory / routing | ✗ | — | ✓ | `src/trajectory/` |
+| Ambient audio | ✗ | — | ✗ | — |
 
 ## The architectural split
 
