@@ -786,6 +786,81 @@
         ]
       },
       "spec_path": "specs/hypotheses/h4.yaml"
+    },
+    {
+      "id": "H5",
+      "slug": "h5",
+      "title": "Our SCReAM adapts to changing bandwidth better than UMN's reimplementation \u2014 because UMN's controller can't drive its encoder, not because of the algorithm",
+      "claim": "When the available bandwidth keeps changing, our SCReAM raises and lowers its sending rate to match what the link can carry, so it uses most of the available bandwidth. UMN's reimplementation instead holds a roughly constant sending rate, so it leaves most of a fast link unused. The reason is what we call a controller-to-encoder gap: the congestion controller (the part that decides how fast to send) picks a sending rate, but that decision is never applied to the video encoder, so the encoder keeps producing video at roughly the same rate no matter what. This is a plumbing problem inside UMN's implementation \u2014 not a flaw in the SCReAM algorithm itself, and not a matter of how often its control loop runs. (A Glossary at the end defines any remaining term.)\n",
+      "declared_status": "supported",
+      "execution_status": "untested",
+      "source": "Project-internal cross-implementation comparison against UMN Teleop-Gopher-streamer (scream-integration branch 502533c)",
+      "page": "analysis/hypotheses/h5.html",
+      "verifier": "analysis/hypotheses/h5_umn_scream_implementation_gap.py",
+      "prediction": "Both stacks stream the same 60 s clip on one machine over loopback (sender and receiver are two processes on the same host). The network is squeezed the same way for both: a Linux traffic shaper on the loopback interface replays recorded 5G bandwidth patterns \u2014 a sudden handover drop (HO), bumpy tower-sharing (RB), and smooth signal drift (CQI) \u2014 each scaled to 1/3 capacity so the link is tight. Both get the same bitrate limits, and UMN's network_time_sync flag is on so its delay signal (the cue SCReAM uses to sense a building queue, and back off) actually works. We expect: our SCReAM's sending rate rises and falls with the available bandwidth, so it uses most of what the link offers \u2014 high \"utilization\", the share of available bandwidth actually used \u2014 while UMN's stays near a constant rate across the three traces, whose capacities differ about 2.5x. We also expect the gap to remain when UMN's control loop is sped up (re-checking every 50 ms instead of 200 ms) and made to ramp up faster \u2014 which would rule out loop timing as the cause \u2014 and to line up with the controller-to-encoder gap measured directly: the rate actually sent exceeds the rate the controller asked for, in most decisions.\n",
+      "verdict_rule": "Supported when (a) on the high-capacity CQI trace our utilization is at least 2x UMN's; (b) UMN's mean sent rate barely changes across the three traces (spread <= 15%), showing it does not track capacity; (c) speeding up UMN's loop to 50 ms and raising its ramp gain do not raise its CQI utilization (timing ruled out); and (d) the diagnostic shows the actual sent rate exceeding the controller's commanded target by more than 1.3x in most decisions. Refuted if the utilization gap closes once the delay signal is on, or if faster timing recovers utilization. Untested if the comparison metrics are missing.\n",
+      "setup": {
+        "environment": {
+          "topology": "single host, loopback (127.0.0.1) \u2014 sender and receiver are two processes on the same machine",
+          "host": "aum",
+          "shaper": "tc qdisc on the loopback interface (fixed 20 ms delay + a bandwidth cap that changes every 100 ms to follow the 5G trace)",
+          "our_stack": "GStreamer 1.24, config 90 (SCReAM via the gstscream plugin), streaming realmotion.avi",
+          "umn_stack": "UMN Teleop-Gopher-streamer (branch 502533c), congestion_controller=scream, network_time_sync on",
+          "workload": "realmotion.avi \u2014 a 1280x1024 Motion-JPEG clip at 10 frames/sec, 60 s long",
+          "note": "This is a cross-implementation comparison run by a dedicated harness (tools/comparison_sweep.sh, umn_scream_rerun.sh, umn_ladder.sh, tc_lo_driver.py), not by experiment.py, so this hypothesis has no internal experiment.py records. The evidence is the tables and figures below; the raw per-run numbers are in analysis/umn-comparison/metrics.csv.\n"
+        },
+        "experiments": [],
+        "required_metrics": [
+          "utilization",
+          "overshoot_frac",
+          "mean_sent_kbps"
+        ]
+      },
+      "results": {
+        "expected_records": [],
+        "report": "analysis/hypotheses/results/h5_report.json",
+        "figures": [
+          "analysis/hypotheses/results/h5_isolation_ladder.svg",
+          "analysis/hypotheses/results/h5_utilization_by_trace.svg"
+        ],
+        "tables": [
+          "h5_fair_comparison",
+          "h5_isolation_ladder",
+          "h5_implementation_maturity",
+          "h5_algorithm_comparison_code_review"
+        ]
+      },
+      "execution": {
+        "experiments": []
+      },
+      "conclusions": {
+        "mechanism_claim": "With both implementations configured fairly, our SCReAM changes its sending rate to track the available bandwidth, while UMN's holds a near-constant rate. The cause is a controller-to-encoder gap: UMN's controller decides on a rate, but that decision is not applied to the encoder, so the encoder keeps producing video at roughly the same rate regardless. This is not explained by the SCReAM algorithm or by how often the control loop runs.\n",
+        "supporting_subclaims": [
+          "On the high-capacity CQI trace, our SCReAM uses about 63% of the available bandwidth; UMN's uses about 22%.",
+          "UMN's sending rate stays near 776-780 kbps on all three traces, even though their capacities differ about 2.5x \u2014 so it is not following the link.",
+          "Speeding up UMN's control loop (200 ms to 50 ms) and making it ramp faster did not raise its utilization \u2014 so loop timing is not the cause.",
+          "The controller-to-encoder gap is measured directly - the actual sent rate exceeded the controller's commanded rate by more than 1.3x in about 89% of decisions; UMN's packet-loss congestion signal also never fired."
+        ],
+        "established_claims": [
+          "Utilization (the share of available bandwidth actually used) on the high-capacity CQI trace: ours ~63%, UMN ~22%.",
+          "UMN's SCReAM sends a near-constant ~776-782 kbps across the HO, RB, and CQI traces, whose capacities differ about 2.5x; it does not raise its rate when more bandwidth is available.",
+          "The shortfall is a controller-to-encoder gap (the controller's chosen rate is not applied to the encoder), not the SCReAM algorithm or its loop timing.",
+          "Pinpointed in code: in encoder.py the encode loop applies the controller's rate by writing codec.bit_rate on an already-running software encoder, which libav ignores (a software encoder's bitrate is fixed when it opens). Only a full encoder reopen changes the rate, and the libvpx path never triggers that reopen \u2014 so the rate is set once at startup. This is a wiring problem in the implementation, not the SCReAM algorithm.",
+          "Architecture difference: UMN runs the controller as a separate thread that leaves a per-frame \"budget\" the encode loop must apply by hand, per codec; our SCReAM is a built-in pipeline element whose rate the media framework applies to the encoder automatically. The reference + framework-integrated design avoids this class of bug.",
+          "Algorithm fidelity (from source-code review, NOT measured in this experiment \u2014 the wiring gap masked it): the reference SCReAM is a queue-delay-gradient controller with a congestion window, bytes-in-flight limiting, and adaptive step sizes; UMN's is a fixed-gain multiply-up (x1.05) / multiply-down (x0.8) loop on binary signals with no memory. So the maturity case has two independent legs \u2014 a simpler control law (code-level) and an open control loop on the software path (measured). See the algorithm-comparison table.",
+          "An earlier version of this comparison showed UMN overshooting the link badly; that was our configuration mistake (network_time_sync was off, which disables UMN's delay signal). With it on, UMN no longer overshoots \u2014 confirming that result was an artifact, not a property of UMN's controller.",
+          "UMN's delay congestion signal works once network_time_sync is on; its packet-loss signal never fires in these runs."
+        ],
+        "limits": [
+          "Single-host loopback reproduces the bandwidth and delay faithfully but not real 5G radio effects (interference, scheduling, retransmission at the radio layer).",
+          "We measured network behavior (utilization, overshoot, sent rate), not delivered picture quality (PSNR/SSIM). \"Uses the link better\" is a statement about bandwidth use, not yet a measured video-quality difference.",
+          "UMN's controller is an early reimplementation (its own code marks receiver feedback as a future phase). This is a snapshot of branch 502533c, not a statement about the SCReAM algorithm in general.",
+          "Encode path (corrected): only UMN's VAAPI path reopens the encoder when the bitrate changes. NVENC \u2014 which UMN actually deploys \u2014 takes the SAME PyAV path as the libvpx encoder we tested: it applies the controller's rate with a live codec.bit_rate write and never reopens (NVENC uses in-band keyframes). libav fixes an encoder's bitrate when it opens and ignores later writes, so the controller-to-encoder gap almost certainly affects UMN's deployed NVENC path too \u2014 not just the software path. (An earlier draft wrongly implied the hardware path escapes the gap; that described VAAPI, which UMN does not deploy.)",
+          "Open question / verify next: NVENC behavior here is inferred from the code (PyAV path + libav's open-time bitrate), not measured \u2014 there is no NVIDIA GPU on the bench. Confirming it needs an NVENC run on real hardware under the same traces.",
+          "Open question / verify next: we measured network behavior (utilization), not delivered video quality. The honest quality metric is PSNR/SSIM of the received video vs the source, on both stacks."
+        ]
+      },
+      "spec_path": "specs/hypotheses/h5.yaml"
     }
   ]
 }

@@ -150,6 +150,7 @@ def render_html(spec_path: Path, report_path: Path) -> str:
         trace_characteristics=_trace_characteristics(report),
         experiments=_experiment_blocks(report),
         required_metrics=_required_metrics(spec),
+        glossary=spec.get("glossary") or [],
     )
 
 
@@ -281,6 +282,12 @@ def render_notebook(spec_path: Path, report_path: Path) -> nbformat.NotebookNode
     metrics = _required_metrics(spec)
     if metrics:
         body = "## Required metrics\n\n" + "\n".join(f"- `{m}`" for m in metrics)
+        cells.append(_md_cell(body))
+
+    glossary = spec.get("glossary") or []
+    if glossary:
+        body = "## Glossary\n\n" + "\n\n".join(
+            f"**{g.get('term')}** — {g.get('definition')}" for g in glossary)
         cells.append(_md_cell(body))
 
     cells.append(_md_cell(

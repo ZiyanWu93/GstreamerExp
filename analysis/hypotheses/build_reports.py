@@ -1173,6 +1173,180 @@ def build_h2(out_dir: Path = OUT_DIR) -> dict[str, Any]:
     }
 
 
+def build_h5(out_dir: Path = OUT_DIR) -> dict[str, Any]:
+    """H5 — cross-implementation SCReAM comparison vs UMN Teleop-Gopher.
+
+    Reads the comparison metrics CSV produced by tools/extract_comparison.py
+    (analysis/umn-comparison/metrics.csv), not an experiment.py record.
+    """
+    import csv as _csv
+
+    metrics_path = PROJECT_ROOT / "analysis" / "umn-comparison" / "metrics.csv"
+    rows = list(_csv.DictReader(metrics_path.open()))
+
+    def agg(metric: str) -> dict[tuple[str, str], float]:
+        g: dict[tuple[str, str], list[float]] = {}
+        for r in rows:
+            try:
+                g.setdefault((r["arm"], r["trace"]), []).append(float(r[metric]))
+            except ValueError:
+                pass
+        return {k: statistics.mean(v) for k, v in g.items() if v}
+
+    util, over = agg("utilization"), agg("overshoot_frac")
+    sent, cap = agg("mean_sent_kbps"), agg("mean_cap_kbps")
+    traces = ["ho", "rb", "cqi"]
+    rungs = [("umn-scream", "S0\nno delay"), ("umn-scream-v2", "S1\n+delay"),
+             ("umn-scream-s2", "S2\n+50ms"), ("umn-scream-s3", "S3\n+ramp"),
+             ("ours-scream", "REF\nours")]
+
+    plt = _matplotlib()
+
+    # Figure H5-1: utilization by trace, ours vs UMN (fair config).
+    fig, ax = plt.subplots(figsize=(5.4, 3.0))
+    x = range(len(traces))
+    w = 0.38
+    ours_u = [util.get(("ours-scream", t), 0.0) for t in traces]
+    umn_u = [util.get(("umn-scream-v2", t), 0.0) for t in traces]
+    ax.bar([xi - w / 2 for xi in x], ours_u, w, color=FIG_SCREAM,
+           label="Our SCReAM (reference)")
+    ax.bar([xi + w / 2 for xi in x], umn_u, w, color=FIG_GCC,
+           label="UMN SCReAM (reimpl., feedback on)")
+    ax.axhline(1.0, color=FIG_CAPACITY, ls="--", lw=0.7)
+    ax.set_xticks(list(x))
+    ax.set_xticklabels([t.upper() for t in traces])
+    ax.set_ylabel("link utilization (sent / capacity)")
+    ax.set_title("Link utilization by trace — both fairly configured")
+    ax.legend()
+    ax.grid(axis="y", color=FIG_GRID, lw=0.6)
+    fig.tight_layout()
+    fig.savefig(out_dir / "h5_utilization_by_trace.svg", format="svg",
+                metadata={"Date": None})
+    plt.close(fig)
+
+    # Figure H5-2: isolation ladder — HO overshoot + CQI utilization per rung.
+    fig, (a1, a2) = plt.subplots(1, 2, figsize=(8.0, 3.4))
+    labels = [lbl for _, lbl in rungs]
+    a1.bar(range(len(rungs)), [over.get((arm, "ho"), 0.0) for arm, _ in rungs],
+           color=FIG_SOURCE)
+    a1.set_xticks(range(len(rungs)))
+    a1.set_xticklabels(labels)
+    a1.set_title("HO overshoot fraction (lower better)")
+    a1.set_ylabel("overshoot")
+    a1.grid(axis="y", color=FIG_GRID, lw=0.6)
+    a2.bar(range(len(rungs)), [util.get((arm, "cqi"), 0.0) for arm, _ in rungs],
+           color=FIG_SOURCE)
+    a2.axhline(1.0, color=FIG_CAPACITY, ls="--", lw=0.7)
+    a2.set_xticks(range(len(rungs)))
+    a2.set_xticklabels(labels)
+    a2.set_title("CQI link utilization (higher better)")
+    a2.set_ylabel("utilization")
+    a2.grid(axis="y", color=FIG_GRID, lw=0.6)
+    fig.suptitle("Factor isolation ladder — one capability added per rung")
+    fig.tight_layout(rect=[0, 0, 1, 0.95])
+    fig.savefig(out_dir / "h5_isolation_ladder.svg", format="svg",
+                metadata={"Date": None})
+    plt.close(fig)
+
+    fair = [{
+        "trace": t.upper(),
+        "capacity_kbps": round(cap.get(("ours-scream", t), 0.0)),
+        "ours_utilization": round(util.get(("ours-scream", t), 0.0), 3),
+        "umn_utilization": round(util.get(("umn-scream-v2", t), 0.0), 3),
+        "ours_sent_kbps": round(sent.get(("ours-scream", t), 0.0)),
+        "umn_sent_kbps": round(sent.get(("umn-scream-v2", t), 0.0)),
+        "ours_overshoot": round(over.get(("ours-scream", t), 0.0), 3),
+        "umn_overshoot": round(over.get(("umn-scream-v2", t), 0.0), 3),
+    } for t in traces]
+
+    ladder = [{
+        "rung": lbl.replace("\n", " "),
+        "ho_overshoot": round(over.get((arm, "ho"), 0.0), 3),
+        "cqi_utilization": round(util.get((arm, "cqi"), 0.0), 3),
+        "cqi_sent_kbps": round(sent.get((arm, "cqi"), 0.0)),
+    } for arm, lbl in rungs]
+
+    return {
+        "hypothesis": "H5",
+        "status": "supported",
+        "environment": {
+            "topology": "single host, loopback (127.0.0.1)",
+            "host": "aum",
+            "shaper": "tc qdisc on lo (netem 20 ms + dynamic tbf) from translated 5G trace",
+            "our_stack": "GStreamer 1.24, config 90 (SCReAM via gstscream)",
+            "umn_stack": "teleop-gopher-streamer 502533c, congestion_controller=scream, network_time_sync on",
+            "workload": "realmotion.avi (1280x1024 MJPEG @ 10 fps, 60 s)",
+            "data_source": "analysis/umn-comparison/metrics.csv (tools/extract_comparison.py)",
+        },
+        "claim_structure": {
+            "conclusion": ("With both implementations configured fairly, our SCReAM "
+                           "changes its sending rate to match the available bandwidth, "
+                           "while UMN's holds a near-constant rate. The cause is a "
+                           "controller-to-encoder gap: UMN's controller decides on a rate, "
+                           "but the encode loop tries to apply it by writing codec.bit_rate "
+                           "on an already-running software encoder — which libav ignores, "
+                           "since a software encoder's bitrate is fixed when it opens. So "
+                           "the rate is set once at startup and never updated. This is a "
+                           "wiring problem in the implementation, not a flaw in the SCReAM "
+                           "algorithm or a matter of how often the control loop runs."),
+            "subclaims": [
+                f"Link utilization (share of available bandwidth used) on the high-capacity CQI trace: ours ~{util.get(('ours-scream','cqi'),0)*100:.0f}%, UMN ~{util.get(('umn-scream-v2','cqi'),0)*100:.0f}%.",
+                f"UMN's sending rate stays near {min(sent.get(('umn-scream-v2',t),0) for t in traces):.0f}-{max(sent.get(('umn-scream-v2',t),0) for t in traces):.0f} kbps on all three traces, whose capacities differ about 2.5x — it does not rise when more bandwidth is available.",
+                "Speeding up UMN's control loop (200 ms to 50 ms) and ramping faster did not raise its utilization — loop timing is not the cause.",
+                "Measured directly: the actual sent rate exceeded the controller's commanded rate by more than 1.3x in about 89% of decisions (the controller-to-encoder gap); UMN's packet-loss congestion signal also never fired.",
+                "Pinpointed in code: the encode loop (encoder.py _encode_stream_pyav) sets codec.bit_rate on a live encoder; only a full encoder reopen actually changes the rate, and libvpx never triggers that reopen. UMN's separate controller-thread design hand-wires this connection per codec; our SCReAM is a built-in pipeline element whose rate is applied by the framework.",
+            ],
+        },
+        "tables": {
+            "h5_fair_comparison": fair,
+            "h5_isolation_ladder": ladder,
+            "h5_implementation_maturity": [
+                {"dimension": "Algorithm",
+                 "umn_reimplementation": "Hand-written Python, SCReAM-inspired; its own code calls it a first pass for hardware integration",
+                 "ours_reference": "Ericsson reference SCReAM (C++), via the gstscream plugin"},
+                {"dimension": "Does the rate decision reach the encoder?",
+                 "umn_reimplementation": "No on the software path — assigns codec.bit_rate on a running libvpx encoder, which libav ignores",
+                 "ours_reference": "Yes — applied live through GStreamer's encoder property; the framework reconfigures the encoder"},
+                {"dimension": "Congestion signals used",
+                 "umn_reimplementation": "Delay only (and only with network_time_sync on); loss signal never fires; receiver feedback marked a future phase",
+                 "ours_reference": "Delay and loss together, via standard RTCP feedback"},
+                {"dimension": "Packet pacing",
+                 "umn_reimplementation": "None — packets leave as the encoder emits them",
+                 "ours_reference": "SCReAM paces its own RTP send queue"},
+                {"dimension": "Integration",
+                 "umn_reimplementation": "Separate controller thread leaving a per-frame budget the encode loop must apply correctly per codec",
+                 "ours_reference": "Built-in pipeline element; the media framework guarantees the rate reaches the encoder"},
+            ],
+            "h5_algorithm_comparison_code_review": [
+                {"aspect": "Control variable",
+                 "umn_reimplementation": "One scalar target rate",
+                 "ours_reference": "A congestion window + bytes-in-flight limit, then a rate derived from it"},
+                {"aspect": "Delay handling",
+                 "umn_reimplementation": "Binary: is one-way delay over the 120 ms threshold?",
+                 "ours_reference": "A queue-delay trend/gradient vs a target, scaled continuously"},
+                {"aspect": "Rate increase",
+                 "umn_reimplementation": "Blind x1.05 every 200 ms tick, regardless of history",
+                 "ours_reference": "Adaptive: fast when far below the last good point, gentle near it"},
+                {"aspect": "Rate decrease",
+                 "umn_reimplementation": "Fixed x0.8 (x0.7 on loss)",
+                 "ours_reference": "Proportional to how far queue delay exceeds the target"},
+                {"aspect": "State kept",
+                 "umn_reimplementation": "Just the current target rate",
+                 "ours_reference": "cwnd, smoothed RTT, queue-delay stats, reference rate, in-flight bytes"},
+                {"aspect": "Extras",
+                 "umn_reimplementation": "None",
+                 "ours_reference": "ECN/L4S marking, RTP-queue-aware, fast-start"},
+            ],
+        },
+        "figures": [
+            {"path": "analysis/hypotheses/results/h5_isolation_ladder.svg",
+             "caption": "Figure H5-1. Isolating the cause. Each bar adds one capability to UMN's SCReAM: S0 (none) → S1 (+delay signal) → S2 (+faster 50 ms loop) → S3 (+faster ramp); REF is our reference SCReAM. Left: overshoot (the share of time spent sending faster than the link can carry — lower is better) drops once the delay signal is on at S1, and the faster-timing steps S2/S3 do not change it. Right: utilization (the share of available bandwidth used — higher is better) on the high-capacity CQI trace stays low through S1/S2/S3, so faster timing does not help; only the reference implementation reaches high utilization."},
+            {"path": "analysis/hypotheses/results/h5_utilization_by_trace.svg",
+             "caption": "Figure H5-2. Share of available bandwidth used (utilization), per trace, with both implementations configured fairly. Ours rises with the available bandwidth (most visibly on the high-capacity CQI trace); UMN's stays low because its sending rate is held near a constant regardless of the link. The dashed line marks 1.0 — using all the available bandwidth."},
+        ],
+    }
+
+
 def write_reports(out_dir: Path = OUT_DIR) -> dict[str, Any]:
     out_dir.mkdir(parents=True, exist_ok=True)
     reports = {
@@ -1180,6 +1354,7 @@ def write_reports(out_dir: Path = OUT_DIR) -> dict[str, Any]:
         "H2": build_h2(out_dir),
         "H3": build_h3(out_dir),
         "H4": build_h4(out_dir),
+        "H5": build_h5(out_dir),
     }
     for hid, report in reports.items():
         (out_dir / f"{hid.lower()}_report.json").write_text(json.dumps(report, indent=2) + "\n")

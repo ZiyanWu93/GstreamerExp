@@ -35,3 +35,12 @@ __pycache__/
 # gstscream build artifacts (the source tree is gitignored too, but
 # this entry survives if someone copies the source in manually).
 scream/gstscream/target/
+
+# Intermediate render exports for the UMN comparison. The canonical
+# report is h5.html (+ SVGs) and REPORT.md; the combined deck+report PDF
+# and the .pptx are committed as the shareable deliverables. These three
+# are regenerable scaffolding (standalone PDFs subsumed by the combined
+# one; slides.html is the Chrome→PDF mirror of the deck).
+analysis/umn-comparison/H5-scream-comparison-report.pdf
+analysis/umn-comparison/slides.pdf
+analysis/umn-comparison/slides.html

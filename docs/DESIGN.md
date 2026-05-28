@@ -114,6 +114,39 @@ rather than biasing one arm. Stochastic elements (Gilbert-Elliott
 loss, jitter) are honest about their variance and verified
 empirically by `tools/network_probe.py`.
 
+### 8. A comparison is fair before it is conclusive
+
+This project's deliverable is comparative claims — SCReAM vs GCC, our
+stack vs a baseline. A comparative number is worthless if the setup was
+unfair or the cause was never isolated, and the person who ran it is the
+one most likely to have fooled themselves. So a comparison is not done
+when it produces a number; it is done when the number survives an
+adversarial pass. The full discipline lives in the **`technical-rigor`**
+skill (comparison is its worked specialization); the load-bearing checks:
+
+- **Match the other side's shipped config.** A default-valued flag can
+  disable the feature under test. Replicate the maintainer's real config,
+  not the defaults.
+- **Test the path the deployment uses.** Encoders, backends, and fast/slow
+  routes behave differently; measure the branch that actually ships.
+- **Verify the loop reaches the actuator.** A controller that *runs* is not
+  one that *acts* — check commanded-vs-actual, not just that a value was
+  produced.
+- **Isolate causes by ablation, not story.** Toggle one factor at a time;
+  the surviving gap is the real cause. A plausible explanation is not a
+  measured one.
+- **Separate measured from inferred.** Label each finding as observed in
+  the experiment or read from the code; never blur them in one sentence.
+- **Ask "what would make this wrong?"** as a gate before publishing, and
+  put any confound you can't rule out in the caveats up front.
+
+The H5 page (our SCReAM vs the UMN Teleop-Gopher reimplementation,
+`analysis/hypotheses/h5.html`) is the worked example: it nearly produced
+three wrong conclusions — "UMN floods the link" (a disabled flag), "the
+slow loop is the cause" (ruled out by ablation), and "their hardware path
+escapes the gap" (the wrong code path) — each caught by one of these
+checks.
+
 ## Evaluation framework
 
 A teleoperation video pipeline's performance is fully described by

@@ -1,0 +1,94 @@
+# UMN Teleop-Gopher-streamer config for the GstreamerExp ↔ UMN
+# performance comparison. Single stream, file-source pointed at the
+# user-supplied vehicle clip on aum, VP8 software encode (no NVENC
+# on aum's Matrox VGA). Adaptive_bitrate=true so the
+# --congestion-controller CLI flag picks the arm.
+#
+# Run via:
+#   poetry run experiment \
+#     --config configs/comparison/realmotion-vp8-base.yaml \
+#     --up-trace traces/mahimahi/ho.trace \
+#     --down-trace traces/mahimahi/down_8mbps.trace \
+#     --no-display -v
+# with --congestion-controller in {fixed, allocator, scream, gcc}.
+#
+# The streamed file is /home/ziyan/teleop_clips/realmotion.avi
+# (1280x1024 MJPEG@10fps, 60s, md5 db46923c…). PyAV opens AVI+MJPEG
+# natively; both stacks consume the same source bytes.
+
+transmitter:
+  platform: linux
+  receiver_host: "10.0.0.1"          # mahimahi-internal host IP from inside the namespace
+  receiver_port: 9000
+  max_packet_size: 1400
+  log_file: "logs/comparison/transmitter"
+  debug_log_file: "logs/comparison/transmitter-debug"
+  metrics_csv: "logs/comparison/transmitter-metrics"
+
+  # CC selection — runtime via --congestion-controller {fixed|allocator|scream|gcc}.
+  # adaptive_bitrate must be true for the allocator/scream/gcc paths.
+  # Per UMN's docs, --congestion-controller fixed = open-loop (CBR, no controller).
+  adaptive_bitrate: true
+  congestion_controller: "fixed"     # overridden per-arm (sweep sets scream)
+  bandwidth_headroom: 0.20
+  link_capacity_kbps: 5000
+  # network_time_sync stamps tx timestamps on packets (FLAG_TX_TS) so the
+  # receiver can compute one-way delay — SCReAM's PRIMARY congestion signal.
+  # Without it, UMN's SCReAM runs blind on local-qdisc signals only. Their
+  # field config (scream-5g/live-5g.yaml) enables both of these.
+  network_time_sync: true
+  smart_buffer: true
+  no_display: true
+
+  # Sub-blocks for the controllers that need parameters.
+  scream:
+    min_bitrate_kbps: 200
+    max_bitrate_kbps: 4000
+    initial_bitrate_kbps: 1500
+    ramp_up_gain: 1.05
+    ramp_down_gain: 0.80
+    rtt_target_ms: 100
+    queue_delay_target_ms: 120
+    loss_backoff: 0.70
+    update_interval_ms: 200
+
+  gcc:
+    min_bitrate_kbps: 200
+    max_bitrate_kbps: 4000
+    initial_bitrate_kbps: 1500
+
+  streams:
+    - stream_id: 0
+      stream_name: "realmotion"
+      receiver_port: 9000               # MUST match receiver.bind_port (UMN's receiver is single-port)
+      source_path: "/home/ziyan/teleop_clips/realmotion.avi"
+      bitrate_kbps: 1500
+      codec: "vp8"
+      encoder_name: "libvpx"
+      frame_rate: 10
+      width: 1280
+      height: 1024
+
+receiver:
+  bind_host: "0.0.0.0"
+  bind_port: 9000
+  max_packet_size: 1400
+  log_file: "logs/comparison/receiver"
+  metrics_csv: "logs/comparison/receiver-metrics"
+  codec_name: "vp8"
+  decoder_preference:
+    - "libvpx"
+    - "vp8"
+  save_video: false                  # forensic recording off for the comparison
+  jitter_buffer_ms: 200
+  show_metrics_graph: false
+  no_display: true
+  monitor_count: 1
+  windows:
+    - stream_id: 0
+      title: "realmotion"
+      x: 0
+      y: 0
+      width: 640
+      height: 480
+      fullscreen: false

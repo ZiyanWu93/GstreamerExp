@@ -63,6 +63,9 @@
   .source { font-size: 13px; color: var(--muted); margin-top: 4px; }
   .footer { font-size: 12px; color: var(--muted); margin-top: 36px;
             border-top: 1px solid var(--rule); padding-top: 10px; }
+  dl.glossary { margin: 8px 0 18px 0; }
+  dl.glossary dt { font-weight: 600; margin-top: 10px; }
+  dl.glossary dd { margin: 2px 0 0 0; color: var(--ink); font-size: 14px; }
 </style>
 </head>
 <body>
@@ -152,6 +155,13 @@
 <ul>
 {% for metric in required_metrics %}<li><code>{{ metric }}</code></li>
 {% endfor %}</ul>
+
+{% if glossary %}
+<h2>Glossary</h2>
+<dl class="glossary">
+{% for item in glossary %}<dt>{{ item.term }}</dt><dd>{{ item.definition }}</dd>
+{% endfor %}</dl>
+{% endif %}
 
 <h2>Reproducibility</h2>
 <p>This page is generated from <code>specs/hypotheses/{{ slug }}.yaml</code> + <code>analysis/hypotheses/results/{{ slug }}_report.json</code> + figures under <code>analysis/hypotheses/results/</code>.</p>

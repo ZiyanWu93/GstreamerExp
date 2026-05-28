@@ -31,7 +31,10 @@ that depends on context elsewhere.
 
 ### 1.5 Glossary at the end
 Definitions are reference material, not narrative. They go after the
-content, not before it.
+content, not before it. The spec supports a `glossary:` list (each entry
+is `term` + `definition`); the template renders it as the final content
+section (after Required metrics, before Reproducibility). Every page that
+uses a domain term should populate it — see §1.7.
 
 ### 1.6 Use standard empirical-research labels
 Prefer familiar labels over project-specific coinages:
@@ -41,6 +44,41 @@ Prefer familiar labels over project-specific coinages:
 invalidate a result, such as confounding, instrumentation error, or
 generalization beyond the tested population. Ordinary limits on what a
 claim covers are **Limitations**.
+
+### 1.7 Define every domain term — inline on first use; glossary is the backstop
+A cold reader must never hit a term they can't resolve on the page, and
+should rarely have to *leave the main thread* to resolve one. So the
+default is to define a term the first time it appears, inline:
+
+- A short parenthetical — "utilization (the share of available bandwidth
+  actually used)".
+- Or, better, replace the jargon with plain words and introduce the
+  coined term afterward — describe the behavior ("the encoder keeps
+  sending at the same rate no matter what the controller decides"), then
+  name it ("a controller-to-encoder gap"). The reader understands the
+  thing before they have to carry the label.
+
+The end glossary (§1.5) is a **backstop**, not the primary mechanism:
+use it for terms that recur many times or need a longer definition than
+fits inline. A page where the reader must scroll to the glossary to
+follow the opening argument has front-loaded its jargon and deferred its
+meaning — fix the prose, don't lean on the glossary.
+
+This is the principle an author close to the work violates most easily,
+because the jargon feels self-evident. A concrete failure we hit: an H5
+draft used "controller-to-encoder command-following gap," "utilization,"
+"overshoot," "delay signal," "network_time_sync," and "x0.33" with no
+definition anywhere — each obvious to the author, opaque to everyone
+else.
+
+Before publishing, list every noun a non-specialist wouldn't know and
+confirm each has a referent on the page. The usual offenders:
+- **Project coinages** — a named "gap," a multi-letter mechanism. Define
+  what it *is*, not just that it exists.
+- **Metric names** — utilization, overshoot, goodput. State what the
+  number measures and which direction is good.
+- **Bare acronyms** — HO, RB, CQI, NACK, PLI, RTP, tc. Expand on first
+  use or in the glossary.
 
 ---
 

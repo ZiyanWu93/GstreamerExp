@@ -1,0 +1,33 @@
+name: realmotion-avi
+description: |
+  User-supplied MJPEG/AVI clip from a vehicle-style camera: 1280x1024
+  @ 10 fps, 60 s, ~5.6 Mbps as MJPEG. Used as the workload for the
+  GstreamerExp ↔ UMN Teleop-Gopher-streamer comparison (see
+  reference/umn-teleop-gopher-comparison.md). Both stacks consume the
+  same source bytes; only the encoder/transport differs.
+
+  Stage with:
+      scp <local>.avi <camera-host>:~/teleop_clips/realmotion.avi
+  on the camera actor's host (file is large; not rsync'd with the
+  project tree). MD5 db46923c35f1ea70d5f3435c60358c4b.
+
+  GStreamer side path: filesrc → avidemux → jpegparse → jpegdec →
+  videoconvert → videoscale → videorate → vp8enc. The avidemux +
+  jpegdec elements ship in our locally-built GStreamer 1.24
+  (gst-plugins-good); confirmed working on aum via gst-discoverer.
+
+  Dimensions match the native source — no rescale, no upsample. fps
+  is 10 (native) so num_frames = 600 for the full 60 s. Pair with
+  bandwidth-constrained network specs (e.g. the -x0p33 mahimahi
+  variants) — the native bitrate is well below most full-capacity
+  traces, so the controllers won't be challenged otherwise.
+source:
+  backend: file
+  width: 1280
+  height: 1024
+  fps: 10
+  num_frames: 600
+  clock_overlay: false
+  file:
+    path: /home/ziyan/teleop_clips/realmotion.avi
+    loop: false

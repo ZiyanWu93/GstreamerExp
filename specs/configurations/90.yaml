@@ -1,0 +1,43 @@
+meta:
+  name: realmotion_loopback_scream
+  description: >
+    Comparison arm A. Our GStreamer 1.24 stack + reference SCReAM over
+    loopback, streaming the user-supplied realmotion.avi. Network
+    impairment is applied EXTERNALLY via tc on lo (comparison harness),
+    not by this config — so no network: ref here. Mirror of config 91
+    (GCC). Pair against UMN arms C/D under the same tc-on-lo shaping.
+  flags:
+  - scream
+video: realmotion-avi
+scenario:
+  actors:
+    camera:
+      host: 127.0.0.1
+    viewer:
+      host: 127.0.0.2
+  setup_delay_seconds: 3.0
+  drain_delay_seconds: 1.0
+  metrics:
+  - frame_count
+  - encoder_target_kbps
+  - wire_bytes
+  - encoded_bitrate
+  - frame_latency
+  - decoder_errors
+codec: vp8
+encoder:
+  bitrate_kbps: 1500
+  keyframe_interval_frames: 60
+congestion_control:
+  algorithm: scream
+  init_bitrate_kbps: 1500
+  min_bitrate_kbps: 200
+  max_bitrate_kbps: 4000
+sink:
+  backend: fake
+  sync: false
+recovery:
+  nack: false
+  pli: false
+  fec: false
+latency_budget_ms: 0

@@ -1,0 +1,158 @@
+{
+  "hypothesis": "H5",
+  "status": "supported",
+  "environment": {
+    "topology": "single host, loopback (127.0.0.1)",
+    "host": "aum",
+    "shaper": "tc qdisc on lo (netem 20 ms + dynamic tbf) from translated 5G trace",
+    "our_stack": "GStreamer 1.24, config 90 (SCReAM via gstscream)",
+    "umn_stack": "teleop-gopher-streamer 502533c, congestion_controller=scream, network_time_sync on",
+    "workload": "realmotion.avi (1280x1024 MJPEG @ 10 fps, 60 s)",
+    "data_source": "analysis/umn-comparison/metrics.csv (tools/extract_comparison.py)"
+  },
+  "claim_structure": {
+    "conclusion": "With both implementations configured fairly, our SCReAM changes its sending rate to match the available bandwidth, while UMN's holds a near-constant rate. The cause is a controller-to-encoder gap: UMN's controller decides on a rate, but the encode loop tries to apply it by writing codec.bit_rate on an already-running software encoder \u2014 which libav ignores, since a software encoder's bitrate is fixed when it opens. So the rate is set once at startup and never updated. This is a wiring problem in the implementation, not a flaw in the SCReAM algorithm or a matter of how often the control loop runs.",
+    "subclaims": [
+      "Link utilization (share of available bandwidth used) on the high-capacity CQI trace: ours ~63%, UMN ~22%.",
+      "UMN's sending rate stays near 776-780 kbps on all three traces, whose capacities differ about 2.5x \u2014 it does not rise when more bandwidth is available.",
+      "Speeding up UMN's control loop (200 ms to 50 ms) and ramping faster did not raise its utilization \u2014 loop timing is not the cause.",
+      "Measured directly: the actual sent rate exceeded the controller's commanded rate by more than 1.3x in about 89% of decisions (the controller-to-encoder gap); UMN's packet-loss congestion signal also never fired.",
+      "Pinpointed in code: the encode loop (encoder.py _encode_stream_pyav) sets codec.bit_rate on a live encoder; only a full encoder reopen actually changes the rate, and libvpx never triggers that reopen. UMN's separate controller-thread design hand-wires this connection per codec; our SCReAM is a built-in pipeline element whose rate is applied by the framework."
+    ]
+  },
+  "tables": {
+    "h5_fair_comparison": [
+      {
+        "trace": "HO",
+        "capacity_kbps": 2387,
+        "ours_utilization": 0.711,
+        "umn_utilization": 0.598,
+        "ours_sent_kbps": 1020,
+        "umn_sent_kbps": 776,
+        "ours_overshoot": 0.237,
+        "umn_overshoot": 0.165
+      },
+      {
+        "trace": "RB",
+        "capacity_kbps": 1825,
+        "ours_utilization": 0.68,
+        "umn_utilization": 0.563,
+        "ours_sent_kbps": 1040,
+        "umn_sent_kbps": 776,
+        "ours_overshoot": 0.108,
+        "umn_overshoot": 0.116
+      },
+      {
+        "trace": "CQI",
+        "capacity_kbps": 4710,
+        "ours_utilization": 0.629,
+        "umn_utilization": 0.216,
+        "ours_sent_kbps": 2339,
+        "umn_sent_kbps": 780,
+        "ours_overshoot": 0.074,
+        "umn_overshoot": 0.0
+      }
+    ],
+    "h5_isolation_ladder": [
+      {
+        "rung": "S0 no delay",
+        "ho_overshoot": 0.712,
+        "cqi_utilization": 0.553,
+        "cqi_sent_kbps": 2109
+      },
+      {
+        "rung": "S1 +delay",
+        "ho_overshoot": 0.165,
+        "cqi_utilization": 0.216,
+        "cqi_sent_kbps": 780
+      },
+      {
+        "rung": "S2 +50ms",
+        "ho_overshoot": 0.164,
+        "cqi_utilization": 0.216,
+        "cqi_sent_kbps": 780
+      },
+      {
+        "rung": "S3 +ramp",
+        "ho_overshoot": 0.166,
+        "cqi_utilization": 0.216,
+        "cqi_sent_kbps": 782
+      },
+      {
+        "rung": "REF ours",
+        "ho_overshoot": 0.237,
+        "cqi_utilization": 0.629,
+        "cqi_sent_kbps": 2339
+      }
+    ],
+    "h5_implementation_maturity": [
+      {
+        "dimension": "Algorithm",
+        "umn_reimplementation": "Hand-written Python, SCReAM-inspired; its own code calls it a first pass for hardware integration",
+        "ours_reference": "Ericsson reference SCReAM (C++), via the gstscream plugin"
+      },
+      {
+        "dimension": "Does the rate decision reach the encoder?",
+        "umn_reimplementation": "No on the software path \u2014 assigns codec.bit_rate on a running libvpx encoder, which libav ignores",
+        "ours_reference": "Yes \u2014 applied live through GStreamer's encoder property; the framework reconfigures the encoder"
+      },
+      {
+        "dimension": "Congestion signals used",
+        "umn_reimplementation": "Delay only (and only with network_time_sync on); loss signal never fires; receiver feedback marked a future phase",
+        "ours_reference": "Delay and loss together, via standard RTCP feedback"
+      },
+      {
+        "dimension": "Packet pacing",
+        "umn_reimplementation": "None \u2014 packets leave as the encoder emits them",
+        "ours_reference": "SCReAM paces its own RTP send queue"
+      },
+      {
+        "dimension": "Integration",
+        "umn_reimplementation": "Separate controller thread leaving a per-frame budget the encode loop must apply correctly per codec",
+        "ours_reference": "Built-in pipeline element; the media framework guarantees the rate reaches the encoder"
+      }
+    ],
+    "h5_algorithm_comparison_code_review": [
+      {
+        "aspect": "Control variable",
+        "umn_reimplementation": "One scalar target rate",
+        "ours_reference": "A congestion window + bytes-in-flight limit, then a rate derived from it"
+      },
+      {
+        "aspect": "Delay handling",
+        "umn_reimplementation": "Binary: is one-way delay over the 120 ms threshold?",
+        "ours_reference": "A queue-delay trend/gradient vs a target, scaled continuously"
+      },
+      {
+        "aspect": "Rate increase",
+        "umn_reimplementation": "Blind x1.05 every 200 ms tick, regardless of history",
+        "ours_reference": "Adaptive: fast when far below the last good point, gentle near it"
+      },
+      {
+        "aspect": "Rate decrease",
+        "umn_reimplementation": "Fixed x0.8 (x0.7 on loss)",
+        "ours_reference": "Proportional to how far queue delay exceeds the target"
+      },
+      {
+        "aspect": "State kept",
+        "umn_reimplementation": "Just the current target rate",
+        "ours_reference": "cwnd, smoothed RTT, queue-delay stats, reference rate, in-flight bytes"
+      },
+      {
+        "aspect": "Extras",
+        "umn_reimplementation": "None",
+        "ours_reference": "ECN/L4S marking, RTP-queue-aware, fast-start"
+      }
+    ]
+  },
+  "figures": [
+    {
+      "path": "analysis/hypotheses/results/h5_isolation_ladder.svg",
+      "caption": "Figure H5-1. Isolating the cause. Each bar adds one capability to UMN's SCReAM: S0 (none) \u2192 S1 (+delay signal) \u2192 S2 (+faster 50 ms loop) \u2192 S3 (+faster ramp); REF is our reference SCReAM. Left: overshoot (the share of time spent sending faster than the link can carry \u2014 lower is better) drops once the delay signal is on at S1, and the faster-timing steps S2/S3 do not change it. Right: utilization (the share of available bandwidth used \u2014 higher is better) on the high-capacity CQI trace stays low through S1/S2/S3, so faster timing does not help; only the reference implementation reaches high utilization."
+    },
+    {
+      "path": "analysis/hypotheses/results/h5_utilization_by_trace.svg",
+      "caption": "Figure H5-2. Share of available bandwidth used (utilization), per trace, with both implementations configured fairly. Ours rises with the available bandwidth (most visibly on the high-capacity CQI trace); UMN's stays low because its sending rate is held near a constant regardless of the link. The dashed line marks 1.0 \u2014 using all the available bandwidth."
+    }
+  ]
+}
