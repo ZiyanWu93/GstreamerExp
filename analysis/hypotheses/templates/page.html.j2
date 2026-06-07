@@ -78,11 +78,38 @@
 <h2>Claim</h2>
 <p>{{ claim }}</p>
 
-<h2>Prediction</h2>
-<p>{{ prediction }}</p>
+<h2>Predictions</h2>
+{% if predictions %}
+<ul>
+{% for p in predictions %}<li><code>{{ p }}</code></li>
+{% endfor %}</ul>
+{% else %}
+<p class="meta">(none declared)</p>
+{% endif %}
 
-<h2>Verdict rule</h2>
-<p>{{ verdict_rule }}</p>
+<h2>Verdict</h2>
+{% if verdict %}
+<table>
+<thead><tr><th>Outcome</th><th>Predicates</th></tr></thead>
+<tbody>
+{% set _labels = {
+  'supported_when_all': 'Supported when all',
+  'refuted_when_any': 'Refuted when any',
+  'inconclusive_when_any': 'Inconclusive when any',
+  'untested_when_any': 'Untested when any',
+} %}
+{% for key, label in _labels.items() %}
+{% if verdict.get(key) %}
+<tr><td><strong>{{ label }}</strong></td><td>
+{% for c in verdict[key] %}<code>{{ c }}</code>{% if not loop.last %}<br>{% endif %}{% endfor %}
+</td></tr>
+{% endif %}
+{% endfor %}
+</tbody>
+</table>
+{% else %}
+<p class="meta">(none declared)</p>
+{% endif %}
 
 {% if mechanism %}
 <h2>Main claim</h2>

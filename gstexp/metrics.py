@@ -750,19 +750,41 @@ class DecodedPsnr(Metric):
         self._truth_next_n = 0                     # running counter for appsink
         self._truth_pipeline: Gst.Pipeline | None = None
         self._fps: int = 0
-        self._frame_duration_ns: int = 0
         self._width: int = 0
         self._height: int = 0
-        # rtpjitterbuffer rewrites incoming RTP timestamps to a local
-        # wall-clock base (its `buffer-mode=slave` default). The absolute
-        # PTS at vp8dec.src is therefore not the camera's source PTS — but
-        # the *relative* PTS within the stream IS preserved. We capture
-        # the first decoded frame's PTS as a baseline and derive source
-        # frame index relative to it. This assumes the first received
-        # decoded frame = source frame 0 (no losses before any frame
-        # arrives) — true under the clean opening phase of every spec
-        # in this testbed.
-        self._first_decoded_pts: int | None = None
+        # Source frame index comes from the RTP timestamp, NOT the decoded
+        # buffer's PTS. rtpjitterbuffer rewrites PTS to a local wall-clock
+        # arrival base, and under congestion-control pacing + network delay
+        # frames do not arrive at the source's nominal cadence — so deriving
+        # the frame index from PTS drifts off the true source frame as the
+        # run progresses (decoded frame N gets scored against truth frame
+        # M != N, collapsing PSNR to the ~10 dB uncorrelated floor).
+        #
+        # The RTP timestamp travels in the packet header and encodes the
+        # source frame's original PTS (RFC 3551 90 kHz video clock for VP8),
+        # so it is robust to arrival jitter and to dropped frames. We
+        # reconstruct it the same way StageLatency does: read the wire RTP
+        # timestamp at the udp source's marker bit, FIFO-pair it with the
+        # depayloader output, and cache pts -> rtp_ts so the decoder.src
+        # probe can translate its buffer PTS back to the wire timestamp.
+        self._rtp_clock_hz = 90000
+        self._ticks_per_frame = 0                   # set in attach() from fps
+        self._first_rtp_ts: int | None = None
+        self._wire_in_rtp_ts: List[int] = []        # marker-bit RTP ts, in arrival order
+        self._depay_count = 0                        # FIFO index into wire_in list
+        self._pts_to_rtp: Dict[int, int] = {}        # decoder/depay PTS -> wire rtp_ts
+        self._pts_cache_depth = 256
+        # The RTP timestamp gives a clean *relative* frame index, but the
+        # first frame the viewer receives is not necessarily source frame 0:
+        # the camera may stream during the setup window before the viewer's
+        # socket is receiving, so the opening frames are dropped on the wire.
+        # We calibrate a constant offset once, by content — find the truth
+        # index that best matches the first decoded frame — then apply it for
+        # the whole run (the startup skew is fixed within a run). This is the
+        # standard way PSNR tools align a reference to a test stream.
+        self._truth_offset: int | None = None
+        self._calibrate_max_search = 240            # frames to scan for the skew
+        self._calibrate_min_db = 20.0               # require a real match to lock
         self._n_matched = 0
         self._n_unmatched = 0
         self._n_size_mismatch = 0
@@ -782,7 +804,7 @@ class DecodedPsnr(Metric):
             return
 
         self._fps = int(gt["fps"])
-        self._frame_duration_ns = int(round(1e9 / self._fps))
+        self._ticks_per_frame = self._rtp_clock_hz // self._fps
         self._width = int(gt["width"])
         self._height = int(gt["height"])
 
@@ -810,6 +832,23 @@ class DecodedPsnr(Metric):
             print(f"[decoded_psnr] truth pipeline error: {err.message} "
                   f"({debug}) — metric will see all decoded frames as "
                   f"unmatched", flush=True)
+
+        # RTP-timestamp reconstruction probes (mirror StageLatency):
+        #   wire_in  — marker-bit RTP ts at the udp source, in arrival order
+        #   depay.src — FIFO-pair with wire_in and cache pts -> rtp_ts
+        wire_el = (gst_pipeline.get_by_name("udpsrc_rtp")
+                   or gst_pipeline.get_by_name("udpsrc"))
+        if wire_el is not None:
+            wpad = wire_el.get_static_pad("src")
+            if wpad is not None:
+                wpad.add_probe(
+                    Gst.PadProbeType.BUFFER | Gst.PadProbeType.BUFFER_LIST,
+                    self._on_wire_in)
+        depay_el = gst_pipeline.get_by_name("depay")
+        if depay_el is not None:
+            dpad = depay_el.get_static_pad("src")
+            if dpad is not None:
+                dpad.add_probe(Gst.PadProbeType.BUFFER, self._on_depay_buffer)
 
         decoder = gst_pipeline.get_by_name("decoder")
         if decoder is None:
@@ -960,6 +999,48 @@ class DecodedPsnr(Metric):
         self._truth_frames[n] = y_plane
         return Gst.FlowReturn.OK
 
+    def _on_wire_in(self, _pad, info):
+        """Record each frame's wire RTP timestamp at its marker-bit packet,
+        in arrival order. Mirrors StageLatency's marker probe."""
+        def _record(buf):
+            if buf is None:
+                return
+            ok, rtp = GstRtp.RTPBuffer.map(buf, Gst.MapFlags.READ)
+            if not ok:
+                return
+            try:
+                if rtp.get_marker():
+                    self._wire_in_rtp_ts.append(rtp.get_timestamp())
+            finally:
+                rtp.unmap()
+
+        buf = info.get_buffer()
+        if buf is not None:
+            _record(buf)
+        else:
+            blist = info.get_buffer_list()
+            if blist is not None:
+                for i in range(blist.length()):
+                    _record(blist.get(i))
+        return Gst.PadProbeReturn.OK
+
+    def _on_depay_buffer(self, _pad, info):
+        """FIFO-pair the Nth depay output with the Nth wire_in marker packet
+        and cache pts -> wire rtp_ts for the decoder.src probe to look up."""
+        buf = info.get_buffer()
+        if buf is None or buf.pts == Gst.CLOCK_TIME_NONE:
+            return Gst.PadProbeReturn.OK
+        idx = self._depay_count
+        if idx >= len(self._wire_in_rtp_ts):
+            # wire_in sample for this frame hasn't landed yet (streaming-thread
+            # race); skip caching — next frame catches up.
+            return Gst.PadProbeReturn.OK
+        self._depay_count += 1
+        self._pts_to_rtp[buf.pts] = self._wire_in_rtp_ts[idx]
+        if len(self._pts_to_rtp) > self._pts_cache_depth:
+            del self._pts_to_rtp[next(iter(self._pts_to_rtp))]
+        return Gst.PadProbeReturn.OK
+
     def _on_decoded_buffer(self, _pad, info):
         buf = info.get_buffer()
         if buf is None:
@@ -967,17 +1048,18 @@ class DecodedPsnr(Metric):
         pts = buf.pts
         if pts == Gst.CLOCK_TIME_NONE:
             return Gst.PadProbeReturn.OK
-        if self._first_decoded_pts is None:
-            self._first_decoded_pts = pts
-        # Frame index relative to the first received frame (which we
-        # assume is source frame 0). See the alignment note in __init__.
-        delta = pts - self._first_decoded_pts
-        frame_n = int(round(delta / self._frame_duration_ns))
-
-        truth = self._truth_frames.get(frame_n)
-        if truth is None:
+        # Translate the decoded buffer's PTS back to the wire RTP timestamp,
+        # then derive the source frame index from RTP ts (robust to arrival
+        # jitter and drops). Falls through to unmatched if the cache lacks
+        # this PTS (e.g. a frame whose wire_in marker never arrived).
+        rtp_ts = self._pts_to_rtp.get(pts)
+        if rtp_ts is None:
             self._n_unmatched += 1
             return Gst.PadProbeReturn.OK
+        if self._first_rtp_ts is None:
+            self._first_rtp_ts = rtp_ts
+        delta_ticks = (rtp_ts - self._first_rtp_ts) & 0xFFFFFFFF
+        frame_n = int(round(delta_ticks / self._ticks_per_frame))
 
         ok, mapinfo = buf.map(Gst.MapFlags.READ)
         if not ok:
@@ -991,6 +1073,29 @@ class DecodedPsnr(Metric):
         finally:
             buf.unmap(mapinfo)
 
+        # Calibrate the startup offset once, by content. truth_index =
+        # frame_n + offset; scan for the offset that best matches this frame.
+        if self._truth_offset is None:
+            best_off, best_db = 0, -1.0
+            for cand in range(0, self._calibrate_max_search):
+                t = self._truth_frames.get(frame_n + cand)
+                if t is None:
+                    continue
+                p = _psnr_y(decoded_y, t)
+                if p > best_db:
+                    best_off, best_db = cand, p
+            if best_db < self._calibrate_min_db:
+                # No convincing match yet (e.g. early loss/corruption);
+                # defer calibration to a later, cleaner frame.
+                self._n_unmatched += 1
+                return Gst.PadProbeReturn.OK
+            self._truth_offset = best_off
+
+        truth = self._truth_frames.get(frame_n + self._truth_offset)
+        if truth is None:
+            self._n_unmatched += 1
+            return Gst.PadProbeReturn.OK
+
         psnr = _psnr_y(decoded_y, truth)
         self.samples.append([int(pts), frame_n, round(psnr, 3)])
         self._n_matched += 1
@@ -1001,6 +1106,9 @@ class DecodedPsnr(Metric):
             self._truth_pipeline.set_state(Gst.State.NULL)
             self._truth_pipeline = None
         self._truth_frames.clear()
+        self._pts_to_rtp.clear()
+        self._wire_in_rtp_ts.clear()
+        self._truth_offset = None
 
     def finalize(self):
         psnrs = [row[2] for row in self.samples

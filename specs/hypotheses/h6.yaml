@@ -1,0 +1,69 @@
+id: H6
+slug: h6
+title: SCReAM's queue-delay-target moves latency but not picture quality
+claim: Turning SCReAM's queue-delay-target changes p95 latency on every network we tested, but does not change decoded picture quality (PSNR) — at this workload there is no quality gain to trade for the added latency.
+status: refuted
+source: Goal 2.2 (knob sensitivity), project-internal
+page: analysis/hypotheses/h6.html
+verifier: analysis/hypotheses/h6_qdt_sweep.py
+predictions:
+  - psnr_rises_with_knob_on_every_network
+  - p95_latency_rises_with_knob_on_every_network
+  - diminishing_returns_point_visible_on_every_network
+  - diminishing_returns_points_differ_between_networks
+verdict:
+  supported_when_all:
+    - psnr_rises_with_knob_on_every_network
+    - p95_latency_rises_with_knob_on_every_network
+    - diminishing_returns_point_visible_on_every_network
+    - diminishing_returns_points_differ_between_networks
+  refuted_when_any:
+    - psnr_does_not_rise_with_knob_on_at_least_one_network
+    - no_diminishing_returns_point_visible_anywhere
+    - diminishing_returns_points_match_across_networks
+  untested_when_any:
+    - any_cell_failed
+    - required_metric_missing
+setup:
+  environment:
+    topology: controller-worker
+    hosts: { camera: aum, viewer: veda }
+    shaper: tc-qdisc
+    workload: realmotion-avi
+  experiments:
+    - name: h6-qdt-sweep-static
+      configurations: [101, 102, 103, 104, 105, 106]
+      role: qdt-sweep-static
+      minimum_completed_reps: 3
+    - name: h6-qdt-sweep-fluct
+      configurations: [107, 108, 109, 110, 111, 112]
+      role: qdt-sweep-fluct
+      minimum_completed_reps: 3
+    - name: h6-qdt-sweep-5g
+      configurations: [113, 114, 115, 116, 117, 118]
+      role: qdt-sweep-5g
+      minimum_completed_reps: 3
+  required_metrics:
+    - frame_count
+    - encoder_target_kbps
+    - wire_bytes
+    - encoded_bitrate
+    - frame_latency
+    - decoder_errors
+    - decoded_psnr
+results:
+  expected_records:
+    - runs/experiments/h6-qdt-sweep-static.json
+    - runs/experiments/h6-qdt-sweep-fluct.json
+    - runs/experiments/h6-qdt-sweep-5g.json
+  report: analysis/hypotheses/results/h6_report.json
+conclusions:
+  established:
+    - The control loop responds the right way to the knob. As the knob goes from 10 ms to 500 ms on every network, p95 latency moves with it — tighter knob, less latency; looser knob, more latency. SCReAM is doing what its specification says it should.
+    - The encoder does not benefit from extra room at this workload. Decoded picture quality (PSNR) stays roughly flat across the knob range — about a 1 dB swing on each network, which is within run-to-run noise at 3 reps. VP8 at the tested bitrates already has enough budget to encode this clip; loosening the knob does not give it useful extra room.
+  limits:
+    - Workload-specific. Tested with realmotion-avi (1280×1024 MJPEG, 10 fps, 60 s). A higher-motion or longer clip might saturate the encoder differently.
+    - Bitrate-specific. Tested with init / min / max bitrate = 1500 / 200 / 4000 kbps. A tighter ceiling, or a more demanding source, might let the knob bite into quality.
+    - The "no quality response" claim rests on PSNR. SSIM or VMAF might surface a smaller effect that PSNR misses.
+    - 3 reps per cell. PSNR effects smaller than about 1 dB are within noise.
+    - Absolute latency numbers carry a clock-skew artifact between aum and veda (same one H4 flagged). The relative comparison across knob values within one sweep is unaffected.

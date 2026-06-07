@@ -1,0 +1,29 @@
+name: h7-qdt-sweep-static
+description: |
+  H7 — SCReAM queue-delay-target sweep at a tight bitrate ceiling (max
+  800 kbps) on the fixed-5mbps-20ms network, streaming realmotion-avi.
+  Six knob values {10, 30, 60, 100, 200, 500} ms, three reps each. With
+  the encoder starved, this tests whether the knob trades picture quality
+  — the question H6 left open at its loose 4000 kbps ceiling.
+reps: 3
+varies:
+  - congestion_control.scream.delay_target_seconds
+configurations:
+  - id: 119
+    label: qdt 10ms
+    color: "#fee5d9"
+  - id: 120
+    label: qdt 30ms
+    color: "#fcae91"
+  - id: 121
+    label: qdt 60ms
+    color: "#fb6a4a"
+  - id: 122
+    label: qdt 100ms
+    color: "#de2d26"
+  - id: 123
+    label: qdt 200ms
+    color: "#a50f15"
+  - id: 124
+    label: qdt 500ms
+    color: "#67000d"

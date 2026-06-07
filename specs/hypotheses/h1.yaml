@@ -1,41 +1,44 @@
 id: H1
 slug: h1
-title: SCReAM bottleneck-phase sender rate is lower than GCC's on capacity-step networks
-claim: SCReAM's bottleneck-phase sender rate is lower than GCC's on capacity-step networks.
+title: SCReAM uses less of the link than GCC when the network drops capacity
+claim: When the network's bandwidth drops sharply, SCReAM sends less than GCC does — at least on the runs we tested.
 status: regime-dependent
-source: Zhang 2019 SIMUtools plus project fast-transition extension
+source: Zhang 2019 SIMUtools + project fast-transition extension
 page: analysis/hypotheses/h1.html
 verifier: analysis/hypotheses/h1_scream_underuse.py
-prediction: >
-  On capacity-step networks, SCReAM's bottleneck-phase encoder-rate
-  utilization should be lower than GCC's by at least 5 percentage
-  points, and GCC's bottleneck-phase encoder-rate variability should
-  be at least 20% higher.
-verdict_rule: >
-  Supported when both utilization and variability thresholds hold;
-  refuted when they do not. Current interpretation is regime-dependent
-  across slow-changing and fast-changing capacity-step networks.
+predictions:
+  - scream_sends_at_least_5_percentage_points_less_than_gcc_during_the_low_capacity_phase
+  - gcc_sender_rate_swings_at_least_20_percent_more_than_scream_during_the_low_capacity_phase
+verdict:
+  supported_when_all:
+    - scream_sends_at_least_5_percentage_points_less_than_gcc_during_the_low_capacity_phase
+    - gcc_sender_rate_swings_at_least_20_percent_more_than_scream_during_the_low_capacity_phase
+  refuted_when_any:
+    - neither_pattern_holds_in_any_test_case
+  inconclusive_when_any:
+    - patterns_hold_only_when_capacity_changes_slowly
+    - patterns_hold_only_when_capacity_changes_quickly
 setup:
   experiments:
-  - name: scream-vs-gcc-720p
-    configurations: [11, 12]
-    role: slow-changing capacity-step comparison
-    minimum_completed_reps: 7
-  - name: scream-vs-gcc-720p-fast
-    configurations: [27, 28]
-    role: fast-changing capacity-step comparison
-    minimum_completed_reps: 7
+    - name: scream-vs-gcc-720p
+      configurations: [11, 12]
+      role: slow-bandwidth-change
+      minimum_completed_reps: 7
+    - name: scream-vs-gcc-720p-fast
+      configurations: [27, 28]
+      role: fast-bandwidth-change
+      minimum_completed_reps: 7
   required_metrics:
-  - frame_count
-  - encoder_target_kbps
-  - wire_bytes
+    - frame_count
+    - encoder_target_kbps
+    - wire_bytes
 results:
   expected_records:
-  - runs/experiments/scream-vs-gcc-720p.json
-  - runs/experiments/scream-vs-gcc-720p-fast.json
+    - runs/experiments/scream-vs-gcc-720p.json
+    - runs/experiments/scream-vs-gcc-720p-fast.json
 conclusions:
-  established_claims:
-  - SCReAM/GCC ranking depends on the transition time scale of the capacity-step network.
-  - Sender-side utilization and receiver-side delivered frames answer different questions.
+  established:
+    - Whether SCReAM or GCC sends more during the low-capacity phase depends on how fast the bandwidth changes.
+    - "What the sender pushes onto the wire and what the viewer actually receives are two different questions: this hypothesis is about the sender."
   limits:
-  - The result is not a general claim that either algorithm is globally better.
+    - This is not a general claim that one algorithm is better than the other.

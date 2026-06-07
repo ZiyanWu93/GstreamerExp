@@ -42,7 +42,8 @@ This folder contains the GStreamer context needed to start experiments without d
 
 - [Software analysis reference](software-analysis-reference.md)
 
-## Comparisons
+## UMN reference
 
+- [UMN Teleop-Gopher-Streamer: top-down design](umn-teleop-design.md) — standalone design note: what it is, how it is decomposed, how a frame flows through it, and where the design falls short
 - [GstreamerExp vs UMN Teleop-Gopher-streamer](umn-teleop-gopher-comparison.md) — gap-driven comparison against the UMN GopherNetLab teleoperation streamer
 - [Why GstreamerExp and UMN Teleop-Gopher diverge](umn-teleop-divergence-analysis.md) — root-cause analysis of the divergence and a gap severity/cost ranking

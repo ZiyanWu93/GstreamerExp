@@ -1,0 +1,11 @@
+name: psnr-sanity
+description: |
+  One-cell PSNR ground-truth sanity check. Clean loopback, no impairment,
+  near-lossless VP8 (20 Mbps), realmotion-avi. Tells us whether the
+  decoded_psnr truth pipeline is aligned. ~40 dB = sound; ~10 dB = broken.
+reps: 1
+varies: []
+configurations:
+  - id: 140
+    label: clean-lossless
+    color: "#1d6f1d"

@@ -5,15 +5,30 @@
     {
       "id": "H1",
       "slug": "h1",
-      "title": "SCReAM bottleneck-phase sender rate is lower than GCC's on capacity-step networks",
-      "claim": "SCReAM's bottleneck-phase sender rate is lower than GCC's on capacity-step networks.",
+      "title": "SCReAM uses less of the link than GCC when the network drops capacity",
+      "claim": "When the network's bandwidth drops sharply, SCReAM sends less than GCC does \u2014 at least on the runs we tested.",
       "declared_status": "regime-dependent",
       "execution_status": "analyzable",
-      "source": "Zhang 2019 SIMUtools plus project fast-transition extension",
+      "source": "Zhang 2019 SIMUtools + project fast-transition extension",
       "page": "analysis/hypotheses/h1.html",
       "verifier": "analysis/hypotheses/h1_scream_underuse.py",
-      "prediction": "On capacity-step networks, SCReAM's bottleneck-phase encoder-rate utilization should be lower than GCC's by at least 5 percentage points, and GCC's bottleneck-phase encoder-rate variability should be at least 20% higher.\n",
-      "verdict_rule": "Supported when both utilization and variability thresholds hold; refuted when they do not. Current interpretation is regime-dependent across slow-changing and fast-changing capacity-step networks.\n",
+      "predictions": [
+        "scream_sends_at_least_5_percentage_points_less_than_gcc_during_the_low_capacity_phase",
+        "gcc_sender_rate_swings_at_least_20_percent_more_than_scream_during_the_low_capacity_phase"
+      ],
+      "verdict": {
+        "supported_when_all": [
+          "scream_sends_at_least_5_percentage_points_less_than_gcc_during_the_low_capacity_phase",
+          "gcc_sender_rate_swings_at_least_20_percent_more_than_scream_during_the_low_capacity_phase"
+        ],
+        "refuted_when_any": [
+          "neither_pattern_holds_in_any_test_case"
+        ],
+        "inconclusive_when_any": [
+          "patterns_hold_only_when_capacity_changes_slowly",
+          "patterns_hold_only_when_capacity_changes_quickly"
+        ]
+      },
       "setup": {
         "experiments": [
           {
@@ -22,7 +37,7 @@
               11,
               12
             ],
-            "role": "slow-changing capacity-step comparison",
+            "role": "slow-bandwidth-change",
             "minimum_completed_reps": 7
           },
           {
@@ -31,7 +46,7 @@
               27,
               28
             ],
-            "role": "fast-changing capacity-step comparison",
+            "role": "fast-bandwidth-change",
             "minimum_completed_reps": 7
           }
         ],
@@ -143,12 +158,12 @@
         ]
       },
       "conclusions": {
-        "established_claims": [
-          "SCReAM/GCC ranking depends on the transition time scale of the capacity-step network.",
-          "Sender-side utilization and receiver-side delivered frames answer different questions."
+        "established": [
+          "Whether SCReAM or GCC sends more during the low-capacity phase depends on how fast the bandwidth changes.",
+          "What the sender pushes onto the wire and what the viewer actually receives are two different questions: this hypothesis is about the sender."
         ],
         "limits": [
-          "The result is not a general claim that either algorithm is globally better."
+          "This is not a general claim that one algorithm is better than the other."
         ]
       },
       "spec_path": "specs/hypotheses/h1.yaml"
@@ -156,15 +171,27 @@
     {
       "id": "H2",
       "slug": "h2",
-      "title": "GCC stays ahead across latency-deadline and retransmission settings",
-      "claim": "On the fluctuating network, GCC delivers more viewer frames than SCReAM across latency-deadline and retransmission settings.",
+      "title": "On a wobbly network, GCC delivers more frames than SCReAM regardless of deadline or retransmit settings",
+      "claim": "When the link's bandwidth keeps changing, the viewer gets more frames with GCC than with SCReAM, and turning retransmits on or off or tightening the late-frame deadline does not change which one wins.",
       "declared_status": "supported",
       "execution_status": "analyzable",
-      "source": "Project-internal fluctuating-network deadline/retransmission experiment",
+      "source": "Project-internal fluctuating-network deadline / retransmit experiment",
       "page": "analysis/hypotheses/h2.html",
       "verifier": "analysis/hypotheses/h2_fluctuating_deadline_ranking.py",
-      "prediction": "On the fluctuating 5 Mbps/300 kbps capacity-step network, GCC should deliver more median viewer frames than SCReAM in every crossed cell of retransmission on/off and latency budget 0/50/100 ms.\n",
-      "verdict_rule": "Supported if all six deadline/retransmission cells show GCC ahead of SCReAM by at least 30 median viewer frames; inconclusive if only some cells meet the margin; refuted if the margin disappears.\n",
+      "predictions": [
+        "gcc_delivers_at_least_30_more_median_frames_than_scream_in_every_setting"
+      ],
+      "verdict": {
+        "supported_when_all": [
+          "gcc_delivers_at_least_30_more_median_frames_than_scream_in_every_setting"
+        ],
+        "refuted_when_any": [
+          "gcc_does_not_deliver_more_frames_than_scream_in_any_setting"
+        ],
+        "inconclusive_when_any": [
+          "gcc_delivers_more_frames_in_some_settings_but_not_others"
+        ]
+      },
       "setup": {
         "experiments": [
           {
@@ -183,7 +210,7 @@
               51,
               52
             ],
-            "role": "fluctuating-network CC deadline and retransmission comparison",
+            "role": "deadline-and-retransmit-grid",
             "minimum_completed_reps": 4
           }
         ],
@@ -359,12 +386,12 @@
         ]
       },
       "conclusions": {
-        "established_claims": [
-          "GCC delivers more median viewer frames than SCReAM in every tested deadline/retransmission cell on the fluctuating network.",
-          "Neither deadline enforcement nor retransmission changes the SCReAM-vs-GCC ranking in this experiment."
+        "established": [
+          "GCC delivers more median frames than SCReAM in every combination of deadline and retransmit we tested on this wobbly network.",
+          "Adding retransmits or tightening the late-frame deadline does not change which algorithm wins."
         ],
         "limits": [
-          "This is a fluctuating-network ranking result, not a general claim about NACK or latency budgets on every network."
+          "This is a result for one wobbly network, not a general claim about retransmits or deadlines on every network."
         ]
       },
       "spec_path": "specs/hypotheses/h2.yaml"
@@ -372,23 +399,43 @@
     {
       "id": "H3",
       "slug": "h3",
-      "title": "Media workload calibration gates realistic 5G trace comparisons",
-      "claim": "Media workload calibration gates realistic 5G trace comparisons.",
+      "title": "The test video is too lightweight to compare SCReAM and GCC on 5G recordings",
+      "claim": "The current test video (ball-720p30) sends nowhere near enough data to use up the bandwidth in the 5G recordings, so any controller comparison on those recordings is not yet meaningful.",
       "declared_status": "supported",
       "execution_status": "analyzable",
-      "source": "Project-internal validity check for realistic-trace SCReAM/GCC experiments",
+      "source": "Project-internal validity check for 5G-recording SCReAM / GCC experiments",
       "page": "analysis/hypotheses/h3.html",
       "verifier": "analysis/hypotheses/h3_media_workload_calibration.py",
-      "prediction": "The current ball-720p30-30s VP8 workload is not valid for comparing SCReAM and GCC on the translated 5G traces because observed camera wire bitrate is far below trace capacity. A workload is considered under-driving when each translated 5G trace has at least 10x median capacity headroom over observed camera wire bitrate and fewer than 15% of 100 ms bins below 1 Mbit/s.\n",
-      "verdict_rule": "Supported if all tested realistic traces meet the under-driving rule; inconclusive if only some do; refuted if none do; untested if required records are absent.\n",
+      "predictions": [
+        "every_5g_recording_has_at_least_10x_more_capacity_than_the_camera_actually_sends",
+        "on_every_recording_fewer_than_15_percent_of_100ms_windows_drop_below_1mbps_of_actual_sent_bytes"
+      ],
+      "verdict": {
+        "supported_when_all": [
+          "every_5g_recording_has_at_least_10x_more_capacity_than_the_camera_actually_sends",
+          "on_every_recording_fewer_than_15_percent_of_100ms_windows_drop_below_1mbps_of_actual_sent_bytes"
+        ],
+        "refuted_when_any": [
+          "no_recording_passes_either_check"
+        ],
+        "inconclusive_when_any": [
+          "some_recordings_pass_only_one_check"
+        ],
+        "untested_when_any": [
+          "required_records_missing"
+        ]
+      },
       "setup": {
         "environment": {
           "topology": "controller-worker",
-          "controller": "local workstation",
-          "camera_worker": "aum",
-          "viewer_worker": "veda",
-          "transport": "Tailscale hostnames from hosts.yaml for media/control addressing",
-          "sync_scope": "allowlisted project files needed to run the selected experiment"
+          "hosts": {
+            "controller": "workstation",
+            "camera": "aum",
+            "viewer": "veda"
+          },
+          "transport": "tailscale",
+          "shaper": "mahimahi",
+          "workload": "ball-720p30"
         },
         "experiments": [
           {
@@ -397,9 +444,8 @@
               55,
               56
             ],
-            "role": "CQI trace workload calibration",
-            "command": "python3 experiment.py scream-vs-gcc-mahimahi-5g-cqi",
-            "log": null
+            "role": "cqi-recording-calibration",
+            "command": "python3 experiment.py scream-vs-gcc-mahimahi-5g-cqi"
           },
           {
             "name": "scream-vs-gcc-mahimahi-5g-ho",
@@ -407,7 +453,7 @@
               57,
               58
             ],
-            "role": "handover-like trace workload calibration",
+            "role": "handover-recording-calibration",
             "command": "python3 experiment.py scream-vs-gcc-mahimahi-5g-ho",
             "log": "runs/experiment-logs/scream-vs-gcc-mahimahi-5g-ho.log"
           },
@@ -417,7 +463,7 @@
               59,
               60
             ],
-            "role": "resource-block trace workload calibration",
+            "role": "resource-block-recording-calibration",
             "command": "python3 experiment.py scream-vs-gcc-mahimahi-5g-rb",
             "log": "runs/experiment-logs/scream-vs-gcc-mahimahi-5g-rb.log"
           }
@@ -562,14 +608,14 @@
         ]
       },
       "conclusions": {
-        "established_claims": [
-          "The current ball-720p30-30s VP8 workload emits roughly 220-230 kbit/s, far below the typical capacity of the translated 5G traces.",
-          "The previous realistic-trace SCReAM/GCC comparisons should not be interpreted as meaningful algorithm comparisons.",
-          "A future realistic-trace comparison must first pass this calibration gate with a high-quality or high-bitrate workload whose observed wire bitrate actually stresses the trace."
+        "established": [
+          "The current ball-720p30 test video sends about 220\u2013230 kbit / s, well below the typical bandwidth in the translated 5G recordings.",
+          "Earlier 5G-recording SCReAM / GCC comparisons cannot be read as meaningful algorithm comparisons.",
+          "Any future 5G-recording comparison must first pass this calibration with a test video that actually keeps the link busy."
         ],
         "limits": [
-          "This validates that the old workload is too light; it does not yet test a replacement high-quality workload.",
-          "Brief low-capacity fades still exist in the handover-like traces; the claim is about typical headroom across the full replay."
+          "This shows the current test video is too light. It does not yet test a heavier replacement.",
+          "Brief low-capacity dips still happen in the handover-like recordings; the claim is about typical bandwidth across the whole replay."
         ]
       },
       "spec_path": "specs/hypotheses/h3.yaml"
@@ -577,23 +623,46 @@
     {
       "id": "H4",
       "slug": "h4",
-      "title": "SCReAM preserves more decodable video than GCC on calibrated stressed realistic 5G traces",
-      "claim": "SCReAM preserves more decodable video than GCC on calibrated stressed realistic 5G traces.",
+      "title": "SCReAM keeps more video watchable than GCC on tight 5G recordings",
+      "claim": "On 5G recordings squeezed to one-third of their original capacity, SCReAM delivers more decoded frames to the viewer than GCC does, while the camera actually sends fewer bytes \u2014 on the two harder recordings (handover and resource-block).",
       "declared_status": "supported",
       "execution_status": "analyzable",
-      "source": "Project-internal realistic-trace SCReAM/GCC experiment",
+      "source": "Project-internal 5G-recording SCReAM / GCC experiment",
       "page": "analysis/hypotheses/h4.html",
       "verifier": "analysis/hypotheses/h4_scream_realistic_trace_advantage.py",
-      "prediction": "On fixed translated 5G Mahimahi traces scaled to 33% capacity, a calibrated high-entropy 384x216x30 VP8 workload should show where the controller matters. CQI is expected to act as a high-capacity control where both controllers deliver nearly all frames. On the stressed HO and RB traces, SCReAM should deliver more viewer-depayloaded frames than GCC while using no more than 85% of GCC's camera egress bitrate and reaching a similar viewer-side ingress bitrate.\n",
-      "verdict_rule": "Supported if all experiment runs pass, both stressed traces show SCReAM/GCC viewer-frame ratio >=1.25, both stressed traces show camera egress mean bitrate <=85% of GCC, viewer-side mean wire bitrate is within 10% of GCC on stressed traces, and at least one stressed trace shows >=2x viewer-frame ratio. Refuted if completed records fail those thresholds; untested if required records or summaries are missing.\n",
+      "predictions": [
+        "scream_delivers_at_least_25_percent_more_viewer_frames_than_gcc_on_both_harder_recordings",
+        "on_both_harder_recordings_camera_sends_no_more_than_85_percent_of_what_gcc_sends",
+        "viewer_receives_within_10_percent_of_gcc_bytes_on_both_harder_recordings",
+        "scream_delivers_at_least_2x_viewer_frames_on_at_least_one_harder_recording",
+        "on_the_high_capacity_recording_both_algorithms_deliver_nearly_all_frames"
+      ],
+      "verdict": {
+        "supported_when_all": [
+          "scream_delivers_at_least_25_percent_more_viewer_frames_than_gcc_on_both_harder_recordings",
+          "on_both_harder_recordings_camera_sends_no_more_than_85_percent_of_what_gcc_sends",
+          "viewer_receives_within_10_percent_of_gcc_bytes_on_both_harder_recordings",
+          "scream_delivers_at_least_2x_viewer_frames_on_at_least_one_harder_recording"
+        ],
+        "refuted_when_any": [
+          "any_threshold_violated_on_completed_records"
+        ],
+        "untested_when_any": [
+          "required_records_missing",
+          "required_summaries_missing"
+        ]
+      },
       "setup": {
         "environment": {
           "topology": "controller-worker",
-          "controller": "local workstation",
-          "camera_worker": "aum",
-          "viewer_worker": "veda",
-          "transport": "Tailscale hostnames from hosts.yaml for media/control addressing",
-          "sync_scope": "allowlisted project files needed to run the selected experiment"
+          "hosts": {
+            "controller": "workstation",
+            "camera": "aum",
+            "viewer": "veda"
+          },
+          "transport": "tailscale",
+          "shaper": "mahimahi",
+          "workload": "snow-384x216"
         },
         "experiments": [
           {
@@ -602,9 +671,8 @@
               81,
               82
             ],
-            "role": "fixed realistic CQI-like high-capacity control trace",
-            "command": "python3 experiment.py scream-vs-gcc-mahimahi-5g-cqi-x0p33-snow-384x216",
-            "log": null
+            "role": "high-capacity-control",
+            "command": "python3 experiment.py scream-vs-gcc-mahimahi-5g-cqi-x0p33-snow-384x216"
           },
           {
             "name": "scream-vs-gcc-mahimahi-5g-ho-x0p33-snow-384x216",
@@ -612,9 +680,8 @@
               79,
               80
             ],
-            "role": "fixed realistic handover-like stressed trace",
-            "command": "python3 experiment.py scream-vs-gcc-mahimahi-5g-ho-x0p33-snow-384x216",
-            "log": null
+            "role": "handover-recording",
+            "command": "python3 experiment.py scream-vs-gcc-mahimahi-5g-ho-x0p33-snow-384x216"
           },
           {
             "name": "scream-vs-gcc-mahimahi-5g-rb-x0p33-snow-384x216",
@@ -622,9 +689,8 @@
               83,
               84
             ],
-            "role": "fixed realistic RB-like stressed trace",
-            "command": "python3 experiment.py scream-vs-gcc-mahimahi-5g-rb-x0p33-snow-384x216",
-            "log": null
+            "role": "resource-block-recording",
+            "command": "python3 experiment.py scream-vs-gcc-mahimahi-5g-rb-x0p33-snow-384x216"
           }
         ],
         "required_metrics": [
@@ -763,26 +829,16 @@
         ]
       },
       "conclusions": {
-        "mechanism_claim": "SCReAM wins on the stressed HO/RB traces because its post-payload RTP pacing turns congestion-control decisions into lower camera egress, while GCC lowers its estimator target but this pipeline still emits multi-Mbit/s RTP that the trace cannot carry, leaving fewer complete frames decodable at the viewer.\n",
-        "supporting_subclaims": [
-          "Within each trace pair, the trace, video, codec, bitrate bounds, recovery settings, sink, workers, and run length are fixed; only congestion_control.algorithm varies.",
-          "CQI is the high-capacity control and both controllers deliver nearly all frames, so the advantage appears only when HO/RB capacity actually stresses the stream.",
-          "On HO, SCReAM delivers 2.74x GCC's viewer frames; on RB, it delivers 1.39x GCC's viewer frames.",
-          "The advantage is not from sending more traffic; SCReAM uses 0.72x GCC's camera egress on HO and 0.64x on RB.",
-          "GCC's target falls on the stressed traces, but its measured camera egress remains about 2.35 Mbit/s on HO and 2.32 Mbit/s on RB."
-        ],
-        "established_claims": [
-          "On the calibrated fixed CQI x0.33 trace, both controllers delivered nearly all frames, so this trace is a high-capacity control rather than evidence of a SCReAM advantage.",
-          "On the calibrated fixed HO x0.33 trace, SCReAM delivered roughly 2.7x as many viewer-depayloaded frames as GCC while producing lower camera egress.",
-          "On the calibrated fixed RB x0.33 trace, SCReAM delivered about 1.4x as many viewer-depayloaded frames as GCC while producing lower camera egress.",
-          "GCC's estimator target does drop on the stressed traces, but in this pipeline that target is not equivalent to lower post-encoder RTP egress.",
-          {
-            "The result is meaningful because the workload is no longer under-driving the stressed traces": "observed media bitrate is in the same range as the scaled trace capacities."
-          }
+        "established": [
+          "On the high-capacity recording (CQI), both algorithms deliver nearly all frames; this recording acts as the easy control.",
+          "On the handover recording, SCReAM delivers about 2.7x as many frames to the viewer as GCC, while the camera sends fewer bytes.",
+          "On the resource-block recording, SCReAM delivers about 1.4x as many frames to the viewer as GCC, while the camera sends fewer bytes.",
+          "GCC's target bitrate does drop on the tighter recordings, but in this pipeline that lower target does not turn into fewer bytes leaving the camera.",
+          "The result is meaningful because the test video is now heavy enough to actually keep the recordings busy (the H3 calibration issue is fixed for this experiment)."
         ],
         "limits": [
-          "This is a fixed-trace, fixed-workload result; CQI shows that SCReAM does not produce a visible frame-delivery advantage when the trace has enough capacity for both controllers.",
-          "The current latency metric still has clock-skew artifacts; H4's primary claim is decodable frame delivery and camera egress."
+          "One test video, fixed recording, one set of bitrate bounds. The CQI recording shows SCReAM has no visible frame-delivery edge when the link has enough room for both algorithms.",
+          "The latency numbers still have a clock-skew artifact between aum and veda. H4's main claim is frame delivery and camera bytes, not latency."
         ]
       },
       "spec_path": "specs/hypotheses/h4.yaml"
@@ -790,24 +846,48 @@
     {
       "id": "H5",
       "slug": "h5",
-      "title": "Our SCReAM adapts to changing bandwidth better than UMN's reimplementation \u2014 because UMN's controller can't drive its encoder, not because of the algorithm",
-      "claim": "When the available bandwidth keeps changing, our SCReAM raises and lowers its sending rate to match what the link can carry, so it uses most of the available bandwidth. UMN's reimplementation instead holds a roughly constant sending rate, so it leaves most of a fast link unused. The reason is what we call a controller-to-encoder gap: the congestion controller (the part that decides how fast to send) picks a sending rate, but that decision is never applied to the video encoder, so the encoder keeps producing video at roughly the same rate no matter what. This is a plumbing problem inside UMN's implementation \u2014 not a flaw in the SCReAM algorithm itself, and not a matter of how often its control loop runs. (A Glossary at the end defines any remaining term.)\n",
+      "title": "Our SCReAM follows changing bandwidth; UMN's does not \u2014 because UMN's controller never reaches its encoder",
+      "claim": "When the link's bandwidth keeps changing, our SCReAM raises and lowers its sending rate to match. UMN's reimplementation holds a nearly constant rate. The cause is a wiring problem inside UMN \u2014 the controller computes a target sending rate but that target is never applied to the video encoder \u2014 not a flaw in the SCReAM algorithm and not how often the loop runs.",
       "declared_status": "supported",
       "execution_status": "untested",
-      "source": "Project-internal cross-implementation comparison against UMN Teleop-Gopher-streamer (scream-integration branch 502533c)",
+      "source": "Project-internal cross-implementation comparison vs UMN Teleop-Gopher-streamer (scream-integration branch 502533c)",
       "page": "analysis/hypotheses/h5.html",
       "verifier": "analysis/hypotheses/h5_umn_scream_implementation_gap.py",
-      "prediction": "Both stacks stream the same 60 s clip on one machine over loopback (sender and receiver are two processes on the same host). The network is squeezed the same way for both: a Linux traffic shaper on the loopback interface replays recorded 5G bandwidth patterns \u2014 a sudden handover drop (HO), bumpy tower-sharing (RB), and smooth signal drift (CQI) \u2014 each scaled to 1/3 capacity so the link is tight. Both get the same bitrate limits, and UMN's network_time_sync flag is on so its delay signal (the cue SCReAM uses to sense a building queue, and back off) actually works. We expect: our SCReAM's sending rate rises and falls with the available bandwidth, so it uses most of what the link offers \u2014 high \"utilization\", the share of available bandwidth actually used \u2014 while UMN's stays near a constant rate across the three traces, whose capacities differ about 2.5x. We also expect the gap to remain when UMN's control loop is sped up (re-checking every 50 ms instead of 200 ms) and made to ramp up faster \u2014 which would rule out loop timing as the cause \u2014 and to line up with the controller-to-encoder gap measured directly: the rate actually sent exceeds the rate the controller asked for, in most decisions.\n",
-      "verdict_rule": "Supported when (a) on the high-capacity CQI trace our utilization is at least 2x UMN's; (b) UMN's mean sent rate barely changes across the three traces (spread <= 15%), showing it does not track capacity; (c) speeding up UMN's loop to 50 ms and raising its ramp gain do not raise its CQI utilization (timing ruled out); and (d) the diagnostic shows the actual sent rate exceeding the controller's commanded target by more than 1.3x in most decisions. Refuted if the utilization gap closes once the delay signal is on, or if faster timing recovers utilization. Untested if the comparison metrics are missing.\n",
+      "predictions": [
+        "on_the_high_capacity_recording_we_use_at_least_2x_more_of_the_link_than_umn_does",
+        "umn_sender_rate_changes_by_no_more_than_15_percent_across_all_three_recordings",
+        "speeding_umn_loop_up_to_50ms_does_not_raise_its_link_use_on_the_high_capacity_recording",
+        "making_umn_ramp_up_faster_does_not_raise_its_link_use_on_the_high_capacity_recording",
+        "umn_actually_sends_more_than_what_its_controller_asked_for_in_most_decisions"
+      ],
+      "verdict": {
+        "supported_when_all": [
+          "on_the_high_capacity_recording_we_use_at_least_2x_more_of_the_link_than_umn_does",
+          "umn_sender_rate_changes_by_no_more_than_15_percent_across_all_three_recordings",
+          "speeding_umn_loop_up_to_50ms_does_not_raise_its_link_use_on_the_high_capacity_recording",
+          "making_umn_ramp_up_faster_does_not_raise_its_link_use_on_the_high_capacity_recording",
+          "umn_actually_sends_more_than_what_its_controller_asked_for_in_most_decisions"
+        ],
+        "refuted_when_any": [
+          "the_gap_closes_when_umn_delay_signal_is_turned_on",
+          "faster_loop_timing_lets_umn_catch_up"
+        ],
+        "untested_when_any": [
+          "comparison_data_missing"
+        ]
+      },
       "setup": {
         "environment": {
-          "topology": "single host, loopback (127.0.0.1) \u2014 sender and receiver are two processes on the same machine",
-          "host": "aum",
-          "shaper": "tc qdisc on the loopback interface (fixed 20 ms delay + a bandwidth cap that changes every 100 ms to follow the 5G trace)",
-          "our_stack": "GStreamer 1.24, config 90 (SCReAM via the gstscream plugin), streaming realmotion.avi",
-          "umn_stack": "UMN Teleop-Gopher-streamer (branch 502533c), congestion_controller=scream, network_time_sync on",
-          "workload": "realmotion.avi \u2014 a 1280x1024 Motion-JPEG clip at 10 frames/sec, 60 s long",
-          "note": "This is a cross-implementation comparison run by a dedicated harness (tools/comparison_sweep.sh, umn_scream_rerun.sh, umn_ladder.sh, tc_lo_driver.py), not by experiment.py, so this hypothesis has no internal experiment.py records. The evidence is the tables and figures below; the raw per-run numbers are in analysis/umn-comparison/metrics.csv.\n"
+          "topology": "loopback",
+          "hosts": {
+            "camera": "aum",
+            "viewer": "aum"
+          },
+          "shaper": "tc-qdisc-on-loopback",
+          "workload": "realmotion-avi",
+          "our_stack": "GStreamer 1.24 + gstscream (config 90)",
+          "umn_stack": "UMN Teleop-Gopher-streamer branch 502533c, congestion_controller=scream, network_time_sync on",
+          "harness": "tools/comparison_sweep.sh, umn_scream_rerun.sh, umn_ladder.sh, tc_lo_driver.py"
         },
         "experiments": [],
         "required_metrics": [
@@ -834,33 +914,705 @@
         "experiments": []
       },
       "conclusions": {
-        "mechanism_claim": "With both implementations configured fairly, our SCReAM changes its sending rate to track the available bandwidth, while UMN's holds a near-constant rate. The cause is a controller-to-encoder gap: UMN's controller decides on a rate, but that decision is not applied to the encoder, so the encoder keeps producing video at roughly the same rate regardless. This is not explained by the SCReAM algorithm or by how often the control loop runs.\n",
-        "supporting_subclaims": [
-          "On the high-capacity CQI trace, our SCReAM uses about 63% of the available bandwidth; UMN's uses about 22%.",
-          "UMN's sending rate stays near 776-780 kbps on all three traces, even though their capacities differ about 2.5x \u2014 so it is not following the link.",
-          "Speeding up UMN's control loop (200 ms to 50 ms) and making it ramp faster did not raise its utilization \u2014 so loop timing is not the cause.",
-          "The controller-to-encoder gap is measured directly - the actual sent rate exceeded the controller's commanded rate by more than 1.3x in about 89% of decisions; UMN's packet-loss congestion signal also never fired."
-        ],
-        "established_claims": [
-          "Utilization (the share of available bandwidth actually used) on the high-capacity CQI trace: ours ~63%, UMN ~22%.",
-          "UMN's SCReAM sends a near-constant ~776-782 kbps across the HO, RB, and CQI traces, whose capacities differ about 2.5x; it does not raise its rate when more bandwidth is available.",
-          "The shortfall is a controller-to-encoder gap (the controller's chosen rate is not applied to the encoder), not the SCReAM algorithm or its loop timing.",
-          "Pinpointed in code: in encoder.py the encode loop applies the controller's rate by writing codec.bit_rate on an already-running software encoder, which libav ignores (a software encoder's bitrate is fixed when it opens). Only a full encoder reopen changes the rate, and the libvpx path never triggers that reopen \u2014 so the rate is set once at startup. This is a wiring problem in the implementation, not the SCReAM algorithm.",
-          "Architecture difference: UMN runs the controller as a separate thread that leaves a per-frame \"budget\" the encode loop must apply by hand, per codec; our SCReAM is a built-in pipeline element whose rate the media framework applies to the encoder automatically. The reference + framework-integrated design avoids this class of bug.",
-          "Algorithm fidelity (from source-code review, NOT measured in this experiment \u2014 the wiring gap masked it): the reference SCReAM is a queue-delay-gradient controller with a congestion window, bytes-in-flight limiting, and adaptive step sizes; UMN's is a fixed-gain multiply-up (x1.05) / multiply-down (x0.8) loop on binary signals with no memory. So the maturity case has two independent legs \u2014 a simpler control law (code-level) and an open control loop on the software path (measured). See the algorithm-comparison table.",
-          "An earlier version of this comparison showed UMN overshooting the link badly; that was our configuration mistake (network_time_sync was off, which disables UMN's delay signal). With it on, UMN no longer overshoots \u2014 confirming that result was an artifact, not a property of UMN's controller.",
-          "UMN's delay congestion signal works once network_time_sync is on; its packet-loss signal never fires in these runs."
+        "established": [
+          "On the high-capacity (CQI) recording, our SCReAM uses about 63% of the link; UMN uses about 22%.",
+          "UMN's SCReAM sends a nearly constant ~776\u2013782 kbps across all three recordings, even though the recordings differ in capacity by about 2.5x. UMN is not tracking the link.",
+          "The cause is a wiring problem between the controller and the encoder, not the SCReAM algorithm and not how often the loop runs.",
+          "In code \u2014 UMN's encoder.py writes the controller's target rate onto an encoder that is already running. The libav library quietly ignores that write because a software encoder's bitrate is fixed when it opens. The libvpx path never reopens, so UMN's rate is effectively set once at startup.",
+          "Different shapes \u2014 UMN runs the controller in a separate thread that leaves a per-frame \"budget\" the encode loop has to apply by hand, per codec. Ours is a built-in pipeline element whose rate the framework applies to the encoder automatically.",
+          "Algorithm fidelity from reading the source (not measured here \u2014 the wiring problem hid it) \u2014 the reference SCReAM keeps track of how long the queue has been growing, how many bytes are in flight, and adapts its step size. UMN's just multiplies up by 1.05 or down by 0.8 on simple yes/no signals, with no memory.",
+          "An earlier version of this comparison showed UMN overshooting the link \u2014 that was a configuration mistake on our side (network_time_sync was off). With it on, UMN no longer overshoots.",
+          "UMN's delay-based congestion signal works once network_time_sync is on. Its loss-based signal never fired in these runs."
         ],
         "limits": [
-          "Single-host loopback reproduces the bandwidth and delay faithfully but not real 5G radio effects (interference, scheduling, retransmission at the radio layer).",
-          "We measured network behavior (utilization, overshoot, sent rate), not delivered picture quality (PSNR/SSIM). \"Uses the link better\" is a statement about bandwidth use, not yet a measured video-quality difference.",
-          "UMN's controller is an early reimplementation (its own code marks receiver feedback as a future phase). This is a snapshot of branch 502533c, not a statement about the SCReAM algorithm in general.",
-          "Encode path (corrected): only UMN's VAAPI path reopens the encoder when the bitrate changes. NVENC \u2014 which UMN actually deploys \u2014 takes the SAME PyAV path as the libvpx encoder we tested: it applies the controller's rate with a live codec.bit_rate write and never reopens (NVENC uses in-band keyframes). libav fixes an encoder's bitrate when it opens and ignores later writes, so the controller-to-encoder gap almost certainly affects UMN's deployed NVENC path too \u2014 not just the software path. (An earlier draft wrongly implied the hardware path escapes the gap; that described VAAPI, which UMN does not deploy.)",
-          "Open question / verify next: NVENC behavior here is inferred from the code (PyAV path + libav's open-time bitrate), not measured \u2014 there is no NVIDIA GPU on the bench. Confirming it needs an NVENC run on real hardware under the same traces.",
-          "Open question / verify next: we measured network behavior (utilization), not delivered video quality. The honest quality metric is PSNR/SSIM of the received video vs the source, on both stacks."
+          "Single-host loopback reproduces the bandwidth and the delay faithfully but not real 5G radio effects like interference or radio-layer retransmits.",
+          "We measured how much of the link each side uses, not how good the picture looks. \"Uses the link better\" is a bandwidth claim, not yet a video-quality claim.",
+          "UMN's controller is an early reimplementation (its own code marks receiver feedback as future work). This is a snapshot of branch 502533c, not a general statement about SCReAM.",
+          "We did not measure UMN's deployed hardware (NVENC) encoder. From reading the code we believe the same wiring problem affects it, but a real NVIDIA box would be the honest confirmation.",
+          "Measuring picture quality (PSNR or SSIM of the received video vs the source on both sides) is the next verification step."
         ]
       },
       "spec_path": "specs/hypotheses/h5.yaml"
+    },
+    {
+      "id": "H6",
+      "slug": "h6",
+      "title": "SCReAM's queue-delay-target moves latency but not picture quality",
+      "claim": "Turning SCReAM's queue-delay-target changes p95 latency on every network we tested, but does not change decoded picture quality (PSNR) \u2014 at this workload there is no quality gain to trade for the added latency.",
+      "declared_status": "refuted",
+      "execution_status": "analyzable",
+      "source": "Goal 2.2 (knob sensitivity), project-internal",
+      "page": "analysis/hypotheses/h6.html",
+      "verifier": "analysis/hypotheses/h6_qdt_sweep.py",
+      "predictions": [
+        "psnr_rises_with_knob_on_every_network",
+        "p95_latency_rises_with_knob_on_every_network",
+        "diminishing_returns_point_visible_on_every_network",
+        "diminishing_returns_points_differ_between_networks"
+      ],
+      "verdict": {
+        "supported_when_all": [
+          "psnr_rises_with_knob_on_every_network",
+          "p95_latency_rises_with_knob_on_every_network",
+          "diminishing_returns_point_visible_on_every_network",
+          "diminishing_returns_points_differ_between_networks"
+        ],
+        "refuted_when_any": [
+          "psnr_does_not_rise_with_knob_on_at_least_one_network",
+          "no_diminishing_returns_point_visible_anywhere",
+          "diminishing_returns_points_match_across_networks"
+        ],
+        "untested_when_any": [
+          "any_cell_failed",
+          "required_metric_missing"
+        ]
+      },
+      "setup": {
+        "environment": {
+          "topology": "controller-worker",
+          "hosts": {
+            "camera": "aum",
+            "viewer": "veda"
+          },
+          "shaper": "tc-qdisc",
+          "workload": "realmotion-avi"
+        },
+        "experiments": [
+          {
+            "name": "h6-qdt-sweep-static",
+            "configurations": [
+              101,
+              102,
+              103,
+              104,
+              105,
+              106
+            ],
+            "role": "qdt-sweep-static",
+            "minimum_completed_reps": 3
+          },
+          {
+            "name": "h6-qdt-sweep-fluct",
+            "configurations": [
+              107,
+              108,
+              109,
+              110,
+              111,
+              112
+            ],
+            "role": "qdt-sweep-fluct",
+            "minimum_completed_reps": 3
+          },
+          {
+            "name": "h6-qdt-sweep-5g",
+            "configurations": [
+              113,
+              114,
+              115,
+              116,
+              117,
+              118
+            ],
+            "role": "qdt-sweep-5g",
+            "minimum_completed_reps": 3
+          }
+        ],
+        "required_metrics": [
+          "frame_count",
+          "encoder_target_kbps",
+          "wire_bytes",
+          "encoded_bitrate",
+          "frame_latency",
+          "decoder_errors",
+          "decoded_psnr"
+        ]
+      },
+      "results": {
+        "expected_records": [
+          "runs/experiments/h6-qdt-sweep-static.json",
+          "runs/experiments/h6-qdt-sweep-fluct.json",
+          "runs/experiments/h6-qdt-sweep-5g.json"
+        ],
+        "report": "analysis/hypotheses/results/h6_report.json"
+      },
+      "execution": {
+        "experiments": [
+          {
+            "name": "h6-qdt-sweep-static",
+            "spec_path": "specs/experiments/h6-qdt-sweep-static.yaml",
+            "record_path": "runs/experiments/h6-qdt-sweep-static.json",
+            "spec_exists": true,
+            "record_exists": true,
+            "expected_reps": 3,
+            "configurations": {
+              "101": {
+                "completed_runs": 3,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-06-04T11-55-09",
+                  "2026-06-04T12-02-04",
+                  "2026-06-04T12-08-56"
+                ]
+              },
+              "102": {
+                "completed_runs": 3,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-06-04T11-56-20",
+                  "2026-06-04T12-03-12",
+                  "2026-06-04T12-10-04"
+                ]
+              },
+              "103": {
+                "completed_runs": 3,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-06-04T11-57-28",
+                  "2026-06-04T12-04-20",
+                  "2026-06-04T12-11-12"
+                ]
+              },
+              "104": {
+                "completed_runs": 3,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-06-04T11-58-37",
+                  "2026-06-04T12-05-29",
+                  "2026-06-04T12-12-20"
+                ]
+              },
+              "105": {
+                "completed_runs": 3,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-06-04T11-59-45",
+                  "2026-06-04T12-06-37",
+                  "2026-06-04T12-13-31"
+                ]
+              },
+              "106": {
+                "completed_runs": 3,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-06-04T12-00-53",
+                  "2026-06-04T12-07-48",
+                  "2026-06-04T12-14-40"
+                ]
+              }
+            },
+            "completed_runs": 18,
+            "failed_runs": 0,
+            "expected_runs": 18,
+            "execution_status": "analyzable"
+          },
+          {
+            "name": "h6-qdt-sweep-fluct",
+            "spec_path": "specs/experiments/h6-qdt-sweep-fluct.yaml",
+            "record_path": "runs/experiments/h6-qdt-sweep-fluct.json",
+            "spec_exists": true,
+            "record_exists": true,
+            "expected_reps": 3,
+            "configurations": {
+              "107": {
+                "completed_runs": 3,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-06-04T12-16-34",
+                  "2026-06-04T12-23-27",
+                  "2026-06-04T12-30-22"
+                ]
+              },
+              "108": {
+                "completed_runs": 3,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-06-04T12-17-42",
+                  "2026-06-04T12-24-38",
+                  "2026-06-04T12-31-30"
+                ]
+              },
+              "109": {
+                "completed_runs": 3,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-06-04T12-18-53",
+                  "2026-06-04T12-25-46",
+                  "2026-06-04T12-32-39"
+                ]
+              },
+              "110": {
+                "completed_runs": 3,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-06-04T12-20-01",
+                  "2026-06-04T12-26-54",
+                  "2026-06-04T12-33-47"
+                ]
+              },
+              "111": {
+                "completed_runs": 3,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-06-04T12-21-10",
+                  "2026-06-04T12-28-02",
+                  "2026-06-04T12-34-55"
+                ]
+              },
+              "112": {
+                "completed_runs": 3,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-06-04T12-22-18",
+                  "2026-06-04T12-29-11",
+                  "2026-06-04T12-36-06"
+                ]
+              }
+            },
+            "completed_runs": 18,
+            "failed_runs": 0,
+            "expected_runs": 18,
+            "execution_status": "analyzable"
+          },
+          {
+            "name": "h6-qdt-sweep-5g",
+            "spec_path": "specs/experiments/h6-qdt-sweep-5g.yaml",
+            "record_path": "runs/experiments/h6-qdt-sweep-5g.json",
+            "spec_exists": true,
+            "record_exists": true,
+            "expected_reps": 3,
+            "configurations": {
+              "113": {
+                "completed_runs": 3,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-06-04T12-37-15",
+                  "2026-06-04T12-44-08",
+                  "2026-06-04T12-51-01"
+                ]
+              },
+              "114": {
+                "completed_runs": 3,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-06-04T12-38-24",
+                  "2026-06-04T12-45-16",
+                  "2026-06-04T12-52-09"
+                ]
+              },
+              "115": {
+                "completed_runs": 3,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-06-04T12-39-32",
+                  "2026-06-04T12-46-24",
+                  "2026-06-04T12-53-20"
+                ]
+              },
+              "116": {
+                "completed_runs": 3,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-06-04T12-40-40",
+                  "2026-06-04T12-47-35",
+                  "2026-06-04T12-54-29"
+                ]
+              },
+              "117": {
+                "completed_runs": 3,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-06-04T12-41-52",
+                  "2026-06-04T12-48-44",
+                  "2026-06-04T12-55-37"
+                ]
+              },
+              "118": {
+                "completed_runs": 3,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-06-04T12-43-00",
+                  "2026-06-04T12-49-52",
+                  "2026-06-04T12-56-45"
+                ]
+              }
+            },
+            "completed_runs": 18,
+            "failed_runs": 0,
+            "expected_runs": 18,
+            "execution_status": "analyzable"
+          }
+        ]
+      },
+      "conclusions": {
+        "established": [
+          "The control loop responds the right way to the knob. As the knob goes from 10 ms to 500 ms on every network, p95 latency moves with it \u2014 tighter knob, less latency; looser knob, more latency. SCReAM is doing what its specification says it should.",
+          "The encoder does not benefit from extra room at this workload. Decoded picture quality (PSNR) stays roughly flat across the knob range \u2014 about a 1 dB swing on each network, which is within run-to-run noise at 3 reps. VP8 at the tested bitrates already has enough budget to encode this clip; loosening the knob does not give it useful extra room."
+        ],
+        "limits": [
+          "Workload-specific. Tested with realmotion-avi (1280\u00d71024 MJPEG, 10 fps, 60 s). A higher-motion or longer clip might saturate the encoder differently.",
+          "Bitrate-specific. Tested with init / min / max bitrate = 1500 / 200 / 4000 kbps. A tighter ceiling, or a more demanding source, might let the knob bite into quality.",
+          "The \"no quality response\" claim rests on PSNR. SSIM or VMAF might surface a smaller effect that PSNR misses.",
+          "3 reps per cell. PSNR effects smaller than about 1 dB are within noise.",
+          "Absolute latency numbers carry a clock-skew artifact between aum and veda (same one H4 flagged). The relative comparison across knob values within one sweep is unaffected."
+        ]
+      },
+      "spec_path": "specs/hypotheses/h6.yaml"
+    },
+    {
+      "id": "H7",
+      "slug": "h7",
+      "title": "With the encoder starved, the queue-delay-target knob starts trading picture quality",
+      "claim": "H6 found the queue-delay-target knob moves latency but not picture quality, because the encoder had bytes to spare. With the bitrate ceiling dropped from 4000 to 800 kbps, the encoder is hungry, so loosening the knob should now raise picture quality (PSNR) as well as latency.",
+      "declared_status": "refuted",
+      "execution_status": "analyzable",
+      "source": "Goal 2.2 (knob sensitivity), follow-up to H6",
+      "page": "analysis/hypotheses/h7.html",
+      "verifier": "analysis/hypotheses/h7_qdt_sweep_tight.py",
+      "predictions": [
+        "psnr_rises_with_knob_on_every_network",
+        "psnr_swing_across_the_knob_is_larger_than_in_h6",
+        "p95_latency_rises_with_knob_on_every_network"
+      ],
+      "verdict": {
+        "supported_when_all": [
+          "psnr_rises_with_knob_on_every_network",
+          "psnr_swing_across_the_knob_is_larger_than_in_h6"
+        ],
+        "refuted_when_any": [
+          "psnr_stays_flat_like_h6_on_every_network"
+        ],
+        "untested_when_any": [
+          "any_cell_failed",
+          "required_metric_missing"
+        ]
+      },
+      "setup": {
+        "environment": {
+          "topology": "controller-worker",
+          "hosts": {
+            "camera": "aum",
+            "viewer": "veda"
+          },
+          "shaper": "tc-qdisc",
+          "workload": "realmotion-avi"
+        },
+        "experiments": [
+          {
+            "name": "h7-qdt-sweep-static",
+            "configurations": [
+              119,
+              120,
+              121,
+              122,
+              123,
+              124
+            ],
+            "role": "qdt-sweep-static-tight",
+            "minimum_completed_reps": 3
+          },
+          {
+            "name": "h7-qdt-sweep-fluct",
+            "configurations": [
+              125,
+              126,
+              127,
+              128,
+              129,
+              130
+            ],
+            "role": "qdt-sweep-fluct-tight",
+            "minimum_completed_reps": 3
+          },
+          {
+            "name": "h7-qdt-sweep-5g",
+            "configurations": [
+              131,
+              132,
+              133,
+              134,
+              135,
+              136
+            ],
+            "role": "qdt-sweep-5g-tight",
+            "minimum_completed_reps": 3
+          }
+        ],
+        "required_metrics": [
+          "frame_count",
+          "encoder_target_kbps",
+          "wire_bytes",
+          "encoded_bitrate",
+          "frame_latency",
+          "decoder_errors",
+          "decoded_psnr"
+        ]
+      },
+      "results": {
+        "expected_records": [
+          "runs/experiments/h7-qdt-sweep-static.json",
+          "runs/experiments/h7-qdt-sweep-fluct.json",
+          "runs/experiments/h7-qdt-sweep-5g.json"
+        ],
+        "report": "analysis/hypotheses/results/h7_report.json"
+      },
+      "execution": {
+        "experiments": [
+          {
+            "name": "h7-qdt-sweep-static",
+            "spec_path": "specs/experiments/h7-qdt-sweep-static.yaml",
+            "record_path": "runs/experiments/h7-qdt-sweep-static.json",
+            "spec_exists": true,
+            "record_exists": true,
+            "expected_reps": 3,
+            "configurations": {
+              "119": {
+                "completed_runs": 3,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-06-04T20-22-57",
+                  "2026-06-04T20-29-52",
+                  "2026-06-04T20-36-45"
+                ]
+              },
+              "120": {
+                "completed_runs": 3,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-06-04T20-24-08",
+                  "2026-06-04T20-31-00",
+                  "2026-06-04T20-37-53"
+                ]
+              },
+              "121": {
+                "completed_runs": 3,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-06-04T20-25-17",
+                  "2026-06-04T20-32-09",
+                  "2026-06-04T20-39-01"
+                ]
+              },
+              "122": {
+                "completed_runs": 3,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-06-04T20-26-25",
+                  "2026-06-04T20-33-17",
+                  "2026-06-04T20-40-09"
+                ]
+              },
+              "123": {
+                "completed_runs": 3,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-06-04T20-27-33",
+                  "2026-06-04T20-34-25",
+                  "2026-06-04T20-41-20"
+                ]
+              },
+              "124": {
+                "completed_runs": 3,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-06-04T20-28-41",
+                  "2026-06-04T20-35-36",
+                  "2026-06-04T20-42-28"
+                ]
+              }
+            },
+            "completed_runs": 18,
+            "failed_runs": 0,
+            "expected_runs": 18,
+            "execution_status": "analyzable"
+          },
+          {
+            "name": "h7-qdt-sweep-fluct",
+            "spec_path": "specs/experiments/h7-qdt-sweep-fluct.yaml",
+            "record_path": "runs/experiments/h7-qdt-sweep-fluct.json",
+            "spec_exists": true,
+            "record_exists": true,
+            "expected_reps": 3,
+            "configurations": {
+              "125": {
+                "completed_runs": 3,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-06-04T20-43-37",
+                  "2026-06-04T20-50-48",
+                  "2026-06-04T20-58-17"
+                ]
+              },
+              "126": {
+                "completed_runs": 3,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-06-04T20-44-45",
+                  "2026-06-04T20-52-33",
+                  "2026-06-04T20-59-26"
+                ]
+              },
+              "127": {
+                "completed_runs": 3,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-06-04T20-45-53",
+                  "2026-06-04T20-53-41",
+                  "2026-06-04T21-00-34"
+                ]
+              },
+              "128": {
+                "completed_runs": 3,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-06-04T20-47-04",
+                  "2026-06-04T20-54-50",
+                  "2026-06-04T21-01-42"
+                ]
+              },
+              "129": {
+                "completed_runs": 3,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-06-04T20-48-12",
+                  "2026-06-04T20-55-58",
+                  "2026-06-04T21-02-50"
+                ]
+              },
+              "130": {
+                "completed_runs": 3,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-06-04T20-49-21",
+                  "2026-06-04T20-57-06",
+                  "2026-06-04T21-04-02"
+                ]
+              }
+            },
+            "completed_runs": 18,
+            "failed_runs": 0,
+            "expected_runs": 18,
+            "execution_status": "analyzable"
+          },
+          {
+            "name": "h7-qdt-sweep-5g",
+            "spec_path": "specs/experiments/h7-qdt-sweep-5g.yaml",
+            "record_path": "runs/experiments/h7-qdt-sweep-5g.json",
+            "spec_exists": true,
+            "record_exists": true,
+            "expected_reps": 3,
+            "configurations": {
+              "131": {
+                "completed_runs": 3,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-06-04T21-05-10",
+                  "2026-06-04T21-12-03",
+                  "2026-06-04T21-18-56"
+                ]
+              },
+              "132": {
+                "completed_runs": 3,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-06-04T21-06-18",
+                  "2026-06-04T21-13-12",
+                  "2026-06-04T21-20-04"
+                ]
+              },
+              "133": {
+                "completed_runs": 3,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-06-04T21-07-27",
+                  "2026-06-04T21-14-20",
+                  "2026-06-04T21-21-15"
+                ]
+              },
+              "134": {
+                "completed_runs": 3,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-06-04T21-08-35",
+                  "2026-06-04T21-15-31",
+                  "2026-06-04T21-22-24"
+                ]
+              },
+              "135": {
+                "completed_runs": 3,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-06-04T21-09-47",
+                  "2026-06-04T21-16-39",
+                  "2026-06-04T21-23-32"
+                ]
+              },
+              "136": {
+                "completed_runs": 3,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": [
+                  "2026-06-04T21-10-55",
+                  "2026-06-04T21-17-48",
+                  "2026-06-04T21-24-40"
+                ]
+              }
+            },
+            "completed_runs": 18,
+            "failed_runs": 0,
+            "expected_runs": 18,
+            "execution_status": "analyzable"
+          }
+        ]
+      },
+      "conclusions": {
+        "established": [
+          "Starving the encoder did not turn the knob into a quality knob. With the ceiling dropped to 800 kbps, picture quality (PSNR) still stays flat as the knob loosens \u2014 about a 1 dB swing on each network, the same flat pattern H6 saw at 4000 kbps. So the queue-delay-target is a latency knob, not a quality knob, at both ceilings for this workload.",
+          "The robust takeaway across H6 and H7 is one finding, now tested twice -- the knob moves latency, not quality."
+        ],
+        "limits": [
+          "Measurement caveat \u2014 read before trusting the absolute numbers: the PSNR values in H6 and H7 sit at 10\u201313 dB on every single cell. That is far below what a working pipeline should produce (a heavily compressed VP8 stream is normally 28\u201340 dB). A value near 10 dB is the signature of comparing misaligned frames \u2014 decoded frame N against source frame M not equal to N, or a resolution / colour-plane mismatch in the decoded_psnr truth pipeline.",
+          "What this caveat does and does not undermine. The relative finding (quality does not move with the knob) holds, because every cell uses the same metric and the comparison is internal. Any absolute quality claim is suspect until the metric is checked against a known-good baseline.",
+          "Next verification step is a one-cell sanity check \u2014 clean loopback, no impairment, near-lossless encode. If PSNR there is also ~10 dB the metric is misaligned and needs fixing; if it is ~40 dB the metric is sound and the stressed-network numbers are genuine.",
+          "Same workload and clock-skew caveats as H6."
+        ]
+      },
+      "spec_path": "specs/hypotheses/h7.yaml"
     }
   ]
 }

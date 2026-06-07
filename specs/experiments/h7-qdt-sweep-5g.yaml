@@ -1,0 +1,28 @@
+name: h7-qdt-sweep-5g
+description: |
+  H7 — SCReAM queue-delay-target sweep at a tight bitrate ceiling (max
+  800 kbps) on the mahimahi-5g-cqi-100ms-x0p33 network (real 5G CQI
+  capacity recording, scaled to 33%), streaming realmotion-avi. Six knob
+  values {10, 30, 60, 100, 200, 500} ms, three reps each.
+reps: 3
+varies:
+  - congestion_control.scream.delay_target_seconds
+configurations:
+  - id: 131
+    label: qdt 10ms
+    color: "#c7e9c0"
+  - id: 132
+    label: qdt 30ms
+    color: "#a1d99b"
+  - id: 133
+    label: qdt 60ms
+    color: "#74c476"
+  - id: 134
+    label: qdt 100ms
+    color: "#41ab5d"
+  - id: 135
+    label: qdt 200ms
+    color: "#238b45"
+  - id: 136
+    label: qdt 500ms
+    color: "#005a32"

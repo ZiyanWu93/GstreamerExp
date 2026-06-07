@@ -1,0 +1,150 @@
+{
+  "verdict": "refuted",
+  "predicates": {
+    "psnr_rises_with_knob_on_every_network": false,
+    "p95_latency_rises_with_knob_on_every_network": false,
+    "diminishing_returns_point_visible_on_every_network": true,
+    "diminishing_returns_points_differ_between_networks": true,
+    "psnr_does_not_rise_with_knob_on_at_least_one_network": true,
+    "no_diminishing_returns_point_visible_anywhere": false,
+    "diminishing_returns_points_match_across_networks": false,
+    "any_cell_failed": false,
+    "required_metric_missing": false
+  },
+  "elbows": {
+    "static": 10,
+    "fluct": 30,
+    "5g": 10
+  },
+  "per_regime": {
+    "static": {
+      "cells": [
+        {
+          "qdt_ms": 10,
+          "mean_psnr_db": 13.146,
+          "mean_p95_latency_ms": -47.433,
+          "n_reps": 3
+        },
+        {
+          "qdt_ms": 30,
+          "mean_psnr_db": 13.136,
+          "mean_p95_latency_ms": -26.817,
+          "n_reps": 3
+        },
+        {
+          "qdt_ms": 60,
+          "mean_psnr_db": 12.206,
+          "mean_p95_latency_ms": -26.247,
+          "n_reps": 3
+        },
+        {
+          "qdt_ms": 100,
+          "mean_psnr_db": 13.048,
+          "mean_p95_latency_ms": -26.453,
+          "n_reps": 3
+        },
+        {
+          "qdt_ms": 200,
+          "mean_psnr_db": 13.066,
+          "mean_p95_latency_ms": -25.823,
+          "n_reps": 3
+        },
+        {
+          "qdt_ms": 500,
+          "mean_psnr_db": 12.253,
+          "mean_p95_latency_ms": -26.763,
+          "n_reps": 3
+        }
+      ],
+      "psnr_curve_monotone_nondecreasing": false,
+      "p95_latency_curve_monotone_nondecreasing": false,
+      "elbow_qdt_ms": 10
+    },
+    "fluct": {
+      "cells": [
+        {
+          "qdt_ms": 10,
+          "mean_psnr_db": 12.377,
+          "mean_p95_latency_ms": -41.283,
+          "n_reps": 3
+        },
+        {
+          "qdt_ms": 30,
+          "mean_psnr_db": 13.353,
+          "mean_p95_latency_ms": -29.947,
+          "n_reps": 3
+        },
+        {
+          "qdt_ms": 60,
+          "mean_psnr_db": 12.46,
+          "mean_p95_latency_ms": -22.27,
+          "n_reps": 3
+        },
+        {
+          "qdt_ms": 100,
+          "mean_psnr_db": 12.5,
+          "mean_p95_latency_ms": -19.187,
+          "n_reps": 3
+        },
+        {
+          "qdt_ms": 200,
+          "mean_psnr_db": 13.32,
+          "mean_p95_latency_ms": -19.503,
+          "n_reps": 3
+        },
+        {
+          "qdt_ms": 500,
+          "mean_psnr_db": 13.324,
+          "mean_p95_latency_ms": -17.283,
+          "n_reps": 3
+        }
+      ],
+      "psnr_curve_monotone_nondecreasing": false,
+      "p95_latency_curve_monotone_nondecreasing": false,
+      "elbow_qdt_ms": 30
+    },
+    "5g": {
+      "cells": [
+        {
+          "qdt_ms": 10,
+          "mean_psnr_db": 10.333,
+          "mean_p95_latency_ms": -28.443,
+          "n_reps": 3
+        },
+        {
+          "qdt_ms": 30,
+          "mean_psnr_db": 10.159,
+          "mean_p95_latency_ms": -16.503,
+          "n_reps": 3
+        },
+        {
+          "qdt_ms": 60,
+          "mean_psnr_db": 9.861,
+          "mean_p95_latency_ms": -16.883,
+          "n_reps": 3
+        },
+        {
+          "qdt_ms": 100,
+          "mean_psnr_db": 10.287,
+          "mean_p95_latency_ms": -17.18,
+          "n_reps": 3
+        },
+        {
+          "qdt_ms": 200,
+          "mean_psnr_db": 14.175,
+          "mean_p95_latency_ms": -15.743,
+          "n_reps": 3
+        },
+        {
+          "qdt_ms": 500,
+          "mean_psnr_db": 9.82,
+          "mean_p95_latency_ms": -17.107,
+          "n_reps": 3
+        }
+      ],
+      "psnr_curve_monotone_nondecreasing": false,
+      "p95_latency_curve_monotone_nondecreasing": false,
+      "elbow_qdt_ms": 10
+    }
+  }
+}

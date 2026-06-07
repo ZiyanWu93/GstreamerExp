@@ -1,35 +1,36 @@
 id: H2
 slug: h2
-title: GCC stays ahead across latency-deadline and retransmission settings
-claim: On the fluctuating network, GCC delivers more viewer frames than SCReAM across latency-deadline and retransmission settings.
+title: On a wobbly network, GCC delivers more frames than SCReAM regardless of deadline or retransmit settings
+claim: When the link's bandwidth keeps changing, the viewer gets more frames with GCC than with SCReAM, and turning retransmits on or off or tightening the late-frame deadline does not change which one wins.
 status: supported
-source: Project-internal fluctuating-network deadline/retransmission experiment
+source: Project-internal fluctuating-network deadline / retransmit experiment
 page: analysis/hypotheses/h2.html
 verifier: analysis/hypotheses/h2_fluctuating_deadline_ranking.py
-prediction: >
-  On the fluctuating 5 Mbps/300 kbps capacity-step network, GCC should
-  deliver more median viewer frames than SCReAM in every crossed cell of
-  retransmission on/off and latency budget 0/50/100 ms.
-verdict_rule: >
-  Supported if all six deadline/retransmission cells show GCC ahead of
-  SCReAM by at least 30 median viewer frames; inconclusive if only some
-  cells meet the margin; refuted if the margin disappears.
+predictions:
+  - gcc_delivers_at_least_30_more_median_frames_than_scream_in_every_setting
+verdict:
+  supported_when_all:
+    - gcc_delivers_at_least_30_more_median_frames_than_scream_in_every_setting
+  refuted_when_any:
+    - gcc_does_not_deliver_more_frames_than_scream_in_any_setting
+  inconclusive_when_any:
+    - gcc_delivers_more_frames_in_some_settings_but_not_others
 setup:
   experiments:
-  - name: retransmission-deadline-fluc
-    configurations: [41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52]
-    role: fluctuating-network CC deadline and retransmission comparison
-    minimum_completed_reps: 4
+    - name: retransmission-deadline-fluc
+      configurations: [41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52]
+      role: deadline-and-retransmit-grid
+      minimum_completed_reps: 4
   required_metrics:
-  - late_drops
-  - frame_count
-  - wire_bytes
+    - late_drops
+    - frame_count
+    - wire_bytes
 results:
   expected_records:
-  - runs/experiments/retransmission-deadline-fluc.json
+    - runs/experiments/retransmission-deadline-fluc.json
 conclusions:
-  established_claims:
-  - GCC delivers more median viewer frames than SCReAM in every tested deadline/retransmission cell on the fluctuating network.
-  - Neither deadline enforcement nor retransmission changes the SCReAM-vs-GCC ranking in this experiment.
+  established:
+    - GCC delivers more median frames than SCReAM in every combination of deadline and retransmit we tested on this wobbly network.
+    - Adding retransmits or tightening the late-frame deadline does not change which algorithm wins.
   limits:
-  - This is a fluctuating-network ranking result, not a general claim about NACK or latency budgets on every network.
+    - This is a result for one wobbly network, not a general claim about retransmits or deadlines on every network.

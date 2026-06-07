@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>H3 — Media workload calibration gates realistic 5G trace comparisons</title>
+<title>H3 — The test video is too lightweight to compare SCReAM and GCC on 5G recordings</title>
 <style>
   :root {
     --bg: #ffffff;
@@ -63,25 +63,63 @@
   .source { font-size: 13px; color: var(--muted); margin-top: 4px; }
   .footer { font-size: 12px; color: var(--muted); margin-top: 36px;
             border-top: 1px solid var(--rule); padding-top: 10px; }
+  dl.glossary { margin: 8px 0 18px 0; }
+  dl.glossary dt { font-weight: 600; margin-top: 10px; }
+  dl.glossary dd { margin: 2px 0 0 0; color: var(--ink); font-size: 14px; }
 </style>
 </head>
 <body>
 
 <p class="nav"><a href="../../index.html">← GstreamerExp hub</a> · <a href="../../README.md">README</a> · <a href="../../docs/HYPOTHESES.md">Hypothesis catalog</a></p>
 
-<h1>H3 — Media workload calibration gates realistic 5G trace comparisons</h1>
-<p><span class="tag supported">supported</span><span class="meta">Project-internal validity check for realistic-trace SCReAM/GCC experiments</span></p>
+<h1>H3 — The test video is too lightweight to compare SCReAM and GCC on 5G recordings</h1>
+<p><span class="tag supported">supported</span><span class="meta">Project-internal validity check for 5G-recording SCReAM / GCC experiments</span></p>
 
 <h2>Claim</h2>
-<p>Media workload calibration gates realistic 5G trace comparisons.</p>
+<p>The current test video (ball-720p30) sends nowhere near enough data to use up the bandwidth in the 5G recordings, so any controller comparison on those recordings is not yet meaningful.</p>
 
-<h2>Prediction</h2>
-<p>The current ball-720p30-30s VP8 workload is not valid for comparing SCReAM and GCC on the translated 5G traces because observed camera wire bitrate is far below trace capacity. A workload is considered under-driving when each translated 5G trace has at least 10x median capacity headroom over observed camera wire bitrate and fewer than 15% of 100 ms bins below 1 Mbit/s.
-</p>
+<h2>Predictions</h2>
 
-<h2>Verdict rule</h2>
-<p>Supported if all tested realistic traces meet the under-driving rule; inconclusive if only some do; refuted if none do; untested if required records are absent.
-</p>
+<ul>
+<li><code>every_5g_recording_has_at_least_10x_more_capacity_than_the_camera_actually_sends</code></li>
+<li><code>on_every_recording_fewer_than_15_percent_of_100ms_windows_drop_below_1mbps_of_actual_sent_bytes</code></li>
+</ul>
+
+
+<h2>Verdict</h2>
+
+<table>
+<thead><tr><th>Outcome</th><th>Predicates</th></tr></thead>
+<tbody>
+
+
+
+<tr><td><strong>Supported when all</strong></td><td>
+<code>every_5g_recording_has_at_least_10x_more_capacity_than_the_camera_actually_sends</code><br><code>on_every_recording_fewer_than_15_percent_of_100ms_windows_drop_below_1mbps_of_actual_sent_bytes</code>
+</td></tr>
+
+
+
+<tr><td><strong>Refuted when any</strong></td><td>
+<code>no_recording_passes_either_check</code>
+</td></tr>
+
+
+
+<tr><td><strong>Inconclusive when any</strong></td><td>
+<code>some_recordings_pass_only_one_check</code>
+</td></tr>
+
+
+
+<tr><td><strong>Untested when any</strong></td><td>
+<code>required_records_missing</code>
+</td></tr>
+
+
+</tbody>
+</table>
+
 
 
 
@@ -94,16 +132,16 @@
 
 <p class="meta"><strong>Findings</strong></p>
 <ul>
-<li>The current ball-720p30-30s VP8 workload emits roughly 220-230 kbit/s, far below the typical capacity of the translated 5G traces.</li>
-<li>The previous realistic-trace SCReAM/GCC comparisons should not be interpreted as meaningful algorithm comparisons.</li>
-<li>A future realistic-trace comparison must first pass this calibration gate with a high-quality or high-bitrate workload whose observed wire bitrate actually stresses the trace.</li>
+<li>The current ball-720p30 test video sends about 220–230 kbit / s, well below the typical bandwidth in the translated 5G recordings.</li>
+<li>Earlier 5G-recording SCReAM / GCC comparisons cannot be read as meaningful algorithm comparisons.</li>
+<li>Any future 5G-recording comparison must first pass this calibration with a test video that actually keeps the link busy.</li>
 </ul>
 
 
 <p class="meta"><strong>Limitations</strong></p>
 <ul>
-<li>This validates that the old workload is too light; it does not yet test a replacement high-quality workload.</li>
-<li>Brief low-capacity fades still exist in the handover-like traces; the claim is about typical headroom across the full replay.</li>
+<li>This shows the current test video is too light. It does not yet test a heavier replacement.</li>
+<li>Brief low-capacity dips still happen in the handover-like recordings; the claim is about typical bandwidth across the whole replay.</li>
 </ul>
 
 
@@ -167,13 +205,15 @@
 <li><code>frame_count</code></li>
 </ul>
 
+
+
 <h2>Reproducibility</h2>
 <p>This page is generated from <code>specs/hypotheses/h3.yaml</code> + <code>analysis/hypotheses/results/h3_report.json</code> + figures under <code>analysis/hypotheses/results/</code>.</p>
 <pre>python3 analysis/hypotheses/build_reports.py
 python3 analysis/hypotheses/build_pages.py
 python3 analysis/hypotheses/h3_media_workload_calibration.py</pre>
 
-<p class="source">Source: Project-internal validity check for realistic-trace SCReAM/GCC experiments</p>
+<p class="source">Source: Project-internal validity check for 5G-recording SCReAM / GCC experiments</p>
 
 <p class="footer">Generated by <code>analysis/hypotheses/build_pages.py</code>. Do not hand-edit; modify <code>specs/hypotheses/h3.yaml</code> or the template instead.</p>
 

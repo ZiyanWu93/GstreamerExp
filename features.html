@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>GstreamerExp — Features & Roadmap</title>
+<title>GstreamerExp</title>
 <style>
   :root {
     --bg: #fafafa;
@@ -16,6 +16,8 @@
     --good-soft: #ecf7ec;
     --gap: #b14a02;
     --gap-soft: #fdf3e7;
+    --info: #1e3a73;
+    --info-soft: #f0f4fa;
     --code: #f4f5f7;
   }
   * { box-sizing: border-box; }
@@ -85,6 +87,20 @@
     color: var(--ink);
     font-weight: 600;
     font-size: 13.5px;
+  }
+  .sidebar nav a.subsub {
+    padding: 4px 8px 4px 36px;
+    font-size: 12.5px;
+    color: var(--muted);
+    border-radius: 4px;
+    display: block;
+    text-decoration: none;
+  }
+  .sidebar nav a.subsub:hover { background: var(--accent-soft); color: var(--accent); }
+  .sidebar nav a.subsub.active {
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 600;
   }
   .sidebar nav a.sub {
     font-size: 12.5px;
@@ -282,6 +298,119 @@
     font-weight: 600; letter-spacing: 0.02em;
     margin-left: 6px; vertical-align: middle;
   }
+  /* ---- Hub-style cards (carried over from the old index hub) ---- */
+  .feature-link {
+    display: block;
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    padding: 20px 24px;
+    text-decoration: none;
+    color: var(--ink);
+    transition: border-color 0.12s ease, box-shadow 0.12s ease;
+    margin: 12px 0;
+  }
+  .feature-link:hover {
+    border-color: var(--accent);
+    box-shadow: 0 1px 6px rgba(37,99,235,0.08);
+    text-decoration: none;
+  }
+  .feature-link .title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+  .feature-link .desc {
+    font-size: 14px;
+    color: var(--muted);
+    margin: 0;
+  }
+  .hypo-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 12px;
+  }
+  @media (max-width: 760px) {
+    .hypo-grid { grid-template-columns: 1fr; }
+  }
+  .hypo-card {
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    padding: 14px 16px;
+    background: var(--panel);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .hypo-card.linked {
+    transition: border-color 0.12s ease, box-shadow 0.12s ease;
+  }
+  .hypo-card.linked:hover {
+    border-color: var(--accent);
+    box-shadow: 0 1px 4px rgba(37,99,235,0.08);
+    text-decoration: none;
+  }
+  .hypo-card .id {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+  }
+  .hypo-card .claim {
+    font-size: 14.5px;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+  .hypo-card .hypo-footer {
+    margin-top: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+  }
+  .badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    letter-spacing: 0.02em;
+  }
+  .badge.supported    { background: var(--good-soft); color: var(--good); }
+  .badge.regime       { background: #fff7ed; color: #b45309; }
+  .badge.inconclusive { background: #fff7ed; color: #b45309; }
+  .badge.untested     { background: var(--info-soft); color: var(--info); }
+  .badge.refuted      { background: var(--gap-soft); color: var(--gap); }
+  .hypo-card .target {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  /* ---- Section router: sidebar selects which section is shown ---- */
+  .page-section { display: none; }
+  .page-section.active { display: block; }
+  /* In-section pager (prev / next at the bottom of each section) */
+  .section-pager {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 32px 0 8px;
+    padding: 14px 0 0;
+    border-top: 1px solid var(--rule);
+    font-size: 14px;
+  }
+  .section-pager a {
+    color: var(--accent);
+    text-decoration: none;
+    padding: 6px 10px;
+    border-radius: 4px;
+  }
+  .section-pager a:hover { background: var(--accent-soft); text-decoration: none; }
+  .section-pager .stub { color: var(--muted); }
 </style>
 </head>
 <body>
@@ -290,60 +419,106 @@
 
   <aside class="sidebar">
     <p class="brand">GstreamerExp</p>
-    <p class="brand-sub">Features &amp; Roadmap</p>
+    <p class="brand-sub">Streaming software stack</p>
     <nav id="toc">
       <ul class="group">
-        <li><a class="top" href="#model">1 · Programming model</a></li>
+        <li><a class="top" href="#arch">1 · System architecture</a></li>
+        <li><a class="sub" href="#arch-context">System context</a></li>
+        <li><a class="sub" href="#arch-process">Process &amp; deployment</a></li>
+        <li><a class="sub" href="#arch-pipeline">Pipeline shape</a></li>
+        <li><a class="sub" href="#arch-wire">Wire architecture</a></li>
+        <li><a class="sub" href="#arch-multistream">Multi-stream (A vs B)</a></li>
+        <li><a class="sub" href="#arch-control-clock">Control &amp; clock</a></li>
+        <li><a class="sub" href="#arch-decisions">Decisions, recorded</a></li>
+      </ul>
+      <ul class="group">
+        <li><a class="top" href="#model">2 · Programming model</a></li>
         <li><a class="sub" href="#spec-layers">Spec layers</a></li>
         <li><a class="sub" href="#spec-to-pipeline">From spec to pipeline</a></li>
         <li><a class="sub" href="#two-impl">Two-implementations rule</a></li>
         <li><a class="sub" href="#verification">Verification contract</a></li>
       </ul>
       <ul class="group">
-        <li><a class="top" href="#pipelines">2 · Existing pipelines</a></li>
+        <li><a class="top" href="#exec">3 · Execution model</a></li>
+        <li><a class="sub" href="#exec-threads">Threads &amp; the clock</a></li>
+        <li><a class="sub" href="#exec-buffers">Buffer flow &amp; backpressure</a></li>
+        <li><a class="sub" href="#exec-time">Time: three clock domains</a></li>
+        <li><a class="sub" href="#exec-cc-sched">Controller scheduling</a></li>
+        <li><a class="sub" href="#exec-recovery">Recovery timing</a></li>
+        <li><a class="sub" href="#exec-impairment">Impairment effect chain</a></li>
+        <li><a class="sub" href="#exec-lifecycle">Run lifecycle</a></li>
+      </ul>
+      <ul class="group">
+        <li><a class="top" href="#pipelines">4 · Pipelines</a></li>
         <li><a class="sub" href="#pipe-bare">Bare</a></li>
         <li><a class="sub" href="#pipe-scream">SCReAM</a></li>
         <li><a class="sub" href="#pipe-gcc">GCC</a></li>
         <li><a class="sub" href="#pipe-recovery">Recovery primitives</a></li>
       </ul>
       <ul class="group">
-        <li><a class="top" href="#cc">3 · SCReAM vs GCC config space</a></li>
-        <li><a class="sub" href="#cc-shared">Shared by both</a></li>
-        <li><a class="sub" href="#cc-scream">SCReAM (camera + viewer)</a></li>
-        <li><a class="sub" href="#cc-gcc">GCC (camera + viewer)</a></li>
-        <li><a class="sub" href="#cc-example">Side-by-side example</a></li>
+        <li><a class="top" href="#roadmap">5 · Goals &amp; roadmap</a></li>
+        <li><a class="sub" href="#roadmap-goals">The two goals</a></li>
+        <li><a class="sub" href="#roadmap-contracts">Goal 1: capabilities</a></li>
+        <li><a class="subsub" href="#contract-source">Source</a></li>
+        <li><a class="subsub" href="#contract-encoder">Encoder</a></li>
+        <li><a class="subsub" href="#contract-sink">Sink</a></li>
+        <li><a class="subsub" href="#contract-clocksync">ClockSync</a></li>
+        <li><a class="subsub" href="#contract-rtpmeta">RTPMeta</a></li>
+        <li><a class="subsub" href="#contract-session">Session</a></li>
+        <li><a class="subsub" href="#contract-controlport">ControlPort</a></li>
+        <li><a class="sub" href="#roadmap-phases">Goal 1: phasing (P1–P4)</a></li>
+        <li><a class="sub" href="#roadmap-goal2">Goal 2: SCReAM characterization</a></li>
+        <li><a class="subsub" href="#roadmap-goal2-config">Configuration space</a></li>
+        <li><a class="subsub" href="#roadmap-goal2-knobs">Knob sensitivity</a></li>
+        <li><a class="subsub" href="#roadmap-goal2-regimes">Network conditions</a></li>
+        <li><a class="subsub" href="#roadmap-goal2-mechanism">Mechanism contributions</a></li>
+        <li><a class="subsub" href="#roadmap-goal2-interactions">Interactions</a></li>
+        <li><a class="subsub" href="#roadmap-goal2-boundary">Boundary behaviour</a></li>
+        <li><a class="sub" href="#roadmap-relate">How the two goals relate</a></li>
+        <li><a class="sub" href="#roadmap-tradeoffs">Drops &amp; keeps</a></li>
+        <li><a class="sub" href="#roadmap-strategic">Strategic question</a></li>
       </ul>
       <ul class="group">
-        <li><a class="top" href="#todo">4 · Features to do</a></li>
-        <li><a class="sub" href="#todo-capture">Capture</a></li>
-        <li><a class="sub" href="#todo-encoding">Encoding</a></li>
-        <li><a class="sub" href="#todo-transport">Transport</a></li>
-        <li><a class="sub" href="#todo-reception">Reception</a></li>
-        <li><a class="sub" href="#todo-latency">Latency</a></li>
-        <li><a class="sub" href="#todo-quality">Quality</a></li>
-        <li><a class="sub" href="#todo-audio">Audio</a></li>
-        <li><a class="sub" href="#todo-recording">Recording / forensics</a></li>
-        <li><a class="sub" href="#todo-sync">Synchronization</a></li>
-        <li><a class="sub" href="#todo-resilience">Resilience to loss</a></li>
+        <li><a class="top" href="#todo">6 · Status &amp; punch list</a></li>
+        <li><a class="sub" href="#todo-goal1">Goal 1: capabilities</a></li>
+        <li><a class="subsub" href="#todo-source">Source</a></li>
+        <li><a class="subsub" href="#todo-encoder">Encoder</a></li>
+        <li><a class="subsub" href="#todo-sink">Sink</a></li>
+        <li><a class="subsub" href="#todo-clocksync">ClockSync</a></li>
+        <li><a class="subsub" href="#todo-rtpmeta">RTPMeta</a></li>
+        <li><a class="subsub" href="#todo-session">Session</a></li>
+        <li><a class="subsub" href="#todo-controlport">ControlPort</a></li>
+        <li><a class="subsub" href="#todo-crosscutting">Cross-cutting</a></li>
+        <li><a class="sub" href="#todo-goal2">Goal 2: characterization sweeps</a></li>
+        <li><a class="subsub" href="#todo-sweep-knobs">Knob sensitivity</a></li>
+        <li><a class="subsub" href="#todo-sweep-regimes">Network conditions</a></li>
+        <li><a class="subsub" href="#todo-sweep-mechanism">Mechanism contributions</a></li>
+        <li><a class="subsub" href="#todo-sweep-interactions">Interactions</a></li>
+        <li><a class="subsub" href="#todo-sweep-boundary">Boundary behaviour</a></li>
+      </ul>
+      <ul class="group">
+        <li><a class="top" href="#reference">7 · Reference</a></li>
+        <li><a class="sub" href="#ref-umn">UMN Teleop-Gopher design</a></li>
       </ul>
     </nav>
-    <div class="footer-link">
-      <a href="index.html">← Back to hub</a>
-    </div>
   </aside>
 
   <main class="content">
 
-<h1>GstreamerExp — Features & Roadmap</h1>
+<h1>GstreamerExp</h1>
 <p class="subtitle">
-  A reading map of how the testbed is organized today: the programming
-  model, the three pipeline shapes that exist, the configuration surface
-  for SCReAM and GCC, and the gaps between this testbed and a real
-  teleoperation video stack.
+  A GStreamer-based streaming software stack with pluggable congestion
+  control (SCReAM, GCC), loss recovery, and measurement. This page
+  covers the system architecture, the runtime execution model, the
+  programming model, the pipelines, the goals and roadmap (Goal 1:
+  match UMN's stack; Goal 2: characterize SCReAM through its
+  configuration space, including findings to date), the current status
+  and punch list, and reference materials.
 </p>
 
+<section class="page-section" data-section="model">
 <!-- =================================================================== -->
-<h2 id="model">1 · Programming model</h2>
+<h2 id="model">2 · Programming model</h2>
 
 <p>
   Everything that affects pipeline behavior lives in a YAML
@@ -481,8 +656,259 @@
   <code>ExitStack</code> in <code>runner.py</code>.
 </p>
 
+</section>
+
+<section class="page-section" data-section="exec">
 <!-- =================================================================== -->
-<h2 id="pipelines">2 · Existing pipelines</h2>
+<h2 id="exec">3 · Execution model</h2>
+
+<p>
+  How the pipelines from §1 actually run at the byte and millisecond
+  level. Threading, time, controller scheduling, and the chain by which
+  network impairment turns into a controller reaction.
+</p>
+
+<p>
+  Read order. <strong>§3.1</strong> threads and the master clock.
+  <strong>§3.2</strong> buffer flow and what backpressure looks like.
+  <strong>§3.3</strong> the three clock domains the system juggles.
+  <strong>§3.4</strong> how SCReAM and GCC are scheduled at runtime.
+  <strong>§3.5</strong> when each recovery primitive fires and what it
+  costs. <strong>§3.6</strong> the impairment chain from
+  <code>tc</code> qdisc to controller reaction.
+  <strong>§3.7</strong> a run from start to flush.
+</p>
+
+<h3 id="exec-threads">3.1 Threads and the master clock</h3>
+
+<p>
+  A GStreamer pipeline runs as a small set of cooperating threads, one
+  per branch boundary. Threads are decoupled at <code>queue</code>
+  elements: every time a buffer crosses a queue, the upstream and
+  downstream halves run on different threads with their own scheduling.
+  In a SCReAM camera pipeline that means roughly four threads: the
+  source / encoder branch, the payloader, the <code>screamtx</code> +
+  <code>rtpbin</code> branch, and the <code>udpsink</code>.
+</p>
+
+<p>
+  Every pipeline owns a single <code>GstClock</code>. The clock is the
+  shared timeline: every element schedules its work against it, and
+  buffers carry presentation timestamps relative to it. On the sender,
+  the source's clock is the master. On the receiver, the receiver's
+  own clock drives display while the RTP timestamps on incoming
+  buffers are translated into local clock time by the jitter buffer.
+</p>
+
+<h3 id="exec-buffers">3.2 Buffer flow and backpressure</h3>
+
+<p>
+  Data moves through the pipeline in <strong>push mode</strong>: the
+  source emits buffers, each element forwards downstream. When a
+  downstream <code>queue</code> fills, the upstream thread blocks on
+  the next push. That is backpressure, and it is the only mechanism by
+  which a slow link can throttle a fast encoder.
+</p>
+
+<p>
+  Why this matters for the comparison. In a Bare pipeline,
+  <code>udpsink</code> cannot block on the network (UDP is
+  non-blocking); it drops on socket-buffer overflow. A too-fast encoder
+  produces losses, not backpressure. In a SCReAM pipeline,
+  <code>screamtx</code> paces output: it observes the link state and
+  refuses to release packets faster than the link can carry. The pacer
+  is the backpressure point. In a GCC pipeline, <code>rtpgccbwe</code>
+  only adjusts the encoder target; it does not pace at the transport.
+  That is part of why the two controllers behave differently under
+  burst.
+</p>
+
+<h3 id="exec-time">3.3 Time: three clock domains</h3>
+
+<p>
+  Three clocks live in the system. Joining them is how we measure.
+</p>
+
+<div class="feature-block">
+  <ul>
+    <li>
+      <strong>Pipeline clock (<code>GstClock</code>).</strong> The
+      element scheduler. Sets buffer PTS / DTS. Used for
+      "when to play this frame" decisions.
+    </li>
+    <li>
+      <strong>RTP timestamp (90 kHz video clock).</strong> Stamped on
+      every RTP packet by the payloader. Persists across the wire.
+      Survives all of payloader / network / depayloader.
+    </li>
+    <li>
+      <strong>Wall clock.</strong> What latency probes record against.
+      The thing we report to humans.
+    </li>
+  </ul>
+</div>
+
+<p>
+  The eight-probe stage-latency metric works because every probe
+  records <code>(wall_clock, rtp_timestamp, byte_count)</code>. The RTP
+  timestamp is the join key across endpoints: the sender's
+  <code>encoder.src</code> probe at <code>rtp_ts = T</code> joins with
+  the receiver's <code>decoder.src</code> probe at the same
+  <code>rtp_ts = T</code>, giving end-to-end latency in wall-clock
+  terms.
+</p>
+
+<h3 id="exec-cc-sched">3.4 Controller scheduling</h3>
+
+<div class="grid2">
+  <div class="panel">
+    <h3 style="margin-top: 0;">SCReAM</h3>
+    <ul>
+      <li>Runs on every RTCP feedback packet, ~50–100 ms cadence.</li>
+      <li>Each feedback updates RTT estimate, queue-delay estimate, in-flight bytes.</li>
+      <li>Decision output: <code>current-max-bitrate</code> notify on
+        <code>screamtx</code>. The encoder picks it up at the next
+        frame boundary.</li>
+      <li>Side effect: paces transmission. The transport-side rate
+        limit is built in.</li>
+    </ul>
+  </div>
+
+  <div class="panel">
+    <h3 style="margin-top: 0;">GCC</h3>
+    <ul>
+      <li>Runs on RFC 8888 TWCC feedback (per-packet arrival times)
+        plus a periodic timer.</li>
+      <li>Each cycle: arrival-time gradient plus loss fraction →
+        overuse / underuse signal → bitrate adjustment.</li>
+      <li>Decision output: <code>estimated-bitrate</code> property on
+        <code>rtpgccbwe</code>, which the application maps to
+        <code>vp8enc.target-bitrate</code>.</li>
+      <li>No transport pacing built in. Pure rate signal to the
+        encoder.</li>
+    </ul>
+  </div>
+</div>
+
+<p>
+  One of the load-bearing asymmetries: SCReAM is a CC <em>and</em> a
+  pacer; GCC is a CC only. When the network bursts, SCReAM smooths the
+  outgoing traffic; GCC relies on the encoder's response time to do the same job.
+</p>
+
+<h3 id="exec-recovery">3.5 Recovery timing</h3>
+
+<p>
+  Each recovery primitive has a cost in time. Recovery is a budget
+  against the jitter buffer's deadline.
+</p>
+
+<div class="feature-block">
+  <ul>
+    <li>
+      <strong>NACK + RTX.</strong> The receiver's jitter buffer detects
+      a sequence gap; NACK fires over RTCP; the sender's
+      <code>rtprtxsend</code> retransmits the missing packet. Cost: one
+      RTT plus the encoder-side queue. Within budget if jitter-buffer
+      latency &gt; RTT.
+    </li>
+    <li>
+      <strong>PLI.</strong> The receiver detects a decode-fatal gap
+      and requests a keyframe. The sender's encoder forces one. Cost:
+      RTT plus one encoder cycle. Heavy because the keyframe is large.
+    </li>
+    <li>
+      <strong>ULPFEC.</strong> Forward error correction. The
+      receiver's <code>rtpulpfecdec</code> reconstructs lost media
+      packets from the FEC matrix without a round trip. Cost:
+      bandwidth overhead on the wire. Within budget only if the loss
+      pattern fits the matrix; bursts past the matrix escape.
+    </li>
+    <li>
+      <strong>Jitter buffer.</strong> The wall-time budget for
+      everything above. Configured by a latency knob. After that, the
+      gap is given up on (or escalated to PLI).
+    </li>
+  </ul>
+</div>
+
+<h3 id="exec-impairment">3.6 Impairment effect chain</h3>
+
+<p>
+  How a <code>tc</code> qdisc change on the sender's outgoing traffic turns into
+  a controller decision.
+</p>
+
+<pre class="ascii">tc <span class="cc">tbf</span> (rate cap) + tc <span class="cc">netem</span> (delay, loss iid/GE)   ← spec-driven, on sender's outgoing traffic
+          │
+          ▼
+[<span class="net">sender qdisc</span>: backlog grows or drops]
+          │ (1) udpsink fills socket buffer if tbf rate &lt; encoder rate
+          ▼
+[<span class="net">RTP on wire</span>: gaps from <span class="cc">netem</span> drops; delay added; rate capped by <span class="cc">tbf</span>]
+          │
+          ▼
+[<span class="hi">receiver jitter buffer</span>: sees sequence gaps]
+          │ (2) reports loss + arrival times via RTCP
+          ▼
+[<span class="net">RTCP back to sender</span>]
+          │
+          ▼
+[<span class="cc">SCReAM</span>: queue-delay + loss → reduce target] OR [<span class="cc">GCC</span>: TWCC gradient → reduce estimate]
+          │ (3) ~50–200 ms after the first lost packet
+          ▼
+[<span class="hi">vp8enc</span>: next frame uses new target-bitrate]</pre>
+
+<p>
+  Three things to keep in mind. (1) The sender sees the qdisc backlog
+  but not the wire-level drops directly; the wire's truth comes back
+  via RTCP. (2) RTCP cadence sets the controller's reaction floor:
+  even a perfect controller cannot react faster than feedback arrives.
+  (3) The encoder reacts at frame boundaries, not at decision instants.
+  At 30 fps, that is up to 33 ms of inertia after the controller has
+  already decided.
+</p>
+
+<h3 id="exec-lifecycle">3.7 Run lifecycle</h3>
+
+<p>
+  How a single run executes, from spec load to flush.
+</p>
+
+<div class="feature-block">
+  <ul>
+    <li>
+      <strong>Setup.</strong> Spec is validated, the pipeline is
+      assembled from the three shapes, <code>tc</code> qdiscs are
+      applied to the configured interface, both halves go to
+      <code>PAUSED</code> and then <code>PLAYING</code>.
+    </li>
+    <li>
+      <strong>Steady state.</strong> Data flows. The runner main thread
+      drives the <code>during_run</code> hooks, applying impairment
+      changes at scheduled wall-clock points. Probes accumulate in
+      memory.
+    </li>
+    <li>
+      <strong>End.</strong> The source signals EOS, or a run timer
+      fires. The pipeline drains downstream; both ends process the
+      final buffers. Probes flush to JSONL. The <code>tc</code> qdisc
+      is cleared.
+    </li>
+    <li>
+      <strong>Failure.</strong> Any element error or unexpected EOS
+      bubbles up via the bus. The runner cleans the qdisc and exits
+      non-zero. The verifier then evaluates the partial output against
+      the hypothesis's pass / fail rule.
+    </li>
+  </ul>
+</div>
+
+</section>
+
+<section class="page-section" data-section="pipelines">
+<!-- =================================================================== -->
+<h2 id="pipelines">4 · Pipelines</h2>
 
 <p>
   Three pipeline shapes, dispatched at build time from
@@ -581,8 +1007,841 @@
 
 </div>
 
+</section>
+
+<section class="page-section" data-section="arch">
 <!-- =================================================================== -->
-<h2 id="cc">3 · Configuration space — SCReAM vs GCC</h2>
+<h2 id="arch">1 · System architecture</h2>
+
+<p>
+  The architectural shape of GstreamerExp. Two endpoints (vehicle host
+  and operator host) connected by standard RTP / RTCP / SRTP / DTLS,
+  plus one orchestrator (Session runtime) plus one external integration
+  surface (<code>ControlPort</code>). Each pipeline box has a named
+  <strong>contract</strong> (<code>Source</code>, <code>Encoder</code>,
+  <code>Sink</code>, <code>ClockSync</code>, <code>RTPMeta</code>,
+  <code>Session</code>, <code>ControlPort</code>): an interface with a
+  today-implementation (synthetic source, software VP8, measurement
+  sink) and a tomorrow-implementation (real camera, hardware H.264,
+  display sink). The architecture stays fixed as the product evolves;
+  §5 (the roadmap) is about which contract implementations are stubs
+  and how they fill in.
+</p>
+
+<p>
+  Read order. <strong>§1.1</strong> the actors and what is in versus
+  out of repo. <strong>§1.2</strong> processes and how they are
+  deployed. <strong>§1.3</strong> the actual GStreamer element graph
+  on each endpoint. <strong>§1.4</strong> what is on the wire.
+  <strong>§1.5–§1.6</strong> the architectural choices that are real
+  calls, not defaults. <strong>§1.7</strong> the decisions recorded as
+  one-line claims.
+</p>
+
+<h3 id="arch-context">1.1 System context</h3>
+
+<p>
+  Three actors. <strong>Vehicle host</strong> captures, encodes, and
+  sends video plus per-frame metadata. <strong>Operator host</strong>
+  receives, decodes, composites, displays. <strong>External systems</strong>
+  (vehicle controls, RAN telemetry, trajectory) live outside this repo
+  and talk to the streamer through one narrow surface, the
+  <code>ControlPort</code>.
+</p>
+
+<pre class="ascii">┌──────────────────────────┐                  ┌──────────────────────────┐
+│   <span class="hi">VEHICLE HOST</span>           │                  │   <span class="hi">OPERATOR HOST</span>          │
+│                          │                  │                          │
+│   [Camera(s)]            │  <span class="net">RTP + RTCP (UDP)</span>│   [Display(s)]           │
+│        │                 │  <span class="net">SRTP / DTLS</span>     │        ▲                 │
+│   [<span class="hi">gstexp camera</span>]   ───┼─────────────────►┼──[<span class="hi">gstexp viewer</span>]      │
+│        │                 │                  │        │                 │
+│   [<span class="rec">ForensicSink</span>]       │                  │   [<span class="rec">ForensicSink</span>]       │
+│   [ClockSync agent]      │                  │   [ClockSync agent]      │
+└────────────┬─────────────┘                  └────────────┬─────────────┘
+             │                                             │
+             │       gRPC <span class="cc">ControlPort</span>       ┌───────┐    │
+             └───────────────────────────────► <span class="cc">SESSION</span> │ ◄──┘
+                                              │RUNTIME│
+                                              └───┬───┘
+                                                  │
+                                                  ▼
+                                   ┌──────────────────────────┐
+                                   │ <span class="net">EXTERNAL (not in repo)</span>  │
+                                   │   vehicle controls       │
+                                   │   RAN telemetry          │
+                                   │   trajectory / routing   │
+                                   └──────────────────────────┘</pre>
+
+<p>
+  The whole product, at this level, is two endpoints plus one
+  orchestrator plus one external integration surface. Everything else
+  is implementation detail of one of those four boxes.
+</p>
+
+<h3 id="arch-process">1.2 Process and deployment model</h3>
+
+<p>
+  One process per role. Configured by spec, supervised externally.
+</p>
+
+<div class="grid2">
+  <div class="panel">
+    <h3 style="margin-top: 0;"><code>gstexp camera</code></h3>
+    <p class="small" style="margin: 0 0 8px 0;">on the vehicle host</p>
+    <ul>
+      <li>One GStreamer pipeline assembling <code>N</code> parallel send
+        chains under a single <code>rtpbin</code> (see §1.5 for the
+        multi-stream choice).</li>
+      <li>Owns the camera-side clock domain.</li>
+      <li>Runs <code>ForensicSink</code> locally.</li>
+      <li>Exposes a status surface used by the Session runtime.</li>
+    </ul>
+  </div>
+
+  <div class="panel">
+    <h3 style="margin-top: 0;"><code>gstexp viewer</code></h3>
+    <p class="small" style="margin: 0 0 8px 0;">on the operator host</p>
+    <ul>
+      <li>Receives <code>N</code> streams, decodes, composites mosaic,
+        renders to <code>DisplaySink</code>.</li>
+      <li>Owns the operator-side clock domain.</li>
+      <li>Runs its own <code>ForensicSink</code>; the receiver-side
+        bytes are byte-identical to the sender's.</li>
+      <li>Drives RTCP feedback (NACK, PLI) back to the camera.</li>
+    </ul>
+  </div>
+
+  <div class="panel">
+    <h3 style="margin-top: 0;"><code>gstexp session</code></h3>
+    <p class="small" style="margin: 0 0 8px 0;">orchestrator (anywhere)</p>
+    <ul>
+      <li>Holds the spec, supervises camera and viewer processes.</li>
+      <li>Serves the status endpoint (JSON / WebSocket) for the
+        operator UI.</li>
+      <li>Serves the <code>ControlPort</code> for external systems.</li>
+      <li>Owns session lifecycle: start, run, stop, replay.</li>
+    </ul>
+  </div>
+
+  <div class="panel">
+    <h3 style="margin-top: 0;">Packaging</h3>
+    <p class="small" style="margin: 0 0 8px 0;">how it ships</p>
+    <ul>
+      <li>Python wheel installed into a venv. No container required.</li>
+      <li><code>systemd</code> units for the three processes
+        (<code>gstexp-camera.service</code>, <code>gstexp-viewer.service</code>,
+        <code>gstexp-session.service</code>).</li>
+      <li>Optional Dockerfile for reproducibility.</li>
+      <li>Specs are YAML files versioned alongside the code.</li>
+    </ul>
+  </div>
+</div>
+
+<h3 id="arch-pipeline">1.3 Pipeline shape</h3>
+
+<p>
+  The GStreamer element graph each endpoint runs. Boxes labelled with
+  a contract name (<code>Source</code>, <code>Encoder</code>,
+  <code>Sink</code>, etc.) are the contract boundaries from §5.2;
+  swapping their implementation is how hardware later slots in.
+</p>
+
+<div class="legend">
+  <span style="background:#1f2d2d;color:#79c0ff">media</span>
+  <span style="background:#1f2d2d;color:#d2a8ff">congestion control</span>
+  <span style="background:#1f2d2d;color:#ffa657">recovery / forensic</span>
+  <span style="background:#1f2d2d;color:#8b949e">transport</span>
+</div>
+
+<div class="panel pipeline-card" id="arch-pipeline-tx">
+  <h3>Vehicle pipeline (camera)</h3>
+  <p class="small">
+    One process. <code>N</code> parallel chains (one per camera) under
+    a single <code>rtpbin</code>. Diagram below shows one chain.
+  </p>
+  <pre class="ascii">[<span class="hi">Source</span>]──→[<span class="hi">Encoder bin</span>]──→[<span class="hi">Pay + RTP header ext</span>]──┐
+   ▲              ▲                  ▲                      │
+   Source         Encoder            RTPMeta                ▼
+   contract       contract           contract        [rtpbin SSRC #N]──→[<span class="net">DTLS-SRTP</span>]──→[<span class="net">udpsink</span>]──→ RTP
+                                                            │   ▲
+                                                            ▼   │
+                                                    [<span class="rec">RTX/ULPFEC</span>]  │
+                                                            ▲   │
+                                                            │   │
+                                                  [<span class="cc">SCReAM | GCC | bare</span>]   │ ←── adjusts Encoder.target,
+                                                            ▲                paces Sender
+                                                            │
+                                                  [<span class="net">udpsrc</span>]──── RTCP ───────┘
+
+[<span class="rec">tee</span>]──→[<span class="rec">ForensicSink</span>: encoded bytes → filesink, no re-encode]
+     └──→[<span class="rec">MeasurementSink</span>: 8 stage-latency probes, frame_count, bitrate, decoded_psnr]
+
+[ClockSync agent]──(PTP / NTP / TREQ-TRES)──→ stamps every metric with offset_ms</pre>
+</div>
+
+<div class="panel pipeline-card" id="arch-pipeline-rx">
+  <h3>Operator pipeline (viewer)</h3>
+  <p class="small">
+    One process. <code>N</code> parallel receive chains under one
+    <code>rtpbin</code>, composited at the end.
+  </p>
+  <pre class="ascii">RTP ──→[<span class="net">udpsrc</span>]──→[<span class="net">DTLS-SRTP</span>]──→[<span class="hi">rtpbin</span>: jitter buf + <span class="rec">RTX</span> + <span class="rec">FEC</span>]──→[<span class="hi">Depay + RTP ext read</span>]
+                                                  │
+                                                  ▼
+                                          [<span class="hi">Decoder bin</span>]──→[<span class="hi">Compositor</span> mosaic]──→[<span class="hi">DisplaySink</span>]
+                                                                                         ▲
+                                                                                         │
+                                                                                 Sink contract
+                                                                                 (glimagesink /
+                                                                                  HMD / framebuffer)
+
+RTCP ◄──[<span class="net">udpsink</span>]──[<span class="cc">RTCP sender</span>]──(PLI on partial-frame, NACK on lost-packet)
+
+[<span class="rec">tee</span>]──→[<span class="rec">ForensicSink</span>: received encoded bytes → filesink]
+[<span class="rec">MeasurementSink</span>]──→ glass-to-glass = display_ts − capture_ts (from RTP header ext)</pre>
+</div>
+
+<h3 id="arch-wire">1.4 Wire architecture</h3>
+
+<p>
+  Four channels. Each does one thing.
+</p>
+
+<div class="feature-block">
+  <h3>1 · Data plane (RTP/UDP, one SSRC per stream)</h3>
+  <ul>
+    <li>RTP header extensions carry: absolute capture timestamp, source
+      frame id, optional geo (lat / lon / RTK status).</li>
+    <li>Payload is whatever the codec produces.</li>
+    <li>SRTP / DTLS-encrypted when <code>secure: true</code> in spec.</li>
+  </ul>
+</div>
+
+<div class="feature-block">
+  <h3>2 · Path feedback (RTCP)</h3>
+  <ul>
+    <li>Standards-compliant. NACK, PLI, RTCP-FB.</li>
+    <li>SCReAM consumes RTCP and its own per-packet feedback over the
+      same RTCP socket.</li>
+    <li>GCC consumes the RFC 8888 transport-wide congestion control
+      feedback messages.</li>
+    <li>This is the channel UMN replaced with custom <code>RFBK</code>.
+      We don't.</li>
+  </ul>
+</div>
+
+<div class="feature-block">
+  <h3>3 · Control plane (<code>ControlPort</code>)</h3>
+  <ul>
+    <li>Separate connection. Default: gRPC over QUIC or TCP. Zenoh is a
+      real alternative (UMN uses it) but adds a runtime dependency that
+      gRPC does not.</li>
+    <li>Operations: <code>request_keyframe</code>,
+      <code>switch_active_camera</code>, <code>push_policy</code>,
+      <code>get_session_status</code>, <code>stream_metrics</code>,
+      <code>start_session</code>, <code>stop_session</code>.</li>
+    <li>Lives on the Session runtime. Does not touch the data plane
+      directly; policy updates go through the Session, which
+      reconfigures the pipeline.</li>
+  </ul>
+</div>
+
+<div class="feature-block">
+  <h3>4 · Forensic plane (local only)</h3>
+  <ul>
+    <li>Each endpoint writes its <code>ForensicSink</code> to local
+      disk. No network involved.</li>
+    <li>Encoded bytes only, no re-encode. Sender and receiver files
+      are byte-identical for every delivered frame.</li>
+    <li>Sidecar metadata: codec, framerate, RTP extension map.</li>
+  </ul>
+</div>
+
+<h3 id="arch-multistream">1.5 Multi-stream architecture (a real call)</h3>
+
+<p>
+  Teleop typically runs three to six cameras. There are two clean ways
+  to model that, and the choice has real consequences.
+</p>
+
+<div class="grid2">
+  <div class="panel">
+    <h3 style="margin-top: 0;">(A) One pipeline, N parallel chains</h3>
+    <ul>
+      <li>Single <code>rtpbin</code>, <code>N</code> SSRCs, shared
+        clock, shared CC instance.</li>
+      <li>The allocator (priority-ordered degradation) sits as a layer
+        above CC and adjusts per-stream encoder targets through the
+        <code>Encoder</code> contract.</li>
+      <li><strong>Pros.</strong> Single clock domain. CC sees aggregate
+        link state. Simpler config. Lower process overhead.</li>
+      <li><strong>Cons.</strong> One bad camera can stall the whole
+        pipeline. Crash-isolation is process-level only.</li>
+    </ul>
+  </div>
+
+  <div class="panel">
+    <h3 style="margin-top: 0;">(B) N independent pipelines</h3>
+    <ul>
+      <li>Per-camera process or per-camera bin. Per-stream CC.</li>
+      <li>Needs a cross-pipeline allocator to coordinate priorities,
+        which is harder than (A)'s in-pipeline allocator.</li>
+      <li><strong>Pros.</strong> Crash-isolated. Hot-restart a single
+        camera without touching the others.</li>
+      <li><strong>Cons.</strong> N CC instances, all competing for the
+        same link, with no shared signal. UMN ships this shape and the
+        coordination layer it lacks shows up as the
+        <code>BandwidthAllocator</code>.</li>
+    </ul>
+  </div>
+</div>
+
+<div class="accent">
+  <p style="margin-top: 0;">
+    <strong>Default: (A).</strong> One pipeline, <code>N</code> chains,
+    one CC, allocator above it. Move to (B) only if cross-camera failure
+    isolation becomes a hard requirement — at which point the
+    <code>Encoder</code> contract and the policy-driven allocator are
+    already where they need to be for the split to land cleanly.
+  </p>
+</div>
+
+<h3 id="arch-control-clock">1.6 Control plane and clock domain</h3>
+
+<div class="grid2">
+  <div class="panel">
+    <h3 style="margin-top: 0;">Control plane (<code>ControlPort</code>)</h3>
+    <p class="small">
+      The protocol that external systems use to talk to the streamer.
+    </p>
+    <pre class="ascii">request_keyframe(stream_id)        → ack
+switch_active_camera(stream_id)    → ack
+push_policy(policy_yaml)           → ack
+get_session_status()               → SessionStatus
+stream_metrics()                   → stream&lt;Metrics&gt;
+start_session(spec)                → session_id
+stop_session(session_id)           → ack</pre>
+    <ul>
+      <li>Implemented by Session runtime. Pipeline reconfigures happen
+        through the Session, not from outside.</li>
+      <li>Schema is part of the spec model. Versioned.</li>
+      <li>Decoupled from data plane. Debuggable, replaceable, testable.</li>
+    </ul>
+  </div>
+
+  <div class="panel">
+    <h3 style="margin-top: 0;">Clock domain</h3>
+    <p class="small">
+      One clock domain per endpoint, ideally PTP-aligned across both.
+    </p>
+    <ul>
+      <li>Every frame carries an absolute capture timestamp in an RTP
+        header extension.</li>
+      <li>The <code>ClockSync</code> agent on each endpoint measures and
+        exposes the offset. Every metric record carries it.</li>
+      <li>Glass-to-glass latency is <code>display_ts −
+        offset_corrected_capture_ts</code>, computed from the header
+        extension, not from local-only probes.</li>
+      <li>Fallback: NTP plus a UDP exchange like UMN's
+        <code>TREQ/TRES</code>. Architecture does not change; precision
+        degrades from sub-millisecond to several milliseconds.</li>
+    </ul>
+  </div>
+</div>
+
+<h3 id="arch-decisions">1.7 Architecture decisions, recorded</h3>
+
+<p>
+  One-line claims. Each marks a place where we are choosing one of
+  several possible architectures, on purpose, with a reason.
+</p>
+
+<div class="feature-block">
+  <ul>
+    <li class="done">
+      <strong>RTP, not custom UDP.</strong> Inherits SRTP / DTLS / RTCP /
+      standards-compliant analyzers. UMN's custom framing is the
+      opposite direction; we explicitly do not follow it.
+    </li>
+    <li class="done">
+      <strong>One process per role, not per stream.</strong> Camera,
+      viewer, session runtime. Shared clock domain per endpoint.
+      Multi-stream is <code>N</code> chains in one pipeline, not
+      <code>N</code> processes (see §1.5 (A)).
+    </li>
+    <li class="done">
+      <strong>Contracts are code, not just docs.</strong> Each
+      <code>Source</code> / <code>Encoder</code> / <code>Sink</code> /
+      <code>ClockSync</code> / <code>RTPMeta</code> / <code>Session</code>
+      / <code>ControlPort</code> is a Python protocol with a runtime
+      registry. Spec selects an implementation by name.
+    </li>
+    <li class="done">
+      <strong>Control plane is not in this repo.</strong> Vehicle
+      controls, RAN telemetry, and trajectory are external systems that
+      talk to the streamer through <code>ControlPort</code>. UMN's
+      monorepo conflates two products.
+    </li>
+    <li class="done">
+      <strong>Measurement is a <code>Sink</code>, not a side feature.</strong>
+      Decoded PSNR, eight-probe stage latency, and glass-to-glass
+      latency ship on by default. The product is its own regression
+      harness.
+    </li>
+    <li class="done">
+      <strong>Forensic record is dual-end and lossless.</strong>
+      <code>tee</code> off encoded bytes on both endpoints. No
+      re-encode. Sender and receiver files match byte-for-byte on
+      every delivered frame.
+    </li>
+    <li class="done">
+      <strong>Single CC, multi-stream allocator above it.</strong> One
+      SCReAM or GCC instance per pipeline; the allocator translates the
+      shared rate into per-stream encoder targets through the
+      <code>Encoder</code> contract. (See §1.5.)
+    </li>
+    <li class="done">
+      <strong>Absolute time on the wire, not just local probes.</strong>
+      Glass-to-glass latency derives from the RTP-header-extension
+      capture timestamp plus the <code>ClockSync</code> offset, not
+      from a chain of pipeline-local probes.
+    </li>
+  </ul>
+</div>
+
+</section>
+
+<section class="page-section" data-section="roadmap">
+<!-- =================================================================== -->
+<h2 id="roadmap">5 · Goals &amp; roadmap</h2>
+
+<p>
+  GstreamerExp has two goals pulling together, not one. Both reduce to
+  the same first activity: clearly identifying the gaps. This section
+  names both, lists the gaps for each, and shows how the two pieces of
+  work share a roof.
+</p>
+
+<p>
+  Read order. <strong>§5.1</strong> the two goals named side by side.
+  <strong>§5.2</strong> Goal 1's capabilities, grouped by the seven
+  contracts that mark where each gap closes.
+  <strong>§5.3</strong> Goal 1's phasing
+  (P1–P4), no hardware required for P1–P2. <strong>§5.4</strong> Goal 2:
+  what we do not yet know about how SCReAM behaves across its
+  configuration space (now §5.4.1). <strong>§5.5</strong> how the two goals
+  share work. <strong>§5.6–§5.7</strong> what this drops, what it
+  keeps, and the open strategic question about the repo shape.
+</p>
+
+<h3 id="roadmap-goals">6.1 The two goals</h3>
+
+<p>
+  Stating them separately keeps the work honest about what is
+  engineering and what is research.
+</p>
+
+<div class="grid2">
+  <div class="panel">
+    <h3 style="margin-top: 0;">Goal 1 · Match UMN's stack, keep our advantages</h3>
+    <p class="small" style="margin: 0 0 8px 0;">Engineering deliverable.</p>
+    <p>
+      Match the capabilities UMN's Teleop-Gopher-Streamer
+      (<a href="https://github.com/GopherNetLab/Teleop-Gopher-streamer">GopherNetLab</a>)
+      ships today: real cameras with hardware-timestamp metadata,
+      multi-codec with hardware-encode paths (NVENC / QSV / VAAPI),
+      multi-stream rigs of three to six cameras, adaptive resolution,
+      partial-frame decode at the receiver, dual-end forensic
+      bitstream recording, an external integration surface for vehicle
+      / RAN / trajectory.
+    </p>
+    <p>
+      Keep what GstreamerExp does <em>better</em> than UMN: standards
+      RTP / RTCP / SRTP / DTLS instead of UMN's custom UDP framing;
+      reference congestion-control implementations (Ericsson SCReAM
+      via <code>gstscream</code>, <code>rtpgccbwe</code> for GCC)
+      instead of UMN's 226-line AIMD reimplementation; packet pacing;
+      the full loss-recovery toolbox (NACK + RTX, PLI, ULPFEC);
+      and the measurement rigour (decoded PSNR, eight-probe stage
+      latency, declarative validated specs, hypothesis framework
+      with pass / fail verifiers).
+    </p>
+    <p class="small" style="margin-bottom: 0;">
+      See the <a href="reference/umn-teleop-design.html#12-compared-to-gstreamerexp-ours">side-by-side
+      comparison</a> in the UMN design doc for the full inventory. Gaps
+      map onto Goal 1's capabilities
+      (<a href="#roadmap-contracts">§5.2</a>),
+      grouped by seven contracts
+      (<code>Source</code>, <code>Encoder</code>, <code>Sink</code>,
+      <code>ClockSync</code>, <code>RTPMeta</code>,
+      <code>Session</code>, <code>ControlPort</code>) that mark where
+      each gap closes.
+    </p>
+  </div>
+
+  <div class="panel">
+    <h3 style="margin-top: 0;">Goal 2 · Characterize SCReAM through the configuration space</h3>
+    <p class="small" style="margin: 0 0 8px 0;">Research deliverable.</p>
+    <p>
+      Map how SCReAM behaves across the configuration knobs documented
+      in <a href="#roadmap-goal2-config">§5.4.1</a> and the network conditions that engineer
+      those knobs. Until that map exists, claims like "SCReAM beats
+      GCC on a particular network" only carry as far as the few cells we have run.
+    </p>
+    <p class="small" style="margin-bottom: 0;">
+      <strong>Gaps live in our characterization</strong>
+      (<a href="#roadmap-goal2">§5.4</a>): knob-sensitivity sweeps,
+      network-condition sweeps, mechanism-isolation experiments,
+      interaction studies, boundary behaviour.
+    </p>
+  </div>
+</div>
+
+<p>
+  Both goals reduce to gap identification. Functional gaps say what to
+  build. Characterization gaps say what to test. §5.5 covers how they
+  share work.
+</p>
+
+<h3 id="roadmap-contracts">6.2 Goal 1: capabilities</h3>
+
+<p>
+  The capabilities that close Goal 1's gaps, grouped by seven contract
+  boundaries. Each contract is a tiny interface plus today's stub
+  implementation, and marks where the product diverges from the
+  testbed. Order is logical, not strictly priority — see §5.3 for the
+  phasing.
+</p>
+
+<h4 style="margin-top: 18px;">Quick reference — the seven contracts</h4>
+
+<div class="feature-block">
+  <ul>
+    <li><strong>1 · <code>Source</code>.</strong> Produces frame
+      buffers plus per-frame metadata plus a source timestamp pinned to
+      a real capture clock.</li>
+    <li><strong>2 · <code>Encoder</code>.</strong>
+      <code>(codec, target_kbps, low_latency_options) → element + applied-bitrate notify</code>.</li>
+    <li><strong>3 · <code>Sink</code>.</strong> Composable:
+      <code>MeasurementSink</code> (probes), <code>DisplaySink</code>
+      (operator UI), <code>ForensicSink</code>
+      (<code>tee → filesink</code>, no re-encode).</li>
+    <li><strong>4 · <code>ClockSync</code>.</strong> Maps wall-clock to
+      capture-time, exposes an offset estimate so latencies stay honest
+      across two real clocks.</li>
+    <li><strong>5 · <code>RTPMeta</code>.</strong> RTP header
+      extensions carrying absolute capture timestamp, source frame id,
+      optional geo (lat / lon / RTK status).</li>
+    <li><strong>6 · <code>Session</code>.</strong> Runtime lifecycle
+      (start / run / stop / replay) plus a status surface (JSON or
+      WebSocket): bitrate, RTT, loss, frame counters, health.</li>
+    <li><strong>7 · <code>ControlPort</code>.</strong> External
+      integration surface (gRPC or Zenoh) for keyframe requests, camera
+      switching, policy push, and session control.</li>
+  </ul>
+</div>
+
+<p>
+  See <a href="#arch">§1 system architecture</a> for the wider shape
+  these contracts sit inside. The seven subgoals below give each
+  contract's gap list (today vs tomorrow) in detail.
+</p>
+
+<div class="legend">
+  <span class="done">in place / today</span>
+  <span class="todo">to add / tomorrow</span>
+</div>
+
+<div class="feature-block" id="contract-source">
+  <h3>1 · <code>Source</code></h3>
+  <ul>
+    <li>
+      <strong>What it is.</strong> Produces frame buffers plus per-frame
+      metadata plus a source timestamp pinned to a real capture clock.
+    </li>
+    <li class="done">
+      <strong>Today.</strong> Synthetic (<code>videotestsrc</code>) and
+      file-backed (<code>filesrc</code>) implementations under one
+      assembly point in <code>gstexp/camera.py</code>.
+    </li>
+    <li class="todo">
+      <strong>Tomorrow.</strong> A PySpin / V4L2 / camera-SDK bridge
+      that fills the same struct via <code>appsrc</code>.
+    </li>
+    <li>
+      <strong>Contract must cover</strong> the things only real hardware
+      does: dropped frames, exposure jitter, hot-unplug, partial reads.
+      If the contract is missing those, the second implementation will
+      look like a rewrite.
+    </li>
+  </ul>
+</div>
+
+<div class="feature-block" id="contract-encoder">
+  <h3>2 · <code>Encoder</code></h3>
+  <ul>
+    <li>
+      <strong>What it is.</strong>
+      <code>(codec, target_kbps, low_latency_options) → GStreamer element</code>,
+      plus an "applied bitrate" notify channel the CC can hook.
+    </li>
+    <li class="done">
+      <strong>Today.</strong> <code>vp8enc</code> with
+      <code>target-bitrate</code> as the single actuator.
+    </li>
+    <li class="todo">
+      <strong>Tomorrow.</strong> Software H.264 (<code>x264enc</code>)
+      alongside VP8 today; hardware
+      <code>vah264enc</code> / <code>nvh264enc</code> / <code>qsvh264enc</code>
+      slot in through the same factory when the GPU lands.
+    </li>
+    <li>
+      <strong>Contract must cover</strong> silent-fallback detection. A
+      misconfigured GPU host should fail loudly, not quietly drop back
+      to software at several times the latency.
+    </li>
+  </ul>
+</div>
+
+<div class="feature-block" id="contract-sink">
+  <h3>3 · <code>Sink</code></h3>
+  <ul>
+    <li>
+      <strong>What it is.</strong> Three composable sinks.
+      <code>MeasurementSink</code> for the probe-driven testbed work,
+      <code>DisplaySink</code> for the operator UI,
+      <code>ForensicSink</code> (<code>tee → filesink</code>, no
+      re-encode) on both endpoints.
+    </li>
+    <li class="done">
+      <strong>Today.</strong> Measurement (<code>fakesink</code> +
+      probes) and basic display (<code>autovideosink</code> in expo
+      specs).
+    </li>
+    <li class="todo">
+      <strong>Tomorrow.</strong> <code>glimagesink</code> for
+      low-latency display, <code>compositor</code> for multi-stream
+      mosaic, dual-end forensic record on both endpoints. The latter is
+      near-direct.
+    </li>
+  </ul>
+</div>
+
+<div class="feature-block" id="contract-clocksync">
+  <h3>4 · <code>ClockSync</code></h3>
+  <ul>
+    <li>
+      <strong>What it is.</strong> Maps wall-clock to capture-time,
+      exposes an offset estimate, and stamps every metric record so
+      latencies stay honest across two real clocks.
+    </li>
+    <li class="todo">
+      <strong>Today (to add).</strong> An NTP-derived estimate plus a
+      UDP exchange similar to UMN's <code>TREQ / TRES</code>.
+    </li>
+    <li class="todo">
+      <strong>Tomorrow.</strong> A PTP-aware implementation when the
+      deployment supports it.
+    </li>
+    <li>
+      <strong>Why it matters.</strong> Without this, glass-to-glass
+      latency stops being defensible the moment camera and viewer are
+      on different hosts.
+    </li>
+  </ul>
+</div>
+
+<div class="feature-block" id="contract-rtpmeta">
+  <h3>5 · <code>RTPMeta</code></h3>
+  <ul>
+    <li>
+      <strong>What it is.</strong> A defined set of RTP header
+      extensions: absolute capture timestamp, source frame id, optional
+      geo (lat / lon / RTK status).
+    </li>
+    <li class="todo">
+      <strong>Today (to add).</strong> Wire the carry path through
+      camera, SCReAM / GCC, and viewer even when fields are zeros.
+    </li>
+    <li class="todo">
+      <strong>Tomorrow.</strong> Real GPS and camera-HW values
+      populate the fields. No pipeline change at that point.
+    </li>
+    <li>
+      <strong>Standards note.</strong> RTP header extensions are the
+      standards-compliant way to do what UMN does with custom UDP
+      headers. Same data, drop-in tooling.
+    </li>
+  </ul>
+</div>
+
+<div class="feature-block" id="contract-session">
+  <h3>6 · <code>Session</code></h3>
+  <ul>
+    <li>
+      <strong>What it is.</strong> A lifecycle wrapper around what is
+      today a one-shot experiment. Start, run, stop, replay. Each
+      session carries a config, a metrics stream, a forensic record,
+      and a final report.
+    </li>
+    <li class="done">
+      <strong>Today.</strong> The validated spec system in
+      <code>gstexp/validation.py</code> covers most of the config and
+      the report.
+    </li>
+    <li class="todo">
+      <strong>Tomorrow.</strong> A runtime <code>Session</code> object
+      plus a small status surface (JSON / WebSocket): current bitrate,
+      RTT, loss, frame counters, health.
+    </li>
+  </ul>
+</div>
+
+<div class="feature-block" id="contract-controlport">
+  <h3>7 · <code>ControlPort</code></h3>
+  <ul>
+    <li>
+      <strong>What it is.</strong> The surface external systems use to
+      talk to the streamer: request a keyframe, switch active camera,
+      push a policy update. A gRPC or Zenoh interface.
+    </li>
+    <li class="todo">
+      <strong>Today (to add).</strong> Define the protocol and stub
+      the endpoints. No external system needs to be live yet.
+    </li>
+    <li>
+      <strong>Why it matters.</strong> UMN bundles vehicle controls,
+      RAN telemetry, and trajectory inside the streamer repo, and that
+      conflates two products. Publishing this protocol keeps the
+      streamer focused.
+    </li>
+  </ul>
+</div>
+
+<h3 id="roadmap-phases">6.3 Goal 1: phasing</h3>
+
+<p>
+  Four phases. The first two need no hardware. The third and fourth
+  are plug-ins, not refactors, because phases 1–2 left the contracts
+  open.
+</p>
+
+<div class="grid2">
+  <div class="panel" id="phase-1">
+    <h3 style="margin-top: 0;">Phase 1 · no hardware needed</h3>
+    <p class="small" style="margin: 0 0 8px 0;">Do now.</p>
+    <ul>
+      <li>Land contracts <strong>1, 2, 3, 5</strong>.</li>
+      <li>Refactor the pipeline so one stream is <code>N = 1</code>,
+        not hardcoded.</li>
+      <li>Adaptive resolution as a CC actuator, wired to SCReAM's
+        <code>current-max-bitrate</code> and GCC's
+        <code>estimated-bitrate</code>. Falls out of the encoder
+        abstraction.</li>
+      <li>Partial-frame decode at the receiver.</li>
+      <li>Dual-end forensic record (falls out of the sink abstraction).</li>
+    </ul>
+    <p class="small">
+      <strong>Outcome:</strong> honest claims about SCReAM / GCC across
+      H.264 software, not just VP8. Most of the rigour the next paper
+      needs.
+    </p>
+  </div>
+
+  <div class="panel" id="phase-2">
+    <h3 style="margin-top: 0;">Phase 2 · product surface</h3>
+    <p class="small" style="margin: 0 0 8px 0;">Still no hardware.</p>
+    <ul>
+      <li>Land contracts <strong>4, 6</strong>.</li>
+      <li>Status endpoint and session lifecycle.</li>
+      <li>Declare SRTP / DTLS in the spec model with a wire-in stub.</li>
+      <li>Operations: structured health probe, graceful shutdown,
+        version metadata threaded through every metric.</li>
+    </ul>
+    <p class="small">
+      <strong>Outcome:</strong> a teleop partner can clone the repo and
+      stand it up as a daemon, even if camera and encoder are still
+      synthetic.
+    </p>
+  </div>
+
+  <div class="panel" id="phase-3">
+    <h3 style="margin-top: 0;">Phase 3 · when hardware arrives</h3>
+    <p class="small" style="margin: 0 0 8px 0;">Low effort, no refactor.</p>
+    <ul>
+      <li>Second <code>Source</code> implementation (real camera
+        bridge).</li>
+      <li>Hardware variant of <code>Encoder</code>.</li>
+      <li>Production <code>DisplaySink</code> (compositor mosaic for
+        multi-stream).</li>
+      <li>DTLS-SRTP wiring.</li>
+      <li>Multi-window layout config for the operator station.</li>
+    </ul>
+    <p class="small">
+      <strong>Outcome:</strong> each item is a plug-in, not a refactor.
+      Contracts from phase 1–2 absorb the change.
+    </p>
+  </div>
+
+  <div class="panel" id="phase-4">
+    <h3 style="margin-top: 0;">Phase 4 · teleop integration</h3>
+    <p class="small" style="margin: 0 0 8px 0;">When partners are real.</p>
+    <ul>
+      <li>Land contract <strong>7</strong>.</li>
+      <li>External vehicle / RAN / trajectory systems integrate through
+        it.</li>
+      <li>Those subsystems do not live in this repo.</li>
+    </ul>
+    <p class="small">
+      <strong>Outcome:</strong> the streamer ships as a focused product.
+      The control protocol is the only thing partners need to learn.
+    </p>
+  </div>
+</div>
+
+<h3 id="roadmap-goal2">5.4 Goal 2: SCReAM characterization</h3>
+
+<p>
+  Map how SCReAM actually behaves across its configuration space.
+  <a href="#roadmap-goal2-config">§5.4.1</a> names the surface (knobs
+  and environment dimensions) the testbed exposes.
+  §5.4.2–§5.4.6 list the five families of open characterization gaps
+  still to close. Each experiment subgoal carries its own
+  <strong>Findings to date</strong>: the hypothesis cards from the
+  H-series that already address part of that subgoal sit at the bottom
+  of the block. Each subgoal below is its own routable block.
+</p>
+
+<h4 style="margin-top: 18px;">Quick reference — knobs and dimensions in scope</h4>
+
+<div class="grid2">
+  <div class="panel">
+    <h3 style="margin-top: 0; font-size: 15px;">SCReAM knobs</h3>
+    <ul style="margin: 0; padding-left: 20px;">
+      <li><strong><code>min-bitrate</code> / <code>initial-bitrate</code> / <code>max-bitrate</code>.</strong> Hard rails on the encoder target.</li>
+      <li><strong><code>queue-delay-target</code>.</strong> Buffering threshold above which SCReAM backs off. Single most influential delay knob.</li>
+      <li><strong>Loss backoff.</strong> Multiplier applied when loss is detected.</li>
+      <li><strong>Bandwidth headroom.</strong> Fraction of estimated capacity kept as safety margin.</li>
+      <li><strong>Pacing.</strong> <code>max-bytes-in-flight</code>, smoothing window; caps how many bytes SCReAM permits in flight.</li>
+      <li><strong>ECN / L4S.</strong> Explicit congestion notification, on or off.</li>
+      <li><strong>RTCP feedback cadence.</strong> Peer-side; gates SCReAM's reaction floor.</li>
+    </ul>
+  </div>
+
+  <div class="panel">
+    <h3 style="margin-top: 0; font-size: 15px;">Environment dimensions</h3>
+    <ul style="margin: 0; padding-left: 20px;">
+      <li><strong>Link capacity.</strong> Static cap or time-varying (static / slow / fast / step / 5G trace).</li>
+      <li><strong>RTT.</strong> Constant base latency on the path.</li>
+      <li><strong>Jitter.</strong> Per-packet delay variance.</li>
+      <li><strong>Loss pattern.</strong> iid (uniform) or Gilbert-Elliott bursty.</li>
+      <li><strong>Workload.</strong> Bitrate envelope of the encoded stream that SCReAM regulates.</li>
+    </ul>
+  </div>
+</div>
+
+<h3 id="roadmap-goal2-config">Goal 2.1 · Configuration space</h3>
 
 <p>
   Each algorithm is exposed in full so the testbed can study performance
@@ -594,7 +1853,7 @@
   code.</strong>
 </p>
 
-<h3 id="cc-shared">Shared by both</h3>
+<h4 id="cc-shared">Shared by both</h4>
 <table>
   <thead>
     <tr><th>YAML field</th><th>Purpose</th></tr>
@@ -610,7 +1869,7 @@
 <div class="grid2">
 
   <div class="panel" id="cc-scream">
-    <h3>SCReAM <span class="pill">camera side</span></h3>
+    <h4 style="margin-top:0;">SCReAM <span class="pill">camera side</span></h4>
     <p class="small">
       Mapped to <code>screamtx.params</code> CLI flags. Field names
       readable in Python; flag names match SCReAM's own.
@@ -632,7 +1891,7 @@
         <tr><td><code>no_pacing</code></td><td><code>-nopace</code> (flag)</td><td>off</td></tr>
       </tbody>
     </table>
-    <h4>SCReAM viewer side</h4>
+    <h5>SCReAM viewer side</h5>
     <p class="small">
       The current <code>gstscream</code> plugin's <code>screamrx</code>
       element exposes no GObject properties — <code>ackDiff</code> and
@@ -642,7 +1901,7 @@
   </div>
 
   <div class="panel" id="cc-gcc">
-    <h3>GCC <span class="pill">camera side</span></h3>
+    <h4 style="margin-top:0;">GCC <span class="pill">camera side</span></h4>
     <p class="small">
       Mapped to <code>rtpgccbwe</code> GObject properties. Far smaller
       surface than SCReAM — most of GCC's behavior is hard-coded inside
@@ -655,7 +1914,7 @@
       </tbody>
     </table>
 
-    <h4>GCC viewer side</h4>
+    <h5>GCC viewer side</h5>
     <table>
       <thead><tr><th>YAML field</th><th>Property</th><th>Default</th></tr></thead>
       <tbody>
@@ -663,7 +1922,7 @@
       </tbody>
     </table>
 
-    <h4>Why so few knobs?</h4>
+    <h5>Why so few knobs?</h5>
     <p class="small">
       GCC has internal parameters (Kalman filter gains, trendline window,
       overuse threshold adaptation) that aren't surfaced as GStreamer
@@ -674,12 +1933,12 @@
 
 </div>
 
-<h3 id="cc-example">Side-by-side example</h3>
+<h4 id="cc-example">Side-by-side example</h4>
 <p>The same scenario, swapping only the controller — pair-comparison ready:</p>
 
 <div class="grid2">
   <div class="panel">
-    <h4 style="margin-top:0;">SCReAM (config 8)</h4>
+    <h5 style="margin-top:0;">SCReAM (config 8)</h5>
 <pre><code>video: ball-480p15
 network: fluctuating-5mbps-300kbps
 codec: vp8
@@ -695,7 +1954,7 @@ recovery: { nack: false, pli: false, fec: false }
 latency_budget_ms: 0</code></pre>
   </div>
   <div class="panel">
-    <h4 style="margin-top:0;">GCC (config 10)</h4>
+    <h5 style="margin-top:0;">GCC (config 10)</h5>
 <pre><code>video: ball-480p15
 network: fluctuating-5mbps-300kbps
 codec: vp8
@@ -719,18 +1978,333 @@ latency_budget_ms: 0</code></pre>
   silent divergence.
 </p>
 
-<!-- =================================================================== -->
-<h2 id="todo">4 · Features to do</h2>
+<h3 id="roadmap-goal2-knobs">Goal 2.2 · Knob sensitivity</h3>
 
 <p>
-  What's currently in scope: VP8 → RTP → (SCReAM | GCC | bare) → UDP
-  over loopback or between two real hosts, with <code>tc tbf</code> +
-  <code>netem</code> impairment (uniform iid or Gilbert-Elliott bursty
-  loss) driven by <code>during_run</code> hooks. Recovery primitives
-  NACK+RTX, PLI, and ULPFEC are implemented and orthogonal. Per-frame
-  Y-plane PSNR against a reproduced source is the working quality
-  metric. Below: gaps between this testbed and an actual teleoperation
-  video stack, ignoring the operator-control return path.
+  Which SCReAM knobs actually move the outcome, and by how much. Each
+  knob swept on its own, baseline elsewhere, across two or three
+  test networks.
+</p>
+
+<div class="feature-block">
+  <ul>
+    <li>
+      <strong>Queue-delay target.</strong> Not systematically swept;
+      its effect across network conditions is unmapped.
+    </li>
+    <li>
+      <strong>Loss backoff.</strong> H1 and H4 touched the loss-based
+      mode but did not isolate the backoff multiplier itself.
+    </li>
+    <li>
+      <strong>Min / initial / max bitrate.</strong> One config set
+      across H1–H5; the sensitivity surface is not mapped.
+    </li>
+    <li>
+      <strong>ECN / L4S.</strong> We have not run with ECN signalling
+      at all.
+    </li>
+    <li>
+      <strong>Pacing parameters.</strong>
+      <code>max-bytes-in-flight</code> and smoothing untouched.
+    </li>
+  </ul>
+</div>
+
+<h3 id="roadmap-goal2-regimes">Goal 2.3 · Network conditions covered</h3>
+
+<p>
+  Each environment dimension swept as an independent axis at fixed
+  SCReAM baseline. Produces the response curves that say where SCReAM
+  works well, less well, and not at all.
+</p>
+
+<div class="feature-block">
+  <ul>
+    <li>
+      <strong>Link capacity.</strong> Three or four conditions covered
+      (Mahimahi 5G slices); not a clean axis.
+    </li>
+    <li>
+      <strong>RTT.</strong> Not varied as an independent dimension.
+    </li>
+    <li>
+      <strong>Loss pattern.</strong> iid covered, Gilbert-Elliott
+      touched, but no systematic comparison at matched mean loss.
+    </li>
+    <li>
+      <strong>Jitter.</strong> Not isolated as a dimension.
+    </li>
+    <li>
+      <strong>Application workload.</strong> H3 found the workload
+      does not keep the recordings busy. That is the symptom of this gap.
+    </li>
+  </ul>
+</div>
+
+<h4 style="margin-top: 20px;">Findings to date</h4>
+
+<div class="hypo-grid">
+
+  <a class="hypo-card linked" id="hypo-h1" href="analysis/hypotheses/h1.html">
+    <div class="id">H1</div>
+    <div class="claim">When the network's bandwidth drops sharply, SCReAM sends less than GCC does. Whether the viewer also gets fewer frames depends on how fast the bandwidth changes.</div>
+    <div class="hypo-footer">
+      <span class="badge regime">tested · depends on the network</span>
+      <span class="target">→ h1.html</span>
+    </div>
+  </a>
+
+  <a class="hypo-card linked" id="hypo-h3" href="analysis/hypotheses/h3.html">
+    <div class="id">H3</div>
+    <div class="claim">The current test video is too lightweight to compare SCReAM and GCC on 5G recordings — it doesn't keep the recordings busy.</div>
+    <div class="hypo-footer">
+      <span class="badge supported">tested · test video too light for the recordings</span>
+      <span class="target">→ h3.html</span>
+    </div>
+  </a>
+
+  <a class="hypo-card linked" id="hypo-h4" href="analysis/hypotheses/h4.html">
+    <div class="id">H4</div>
+    <div class="claim">On tight 5G recordings (handover, resource-block), SCReAM keeps more frames watchable than GCC while the camera sends fewer bytes.</div>
+    <div class="hypo-footer">
+      <span class="badge supported">tested · SCReAM ahead on the harder recordings</span>
+      <span class="target">→ h4.html</span>
+    </div>
+  </a>
+
+</div>
+
+<h3 id="roadmap-goal2-mechanism">Goal 2.4 · Mechanism contributions</h3>
+
+<p>
+  SCReAM does several things at once (rate adjustment, pacing,
+  feedback-driven adaptation). Three targeted studies isolate which
+  mechanism contributes what to its observed advantage.
+</p>
+
+<div class="feature-block">
+  <ul>
+    <li>
+      <strong>Pacing vs encoder-rate adjustment.</strong> SCReAM does
+      both. We do not know the relative contribution of each to the
+      SCReAM-over-GCC delta. Needs a <code>gstscream</code> flag to
+      disable pacing.
+    </li>
+    <li>
+      <strong>Controller → encoder coupling fidelity.</strong> H5
+      isolated the coupling <em>gap</em> at UMN but did not measure
+      how tight the coupling needs to be to recover the gap. The
+      "applied-bitrate fidelity → CC outcome" sensitivity curve is
+      missing. Needs an instrumented delay / drop knob on the
+      <code>current-max-bitrate</code> notify path.
+    </li>
+    <li>
+      <strong>Feedback cadence dependency.</strong> Vary RTCP-feedback
+      interval (50 ms / 100 ms / 250 ms / 500 ms / 1 s) on a
+      wobbly-bandwidth network to find SCReAM's reaction floor.
+    </li>
+  </ul>
+</div>
+
+<h4 style="margin-top: 20px;">Findings to date</h4>
+
+<div class="hypo-grid">
+
+  <a class="hypo-card linked" id="hypo-h5" href="analysis/hypotheses/h5.html">
+    <div class="id">H5</div>
+    <div class="claim">Our SCReAM follows changing bandwidth; UMN's does not. The cause is a wiring problem — UMN's controller picks a rate but that rate never reaches the encoder — not the algorithm or how often the loop runs.</div>
+    <div class="hypo-footer">
+      <span class="badge supported">tested · ours uses more of the link, cause isolated</span>
+      <span class="target">→ h5.html</span>
+    </div>
+  </a>
+
+</div>
+
+<h3 id="roadmap-goal2-interactions">Goal 2.5 · Interactions with other features</h3>
+
+<p>
+  How SCReAM behaves when the rest of the stack changes around it.
+  These are the sweeps gated by Goal 1 capabilities.
+</p>
+
+<div class="feature-block">
+  <ul>
+    <li>
+      <strong>SCReAM × codec.</strong> Does the queue-delay target need
+      different values for VP8 vs H.264? Unknown until §5.2's
+      <code>Encoder</code> contract supports two codecs.
+      <em>Blocked on Goal 1 sprint 1.</em>
+    </li>
+    <li>
+      <strong>SCReAM × recovery.</strong> NACK + RTX retransmits and
+      ULPFEC bytes pass through the controller's view. We have not
+      measured how they bias SCReAM's decisions. Runnable today as a
+      2 × 2 × 2 cross-product over the three recovery primitives.
+    </li>
+    <li>
+      <strong>SCReAM × multi-stream.</strong> One CC instance for
+      <code>N</code> streams vs <code>N</code> independent instances.
+      <em>Blocked on the multi-stream refactor.</em>
+    </li>
+  </ul>
+</div>
+
+<h4 style="margin-top: 20px;">Findings to date</h4>
+
+<div class="hypo-grid">
+
+  <a class="hypo-card linked" id="hypo-h2" href="analysis/hypotheses/h2.html">
+    <div class="id">H2</div>
+    <div class="claim">On a wobbly network, the viewer gets more frames with GCC than with SCReAM. Turning retransmits on or tightening the late-frame deadline does not change which one wins.</div>
+    <div class="hypo-footer">
+      <span class="badge supported">tested · GCC ahead in every setting</span>
+      <span class="target">→ h2.html</span>
+    </div>
+  </a>
+
+</div>
+
+<h3 id="roadmap-goal2-boundary">Goal 2.6 · Boundary behaviour</h3>
+
+<p>
+  Where does SCReAM stop behaving like SCReAM and start degenerating?
+  Binary-search the threshold in each of RTT, loss, and jitter at
+  which the SCReAM-over-bare advantage collapses.
+</p>
+
+<div class="feature-block">
+  <ul>
+    <li>RTT degeneration threshold (sweep base RTT, find the inflection point).</li>
+    <li>Loss-rate degeneration threshold (sweep iid loss until SCReAM ≈ bare).</li>
+    <li>Jitter degeneration threshold (sweep netem jitter until SCReAM gain disappears).</li>
+  </ul>
+</div>
+
+<p>
+  Each subgoal above is a hypothesis-spec family that can be authored
+  against the existing framework. The work is proposal-driven, not
+  platform-driven: pick a subgoal, formulate the hypothesis with a
+  falsifiable verifier, run the sweep, write the result.
+</p>
+
+<h3 id="roadmap-relate">6.5 How the two goals relate</h3>
+
+<p>
+  The two goals are complementary, not independent.
+</p>
+
+<div class="grid2">
+  <div class="panel">
+    <h3 style="margin-top: 0;">Goal 1 broadens what Goal 2 can sweep</h3>
+    <p>
+      Multi-codec, multi-stream, hardware encode, real cameras all
+      become axes Goal 2 can vary. Until the Encoder contract lands a
+      second codec, "SCReAM × codec" is uncharacterizable. Until
+      multi-stream lands, "SCReAM with shared vs per-stream instances"
+      is uncharacterizable.
+    </p>
+  </div>
+
+  <div class="panel">
+    <h3 style="margin-top: 0;">Goal 2 sharpens what Goal 1's stack can claim</h3>
+    <p>
+      A fuller stack is only useful if the claims it produces are
+      believable. The characterization sweeps tell us where to trust
+      "SCReAM beats GCC on X" and where the claim does not carry yet.
+      Without Goal 2, Goal 1 drifts toward "feature parity with UMN,"
+      which is not the point.
+    </p>
+  </div>
+</div>
+
+<p>
+  Two practical implications.
+</p>
+
+<div class="feature-block">
+  <ul>
+    <li>
+      A Goal-2 dimension is sometimes blocked on a Goal-1 capability.
+      The dependency goes one way: building the codec contract unblocks
+      the SCReAM × codec sweep, not the reverse. Sequencing matters.
+    </li>
+    <li>
+      Goal-1 work needs a Goal-2 question to shape it. "Add H.264" is
+      not a hypothesis; "does SCReAM's queue-delay target need
+      different values for VP8 vs H.264?" is. Pick a Goal-1 sprint
+      because it unblocks a Goal-2 question, not just because UMN ships
+      the feature.
+    </li>
+  </ul>
+</div>
+
+<h3 id="roadmap-tradeoffs">6.6 What this drops, what it keeps</h3>
+
+<div class="grid2">
+  <div class="panel">
+    <h3 style="margin-top: 0;">Drops, on purpose</h3>
+    <ul>
+      <li>UMN's monorepo shape (streamer plus vehicle controls plus
+        RAN plus trajectory in one repo). Convenient for a research
+        demo. Wrong for a product.</li>
+      <li>Custom UDP framing. Standard RTP keeps SRTP / DTLS / RTCP /
+        standard analyzers in reach.</li>
+    </ul>
+  </div>
+
+  <div class="panel">
+    <h3 style="margin-top: 0;">Keeps, no regression</h3>
+    <ul>
+      <li>Hypothesis framework, validated specs, declarative network
+        impairment, per-stage latency probes, decoded PSNR.</li>
+      <li>All of the above continue to run on the same code path the
+        product runs. They become the product's regression harness.</li>
+    </ul>
+  </div>
+</div>
+
+<h3 id="roadmap-strategic">6.7 Open strategic question</h3>
+
+<div class="accent">
+  <p style="margin-top: 0;">
+    Two viable shapes for the repo as the product matures. This is a
+    real call, not a default.
+  </p>
+  <p>
+    <strong>(a) Evolve in place.</strong> GstreamerExp grows the seven
+    contracts and becomes the product. Testbed and product share one
+    repo. Every experiment doubles as a regression test on the product.
+    Cheaper. Tighter coupling between research and shipped behavior.
+  </p>
+  <p>
+    <strong>(b) Spin off.</strong> Keep GstreamerExp pure as a CC
+    research instrument. Start a sibling repo
+    (<code>teleop-streamer</code> or similar) that depends on the same
+    pipeline modules. Lets the product churn without destabilizing the
+    research baseline. Costs a second CI surface and a packaging boundary.
+  </p>
+  <p>
+    <strong>Default until proven otherwise.</strong> (a) until the
+    product needs branch protection or release cadence the research
+    baseline cannot tolerate. At that point, split. The seven contracts
+    in §5.2 are the natural cleave line if (b) becomes necessary.
+  </p>
+</div>
+
+<!-- =================================================================== -->
+</section>
+
+<section class="page-section" data-section="todo">
+<h2 id="todo">6 · Status &amp; punch list</h2>
+
+<p>
+  The deliverables that close the gaps named in <a href="#roadmap">§5</a>,
+  organized by goal and indexed by the contract or sweep they belong
+  to. Every item back-links to its framework home in §5, so a
+  "what to do next" question is one click from a "why this matters"
+  answer.
 </p>
 
 <div class="legend">
@@ -738,164 +2312,337 @@ latency_budget_ms: 0</code></pre>
   <span class="todo">TODO</span>
 </div>
 
-<div class="feature-block" id="todo-capture">
-  <h3>Capture</h3>
+<h3 id="todo-goal1">7.1 Goal 1 status — Capabilities</h3>
+
+<p>
+  Eight blocks. Seven mirror the contracts in
+  <a href="#roadmap-contracts">§5.2</a>. The last covers cross-cutting
+  work that does not belong to any one contract (loss recovery,
+  security, multi-stream, audio, operations).
+</p>
+
+<div class="feature-block" id="todo-source">
+  <h3>1 · Source <span class="small">→ <a href="#contract-source">§5.2 / Source</a></span></h3>
   <ul>
-    <li class="todo">Real video from vehicle cameras (replace <code>videotestsrc</code>)</li>
-    <li class="todo">Multi-camera support (front / rear / sides; teleop typically ≥3 streams)</li>
-    <li class="todo">Hardware encoder on the vehicle side (V4L2 / NVENC / VAAPI)</li>
-    <li class="todo">Camera timestamp / frame-clock metadata (for sensor fusion, AR overlays, replay)</li>
-    <li class="todo">Camera calibration intrinsics/extrinsics passthrough</li>
+    <li class="done">Synthetic source (<code>videotestsrc</code>)</li>
+    <li class="done">File-backed source (<code>filesrc</code> → <code>decodebin</code>)</li>
+    <li class="todo">Real cameras: PySpin / V4L2 / camera-SDK bridge into <code>appsrc</code></li>
+    <li class="todo">Camera hardware-timestamp metadata as a <code>GstMeta</code> on the buffer</li>
+    <li class="todo">Multi-camera rigs (teleop typically 3–6 streams)</li>
+    <li class="todo">Source robustness: dropped frames, exposure jitter, hot-unplug, partial reads</li>
+    <li class="todo">Camera calibration intrinsics / extrinsics passthrough</li>
   </ul>
 </div>
 
-<div class="feature-block" id="todo-encoding">
-  <h3>Encoding</h3>
+<div class="feature-block" id="todo-encoder">
+  <h3>2 · Encoder <span class="small">→ <a href="#contract-encoder">§5.2 / Encoder</a></span></h3>
   <ul>
-    <li class="todo">Hardware-accelerated encoding path</li>
+    <li class="done"><code>vp8enc</code> with <code>target-bitrate</code> as the single actuator</li>
+    <li class="todo">Software H.264 (<code>x264enc</code>, low-latency baseline)</li>
+    <li class="todo">Software H.265 / AV1 (<code>x265enc</code>, <code>svtav1enc</code>)</li>
+    <li class="todo">Hardware NVENC / QSV / VAAPI paths (<code>nvh264enc</code>, <code>qsvh264enc</code>, <code>vah264enc</code>)</li>
+    <li class="todo">Silent-fallback detection (stderr-sniff at codec open, fail loudly when GPU is misconfigured)</li>
     <li class="todo">
-      Adaptive resolution — drop from 720p to 480p/360p when the
-      rate-controller cuts the bitrate budget below the threshold where
-      the higher resolution can hold quality. <code>vp8enc</code>
-      currently has only <code>target-bitrate</code> as a knob, so
-      under tight bottlenecks it produces blocky 720p (worst-case
-      ~10 dB PSNR observed) instead of clean 360p. Encoder-side control
-      loop driven by SCReAM's <code>current-max-bitrate</code> notify
-      or GCC's <code>estimated-bitrate</code>; reconfigures
-      <code>vp8enc</code> + the source capsfilter via runtime
-      renegotiation.
+      Adaptive resolution as a CC actuator. Drop 720p → 480p → 360p at
+      well-defined thresholds, driven by SCReAM's
+      <code>current-max-bitrate</code> notify and GCC's
+      <code>estimated-bitrate</code> event. Pre-build scalers, switch
+      at frame boundary.
     </li>
-    <li class="todo">Region-of-interest / variable quality across the frame (more bits on the road, fewer on the sky)</li>
+    <li class="todo">Region-of-interest / variable quality across the frame</li>
     <li class="todo">Scene-change detection and forced-keyframe-on-cut</li>
-    <li class="todo">HDR / wide-color-gamut preservation (taillight visibility, low-light scenes)</li>
+    <li class="todo">HDR / wide-color-gamut preservation</li>
+    <li class="todo">I-frame frequency tuned to recovery time, not just bitrate efficiency</li>
   </ul>
 </div>
 
-<div class="feature-block" id="todo-transport">
-  <h3>Transport</h3>
+<div class="feature-block" id="todo-sink">
+  <h3>3 · Sink <span class="small">→ <a href="#contract-sink">§5.2 / Sink</a></span></h3>
   <ul>
-    <li class="todo">Encryption (SRTP / DTLS)</li>
-    <li class="todo">Authentication (operator station identity)</li>
-    <li class="todo">Redundant transport / multi-path (LTE + 5G failover)</li>
-    <li class="todo">Per-stream priority / DSCP marking</li>
-    <li class="done">Loss recovery on top of SCReAM: NACK+RTX, PLI, ULPFEC — all three landed and orthogonal</li>
-  </ul>
-</div>
-
-<div class="feature-block" id="todo-reception">
-  <h3>Reception</h3>
-  <ul>
-    <li class="todo">Real display sink (replace <code>fakesink</code> with <code>glimagesink</code> / direct framebuffer / HMD)</li>
-    <li class="todo">Display sync (VSYNC alignment so frames present without tearing)</li>
-    <li class="todo">Per-camera composited view (mosaic / picture-in-picture)</li>
-    <li class="todo">Multi-stream synchronization across cameras (so they show the same instant)</li>
-  </ul>
-</div>
-
-<div class="feature-block" id="todo-latency">
-  <h3>Latency</h3>
-  <ul>
-    <li class="todo">Glass-to-glass latency measurement (capture → display) — the headline metric for teleop</li>
     <li class="done">
-      Per-stage latency attribution — <code>stage_latency</code> metric,
-      8 probes (encoder.sink/src, pay.src, udpsink.sink, udpsrc.src,
-      depay.src, decoder.sink/src, convert.src) joined by RTP timestamp;
-      <code>analysis/dimensions/latency.py</code> surfaces per-stage
-      durations
+      <code>MeasurementSink</code>: <code>fakesink</code> +
+      8 stage-latency probes (encoder.sink/src, pay.src, udpsink.sink,
+      udpsrc.src, depay.src, decoder.sink/src, convert.src) joined by
+      RTP timestamp; per-frame <code>decoded_psnr</code> (Y-plane PSNR
+      vs reproduced source)
     </li>
-    <li class="todo">Latency-budget enforcement (drop frames when budget exceeded, don't queue)</li>
+    <li class="done"><code>autovideosink</code> for expo specs</li>
+    <li class="todo"><code>DisplaySink</code>: <code>glimagesink</code> / framebuffer / HMD with VSYNC alignment</li>
+    <li class="todo"><code>Compositor</code> mosaic for multi-stream layout</li>
+    <li class="todo">Per-camera window-layout config (multi-window, multi-monitor)</li>
+    <li class="todo"><code>ForensicSink</code>: <code>tee</code> → <code>filesink</code> of encoded bytes on both endpoints, no re-encode, codec/framerate sidecar</li>
+    <li class="todo">Partial-frame decode at receiver (hand decoder the contiguous prefix when tail is missing)</li>
+    <li class="todo">Audit-grade frame-loss accounting (complete / partial / dropped classification)</li>
+    <li class="todo">SSIM / VMAF in addition to PSNR</li>
+    <li class="todo">Quality-degradation indicator surfaced to the operator</li>
+  </ul>
+</div>
+
+<div class="feature-block" id="todo-clocksync">
+  <h3>4 · ClockSync <span class="small">→ <a href="#contract-clocksync">§5.2 / ClockSync</a></span></h3>
+  <ul>
+    <li class="todo">NTP-derived offset estimate</li>
+    <li class="todo">UDP <code>TREQ / TRES</code>-style exchange as fallback</li>
+    <li class="todo">PTP-aware implementation for production</li>
+    <li class="todo">Offset stamped on every metric record so latencies stay honest across two hosts</li>
+    <li class="todo">Glass-to-glass latency derived from the RTP-extension capture timestamp plus <code>ClockSync</code> offset</li>
+    <li class="todo">Cross-stream synchronization (camera <code>N</code>'s frame at time <code>T</code> arrives with the same <code>T</code> across all cameras), RTCP SR-based</li>
+  </ul>
+</div>
+
+<div class="feature-block" id="todo-rtpmeta">
+  <h3>5 · RTPMeta <span class="small">→ <a href="#contract-rtpmeta">§5.2 / RTPMeta</a></span></h3>
+  <ul>
+    <li class="todo">Absolute capture timestamp as an RTP header extension (RFC 6051-style)</li>
+    <li class="todo">Source frame id as an RTP header extension</li>
+    <li class="todo">Optional geo (lat / lon / RTK status) as an RTP header extension</li>
+    <li class="todo">Zero-fill carry path wired through Source → SCReAM / GCC → Receiver, so fields fill in later without pipeline change</li>
+    <li class="todo">RTP wall-clock timestamps NTP / PTP-aligned</li>
+  </ul>
+</div>
+
+<div class="feature-block" id="todo-session">
+  <h3>6 · Session <span class="small">→ <a href="#contract-session">§5.2 / Session</a></span></h3>
+  <ul>
+    <li class="done">Validated spec system (<code>gstexp/validation.py</code>) covers config and report</li>
+    <li class="done">Hypothesis framework with pass / fail verifiers (H1–H5)</li>
+    <li class="todo">Runtime <code>Session</code> object with <code>start / run / stop / replay</code> lifecycle</li>
+    <li class="todo">Status surface (JSON or WebSocket): current bitrate, RTT, loss, frame counters, health</li>
+    <li class="todo">Latency-budget enforcement (drop frames when budget exceeded; do not queue)</li>
     <li class="todo">Operator-side jitter buffer with explicit depth and policy</li>
   </ul>
 </div>
 
-<div class="feature-block" id="todo-quality">
-  <h3>Quality</h3>
+<div class="feature-block" id="todo-controlport">
+  <h3>7 · ControlPort <span class="small">→ <a href="#contract-controlport">§5.2 / ControlPort</a></span></h3>
   <ul>
-    <li class="done">Per-frame quality metric — <code>decoded_psnr</code> (Y-plane PSNR vs reproduced source); SSIM / VMAF still missing</li>
-    <li class="todo">Quality degradation indicator surfaced to the operator UI</li>
-    <li class="todo">Audit-grade frame loss accounting (which frames, when, why)</li>
+    <li class="todo">Protocol definition (gRPC default, Zenoh alternative)</li>
+    <li class="todo"><code>request_keyframe(stream_id)</code></li>
+    <li class="todo"><code>switch_active_camera(stream_id)</code></li>
+    <li class="todo"><code>push_policy(policy_yaml)</code></li>
+    <li class="todo"><code>get_session_status()</code> and <code>stream_metrics()</code></li>
+    <li class="todo"><code>start_session(spec)</code> and <code>stop_session(session_id)</code></li>
+    <li class="todo">Authentication (operator station identity)</li>
   </ul>
 </div>
 
-<div class="feature-block" id="todo-audio">
-  <h3>Audio</h3>
+<div class="feature-block" id="todo-crosscutting">
+  <h3>Cross-cutting <span class="small">→ <a href="#arch-decisions">§1.7 / Decisions</a></span></h3>
   <ul>
-    <li class="todo">Ambient audio from the vehicle (sirens, horns, impacts) — often safety-relevant</li>
-  </ul>
-</div>
-
-<div class="feature-block" id="todo-recording">
-  <h3>Recording / forensics</h3>
-  <ul>
-    <li class="todo">On-vehicle and on-operator recording of the actual streamed bitstream (for incident replay)</li>
-    <li class="todo">Synchronized multi-camera + telemetry capture</li>
-    <li class="todo">Lossless local copy alongside the lossy transmitted copy (so post-incident analysis isn't degraded)</li>
-  </ul>
-</div>
-
-<div class="feature-block" id="todo-sync">
-  <h3>Synchronization</h3>
-  <ul>
-    <li class="todo">Vehicle wall-clock timestamps in RTP headers (NTP / PTP-aligned)</li>
-    <li class="todo">Cross-stream sync (camera N's frame at time T arrives with the same T across all cameras)</li>
-  </ul>
-</div>
-
-<div class="feature-block" id="todo-resilience">
-  <h3>Resilience to loss</h3>
-  <ul>
+    <li class="done">Loss recovery: NACK + RTX (<code>rtprtxsend</code> / <code>rtprtxreceive</code>)</li>
+    <li class="done">Loss recovery: PLI (<code>do-lost</code> on <code>rtpjitterbuffer</code> → AVPF feedback)</li>
+    <li class="done">Loss recovery: ULPFEC (<code>rtpulpfecenc</code> + <code>rtpstorage</code> + <code>rtpulpfecdec</code>)</li>
+    <li class="done">Declarative network impairment: <code>tc tbf</code> + <code>netem</code> (uniform iid or Gilbert-Elliott bursty loss)</li>
+    <li class="todo">Multi-stream refactor: one pipeline, <code>N</code> parallel chains under one <code>rtpbin</code> (see <a href="#arch-multistream">§1.5</a>)</li>
+    <li class="todo">Multi-stream priority-ordered degradation ladder (third controller arm alongside SCReAM / GCC)</li>
+    <li class="todo">SRTP / DTLS encryption (declared in spec model with wire-in stub)</li>
+    <li class="todo">Per-stream priority / DSCP marking</li>
+    <li class="todo">Redundant transport / multi-path (LTE + 5G failover)</li>
+    <li class="todo">Operations: structured health probe, graceful shutdown, version metadata threaded through every metric</li>
     <li class="todo">Decoder error concealment / freeze-on-bad-frame strategy</li>
-    <li class="done">Keyframe-on-loss request from receiver — PLI wired both sides (do-lost on rtpjitterbuffer → AVPF feedback)</li>
-    <li class="done">Per-packet retransmit on loss — NACK+RTX wired via <code>rtprtxsend</code> / <code>rtprtxreceive</code></li>
-    <li class="done">Proactive redundancy on the wire — ULPFEC (<code>rtpulpfecenc</code> on camera, <code>rtpstorage</code> + <code>rtpulpfecdec</code> on viewer)</li>
-    <li class="todo">I-frame frequency tuned to recovery time, not just to bitrate efficiency</li>
+    <li class="todo"><strong>Out of Goal 1 scope:</strong> ambient audio path from the vehicle. Not enumerated under the seven contracts because audio is a separate Source / Encoder / Sink lineage. Revisit if and when the goal expands.</li>
+  </ul>
+</div>
+
+<h3 id="todo-goal2">7.2 Goal 2 status — characterization sweeps</h3>
+
+<p>
+  Each item below is a hypothesis spec, or a small family of them,
+  that can be authored against the existing framework (the H1–H5
+  pattern). Categories mirror <a href="#roadmap-goal2">§5.4</a>.
+  Status reflects whether the sweep has actually been run end to end,
+  not whether the dimension is interesting.
+</p>
+
+<div class="feature-block" id="todo-sweep-knobs">
+  <h3>Knob sensitivity <span class="small">→ <a href="#roadmap-goal2-knobs">§5.4 / Knob sensitivity</a></span></h3>
+  <ul>
+    <li class="todo">Queue-delay target sweep across network conditions</li>
+    <li class="todo">Loss-backoff multiplier isolated (separate from rate-update gain)</li>
+    <li class="todo">Min / initial / max bitrate sensitivity surface</li>
+    <li class="todo">ECN / L4S enabled vs disabled</li>
+    <li class="todo">Pacing parameters (smoothing window, burst size)</li>
+  </ul>
+</div>
+
+<div class="feature-block" id="todo-sweep-regimes">
+  <h3>Network conditions <span class="small">→ <a href="#roadmap-goal2-regimes">§5.4 / Network conditions</a></span></h3>
+  <ul>
+    <li class="done">Mahimahi 5G slice traces (three to four cells)</li>
+    <li class="todo">RTT as an independent axis</li>
+    <li class="todo">Loss pattern: iid vs Gilbert-Elliott, systematic comparison</li>
+    <li class="todo">Jitter as an independent axis</li>
+    <li class="todo">Application workload axis (tuned to the recording's capacity; addresses the H3 finding)</li>
+  </ul>
+</div>
+
+<div class="feature-block" id="todo-sweep-mechanism">
+  <h3>Mechanism contributions <span class="small">→ <a href="#roadmap-goal2-mechanism">§5.4 / Mechanism contributions</a></span></h3>
+  <ul>
+    <li class="todo">Pacing vs encoder-rate adjustment, isolated. SCReAM does both; we do not know the relative contribution of each to the SCReAM-over-GCC delta.</li>
+    <li class="todo">Controller → encoder coupling fidelity curve. H5 isolated the coupling <em>gap</em>; the sensitivity curve is missing.</li>
+    <li class="todo">Feedback cadence dependency: vary RTCP rate and RTCP loss to find SCReAM's reaction floor.</li>
+  </ul>
+</div>
+
+<div class="feature-block" id="todo-sweep-interactions">
+  <h3>Interactions with other features <span class="small">→ <a href="#roadmap-goal2-interactions">§5.4 / Interactions</a></span></h3>
+  <ul>
+    <li class="todo">SCReAM × codec (VP8 vs H.264). <strong>Blocked on Encoder contract</strong> (see <a href="#todo-encoder">§6.1 / Encoder</a>).</li>
+    <li class="todo">SCReAM × recovery (NACK + RTX bias, ULPFEC overhead biasing SCReAM's link view)</li>
+    <li class="todo">SCReAM × multi-stream (shared CC instance vs N independent instances). <strong>Blocked on multi-stream refactor</strong> (see <a href="#todo-crosscutting">§6.1 / Cross-cutting</a>).</li>
+  </ul>
+</div>
+
+<div class="feature-block" id="todo-sweep-boundary">
+  <h3>Boundary behaviour <span class="small">→ <a href="#roadmap-goal2-boundary">§5.4 / Boundary behaviour</a></span></h3>
+  <ul>
+    <li class="todo">RTT threshold at which SCReAM degenerates</li>
+    <li class="todo">Loss-rate threshold at which SCReAM degenerates</li>
+    <li class="todo">Jitter threshold at which SCReAM degenerates</li>
   </ul>
 </div>
 
 <p class="small" style="margin-top: 24px;">
-  Source of truth: <code>TODO.md</code> at the project root. This page
-  is regenerated from that file when the gap list moves.
+  Source of truth for the Goal 1 punch list:
+  <code>TODO.md</code> at the project root. This page is regenerated
+  from that file when the gap list moves. Goal 2 sweeps live here as
+  authored hypothesis specs, not in <code>TODO.md</code>.
 </p>
+
+</section>
+
+<section class="page-section" data-section="reference">
+<!-- =================================================================== -->
+<h2 id="reference">7 · Reference</h2>
+
+<p>
+  Companion documents that ground this page's framing.
+</p>
+
+<a class="feature-link" id="ref-umn" href="reference/umn-teleop-design.html">
+  <div class="title">UMN Teleop-Gopher-Streamer — top-down design →</div>
+  <p class="desc">
+    Standalone design note for UMN GopherNetLab's teleop streamer:
+    what it is, how it is decomposed, how a frame flows through it,
+    where the design falls short, and a side-by-side comparison
+    against GstreamerExp (§12). The reference target for
+    <a href="#roadmap-goals">Goal 1</a>.
+  </p>
+</a>
+
+</section>
 
   </main>
 </div>
 
 <script>
-  // Scrollspy: highlight the sidebar link whose target section is
-  // currently in view. Tracks both top-level <h2 id> anchors and the
-  // subsection ids declared on h3/panel/feature-block elements.
+  // Two-level router. Top-level sidebar links select which <section> is
+  // visible. Sub-level links further narrow the visible region inside
+  // that section to a single subsection (h3 block or div with matching
+  // id). The h2 always stays visible for context.
   (function() {
-    var links = document.querySelectorAll('#toc a');
-    var byId = {};
-    links.forEach(function(a) {
-      var id = a.getAttribute('href').slice(1);
-      byId[id] = a;
+    var sections = Array.from(document.querySelectorAll('.page-section'));
+    var tocLinks = Array.from(document.querySelectorAll('#toc a'));
+    var subLinks = tocLinks.filter(function(l) {
+      return l.classList.contains('sub') || l.classList.contains('subsub');
     });
-    var targets = Object.keys(byId)
-      .map(function(id) { return document.getElementById(id); })
-      .filter(Boolean);
+    var topLinkBySection = {};
+    tocLinks.forEach(function(a) {
+      if (a.classList.contains('top')) {
+        topLinkBySection[a.getAttribute('href').slice(1)] = a;
+      }
+    });
 
-    var observer = new IntersectionObserver(function(entries) {
-      entries.forEach(function(entry) {
-        var link = byId[entry.target.id];
-        if (!link) return;
-        if (entry.isIntersecting) {
-          link.dataset.visible = '1';
+    // Pre-compute, per section, an ordered list of subsection ranges
+    // {id, startIdx, endIdx} over the section's direct element children.
+    // A subsection's "container" is the first direct child that either IS
+    // the anchor element or contains it.
+    var sectionRanges = new Map();
+    sections.forEach(function(section) {
+      var children = Array.from(section.children);
+      var ranges = [];
+      subLinks.forEach(function(l) {
+        var id = l.getAttribute('href').slice(1);
+        var el = document.getElementById(id);
+        if (!el || !section.contains(el)) return;
+        var idx = children.findIndex(function(c) { return c === el || c.contains(el); });
+        if (idx === -1) return;
+        ranges.push({id: id, startIdx: idx});
+      });
+      ranges.sort(function(a, b) { return a.startIdx - b.startIdx; });
+      ranges.forEach(function(r, i) {
+        r.endIdx = i + 1 < ranges.length ? ranges[i + 1].startIdx - 1 : children.length - 1;
+      });
+      sectionRanges.set(section, ranges);
+    });
+
+    // Default section = the one named by the first TOC top-link. We use
+    // TOC order, not DOM order, so the sidebar's ordering wins when the
+    // URL has no hash.
+    var sectionByName = {};
+    sections.forEach(function(s) { sectionByName[s.dataset.section] = s; });
+    var firstTopLink = tocLinks.find(function(l) { return l.classList.contains('top'); });
+    var defaultSection = (firstTopLink && sectionByName[firstTopLink.getAttribute('href').slice(1)])
+      || sections[0] || null;
+
+    function findSection(id) {
+      if (!id) return defaultSection;
+      var el = document.getElementById(id);
+      if (!el) return defaultSection;
+      return el.closest('.page-section') || defaultSection;
+    }
+
+    function applySubsection(section, activeSubId) {
+      var children = Array.from(section.children);
+      var ranges = sectionRanges.get(section) || [];
+      var active = activeSubId ? ranges.find(function(r) { return r.id === activeSubId; }) : null;
+
+      children.forEach(function(c, i) {
+        if (c.tagName === 'H2') { c.style.display = ''; return; }
+        if (active) {
+          // Subsection mode: show only the active range.
+          var inActive = i >= active.startIdx && i <= active.endIdx;
+          c.style.display = inActive ? '' : 'none';
         } else {
-          delete link.dataset.visible;
+          // Section landing: hide every subsection range, show the rest
+          // (intro paragraphs, read-order map, trailing footers).
+          var inAnyRange = ranges.some(function(r) { return i >= r.startIdx && i <= r.endIdx; });
+          c.style.display = inAnyRange ? 'none' : '';
         }
       });
-      // Pick the first visible link in document order; clear others.
-      var firstActive = null;
-      targets.forEach(function(t) {
-        var l = byId[t.id];
-        if (l && l.dataset.visible && !firstActive) firstActive = l;
-      });
-      links.forEach(function(l) { l.classList.remove('active'); });
-      if (firstActive) firstActive.classList.add('active');
-    }, { rootMargin: '-20% 0px -70% 0px', threshold: 0 });
+    }
 
-    targets.forEach(function(t) { observer.observe(t); });
+    function activate() {
+      var hash = window.location.hash.slice(1);
+      var section = findSection(hash);
+      if (!section) return;
+
+      // Show only the active top-level section.
+      sections.forEach(function(s) { s.classList.toggle('active', s === section); });
+
+      // Decide whether the hash names a subsection in this section.
+      var ranges = sectionRanges.get(section) || [];
+      var activeSubId = ranges.some(function(r) { return r.id === hash; }) ? hash : null;
+      applySubsection(section, activeSubId);
+
+      // Sidebar active highlight: the section's top link, plus the
+      // matching sub link if we are in subsection mode.
+      tocLinks.forEach(function(l) { l.classList.remove('active'); });
+      var topLink = topLinkBySection[section.dataset.section];
+      if (topLink) topLink.classList.add('active');
+      if (activeSubId) {
+        var subLink = tocLinks.find(function(l) { return l.getAttribute('href') === '#' + activeSubId; });
+        if (subLink) subLink.classList.add('active');
+      }
+
+      // Reset scroll to the top of the visible pane.
+      window.scrollTo({top: 0, behavior: 'auto'});
+    }
+
+    window.addEventListener('hashchange', activate);
+    window.addEventListener('DOMContentLoaded', activate);
+    if (document.readyState !== 'loading') activate();
   })();
 </script>
 

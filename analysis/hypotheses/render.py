@@ -26,6 +26,8 @@ def _load_yaml(path: Path) -> dict[str, Any]:
 
 
 def _load_json(path: Path) -> dict[str, Any]:
+    if not path.is_file():
+        return {}
     return json.loads(path.read_text())
 
 
@@ -114,7 +116,7 @@ def _claim_structure(report: dict[str, Any]) -> tuple[str | None, list[str]]:
 def _conclusions(spec: dict[str, Any]) -> tuple[list[str], list[str]]:
     conclusions = spec.get("conclusions") or {}
     return (
-        list(conclusions.get("established_claims") or []),
+        list(conclusions.get("established") or []),
         list(conclusions.get("limits") or []),
     )
 
@@ -138,8 +140,8 @@ def render_html(spec_path: Path, report_path: Path) -> str:
         status=spec.get("status"),
         source=spec.get("source"),
         claim=spec.get("claim"),
-        prediction=spec.get("prediction"),
-        verdict_rule=spec.get("verdict_rule"),
+        predictions=spec.get("predictions") or [],
+        verdict=spec.get("verdict") or {},
         verifier=spec.get("verifier"),
         mechanism=mechanism,
         supporting_subclaims=subclaims,
@@ -196,10 +198,29 @@ def render_notebook(spec_path: Path, report_path: Path) -> nbformat.NotebookNode
         f"**Source:** {spec.get('source')}"
     ))
 
+    predictions = spec.get("predictions") or []
+    predictions_md = "\n".join(f"- `{pid}`" for pid in predictions) or "_(none)_"
+    verdict = spec.get("verdict") or {}
+    verdict_rows = []
+    for outcome_key, label in (
+        ("supported_when_all", "Supported when all"),
+        ("refuted_when_any", "Refuted when any"),
+        ("inconclusive_when_any", "Inconclusive when any"),
+        ("untested_when_any", "Untested when any"),
+    ):
+        conditions = verdict.get(outcome_key) or []
+        if not conditions:
+            continue
+        joined = "<br>".join(f"<code>{cid}</code>" for cid in conditions)
+        verdict_rows.append(f"| **{label}** | {joined} |")
+    if verdict_rows:
+        verdict_md = "| Outcome | Predicate |\n|---|---|\n" + "\n".join(verdict_rows)
+    else:
+        verdict_md = "_(none)_"
     cells.append(_md_cell(
         f"## Claim\n\n{spec.get('claim', '')}\n\n"
-        f"## Prediction\n\n{spec.get('prediction', '')}\n\n"
-        f"## Verdict rule\n\n{spec.get('verdict_rule', '')}"
+        f"## Predictions\n\n{predictions_md}\n\n"
+        f"## Verdict\n\n{verdict_md}"
     ))
 
     if mechanism:

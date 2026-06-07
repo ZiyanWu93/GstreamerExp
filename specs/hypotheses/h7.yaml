@@ -1,0 +1,63 @@
+id: H7
+slug: h7
+title: With the encoder starved, the queue-delay-target knob starts trading picture quality
+claim: H6 found the queue-delay-target knob moves latency but not picture quality, because the encoder had bytes to spare. With the bitrate ceiling dropped from 4000 to 800 kbps, the encoder is hungry, so loosening the knob should now raise picture quality (PSNR) as well as latency.
+status: refuted
+source: Goal 2.2 (knob sensitivity), follow-up to H6
+page: analysis/hypotheses/h7.html
+verifier: analysis/hypotheses/h7_qdt_sweep_tight.py
+predictions:
+  - psnr_rises_with_knob_on_every_network
+  - psnr_swing_across_the_knob_is_larger_than_in_h6
+  - p95_latency_rises_with_knob_on_every_network
+verdict:
+  supported_when_all:
+    - psnr_rises_with_knob_on_every_network
+    - psnr_swing_across_the_knob_is_larger_than_in_h6
+  refuted_when_any:
+    - psnr_stays_flat_like_h6_on_every_network
+  untested_when_any:
+    - any_cell_failed
+    - required_metric_missing
+setup:
+  environment:
+    topology: controller-worker
+    hosts: { camera: aum, viewer: veda }
+    shaper: tc-qdisc
+    workload: realmotion-avi
+  experiments:
+    - name: h7-qdt-sweep-static
+      configurations: [119, 120, 121, 122, 123, 124]
+      role: qdt-sweep-static-tight
+      minimum_completed_reps: 3
+    - name: h7-qdt-sweep-fluct
+      configurations: [125, 126, 127, 128, 129, 130]
+      role: qdt-sweep-fluct-tight
+      minimum_completed_reps: 3
+    - name: h7-qdt-sweep-5g
+      configurations: [131, 132, 133, 134, 135, 136]
+      role: qdt-sweep-5g-tight
+      minimum_completed_reps: 3
+  required_metrics:
+    - frame_count
+    - encoder_target_kbps
+    - wire_bytes
+    - encoded_bitrate
+    - frame_latency
+    - decoder_errors
+    - decoded_psnr
+results:
+  expected_records:
+    - runs/experiments/h7-qdt-sweep-static.json
+    - runs/experiments/h7-qdt-sweep-fluct.json
+    - runs/experiments/h7-qdt-sweep-5g.json
+  report: analysis/hypotheses/results/h7_report.json
+conclusions:
+  established:
+    - Starving the encoder did not turn the knob into a quality knob. With the ceiling dropped to 800 kbps, picture quality (PSNR) still stays flat as the knob loosens — about a 1 dB swing on each network, the same flat pattern H6 saw at 4000 kbps. So the queue-delay-target is a latency knob, not a quality knob, at both ceilings for this workload.
+    - The robust takeaway across H6 and H7 is one finding, now tested twice -- the knob moves latency, not quality.
+  limits:
+    - "Measurement caveat — read before trusting the absolute numbers: the PSNR values in H6 and H7 sit at 10–13 dB on every single cell. That is far below what a working pipeline should produce (a heavily compressed VP8 stream is normally 28–40 dB). A value near 10 dB is the signature of comparing misaligned frames — decoded frame N against source frame M not equal to N, or a resolution / colour-plane mismatch in the decoded_psnr truth pipeline."
+    - What this caveat does and does not undermine. The relative finding (quality does not move with the knob) holds, because every cell uses the same metric and the comparison is internal. Any absolute quality claim is suspect until the metric is checked against a known-good baseline.
+    - Next verification step is a one-cell sanity check — clean loopback, no impairment, near-lossless encode. If PSNR there is also ~10 dB the metric is misaligned and needs fixing; if it is ~40 dB the metric is sound and the stressed-network numbers are genuine.
+    - Same workload and clock-skew caveats as H6.

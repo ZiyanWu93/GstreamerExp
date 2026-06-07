@@ -30,11 +30,17 @@ REQUIRED_TOP_LEVEL = {
     "source",
     "page",
     "verifier",
-    "prediction",
-    "verdict_rule",
+    "predictions",
+    "verdict",
     "setup",
     "results",
     "conclusions",
+}
+VALID_VERDICT_KEYS = {
+    "supported_when_all",
+    "refuted_when_any",
+    "inconclusive_when_any",
+    "untested_when_any",
 }
 VALID_STATUSES = {
     "untested",
@@ -74,6 +80,30 @@ def validate_hypothesis_spec(spec: dict[str, Any], root: Path = PROJECT_ROOT) ->
     if spec["status"] not in VALID_STATUSES:
         raise ValueError(f"{path}: invalid status {spec['status']!r}")
 
+    if not isinstance(spec["claim"], str) or not spec["claim"].strip():
+        raise ValueError(f"{path}: claim must be a non-empty string")
+
+    predictions = spec["predictions"]
+    if not isinstance(predictions, list) or not predictions:
+        raise ValueError(f"{path}: predictions must be a non-empty list")
+    if not all(isinstance(p, str) and p.strip() for p in predictions):
+        raise ValueError(f"{path}: each prediction must be a non-empty string predicate id")
+
+    verdict = spec["verdict"]
+    if not isinstance(verdict, dict) or not verdict:
+        raise ValueError(f"{path}: verdict must be a non-empty mapping")
+    unknown_verdict_keys = set(verdict) - VALID_VERDICT_KEYS
+    if unknown_verdict_keys:
+        raise ValueError(
+            f"{path}: verdict has unknown keys: {', '.join(sorted(unknown_verdict_keys))}; "
+            f"allowed: {', '.join(sorted(VALID_VERDICT_KEYS))}"
+        )
+    if "supported_when_all" not in verdict:
+        raise ValueError(f"{path}: verdict must define supported_when_all")
+    for key, conditions in verdict.items():
+        if not isinstance(conditions, list) or not all(isinstance(c, str) and c.strip() for c in conditions):
+            raise ValueError(f"{path}: verdict.{key} must be a list of non-empty string predicate ids")
+
     setup = spec["setup"]
     if not isinstance(setup, dict):
         raise ValueError(f"{path}: setup must be a mapping")
@@ -97,7 +127,7 @@ def validate_hypothesis_spec(spec: dict[str, Any], root: Path = PROJECT_ROOT) ->
     conclusions = spec["conclusions"]
     if not isinstance(conclusions, dict):
         raise ValueError(f"{path}: conclusions must be a mapping")
-    for key in ("established_claims", "limits"):
+    for key in ("established", "limits"):
         if not isinstance(conclusions.get(key), list):
             raise ValueError(f"{path}: conclusions.{key} must be a list")
 
@@ -257,8 +287,8 @@ def build_registry(root: Path = PROJECT_ROOT) -> dict[str, Any]:
             "source": spec["source"],
             "page": spec.get("page"),
             "verifier": spec.get("verifier"),
-            "prediction": spec["prediction"],
-            "verdict_rule": spec["verdict_rule"],
+            "predictions": spec["predictions"],
+            "verdict": spec["verdict"],
             "setup": spec["setup"],
             "results": spec["results"],
             "execution": {
