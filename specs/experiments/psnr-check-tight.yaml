@@ -1,0 +1,11 @@
+name: psnr-check-tight
+description: |
+  One-cell PSNR discrimination check: H7 tight-ceiling cell (config 121,
+  qdt 60ms static, 800 kbps). Confirms the fixed metric reports believable
+  sub-50 dB quality under real compression, not the old ~10 dB floor.
+reps: 1
+varies: []
+configurations:
+  - id: 121
+    label: tight-800
+    color: "#a14a02"

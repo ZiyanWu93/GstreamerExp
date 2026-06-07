@@ -774,17 +774,25 @@ class DecodedPsnr(Metric):
         self._depay_count = 0                        # FIFO index into wire_in list
         self._pts_to_rtp: Dict[int, int] = {}        # decoder/depay PTS -> wire rtp_ts
         self._pts_cache_depth = 256
-        # The RTP timestamp gives a clean *relative* frame index, but the
-        # first frame the viewer receives is not necessarily source frame 0:
-        # the camera may stream during the setup window before the viewer's
-        # socket is receiving, so the opening frames are dropped on the wire.
-        # We calibrate a constant offset once, by content — find the truth
-        # index that best matches the first decoded frame — then apply it for
-        # the whole run (the startup skew is fixed within a run). This is the
-        # standard way PSNR tools align a reference to a test stream.
+        # Truth-index offset: decoded frame_n maps to truth[frame_n + offset].
+        # The first received frame is not source frame 0 (the camera streams
+        # during the setup window before the viewer's socket is up, so the
+        # opening frames are dropped on the wire) -- so we calibrate the offset
+        # by content. And because the viewer-side rtp_ts<->decoded-frame
+        # association can shift by a frame whenever the jitter buffer drops a
+        # frame, the offset is NOT constant for the whole run: we re-calibrate
+        # (self-healing) whenever alignment breaks. Re-lock only when a nearby
+        # offset beats the current alignment by a large margin -- that
+        # distinguishes a misalignment shift (a sharp better match exists
+        # elsewhere) from genuine congestion quality loss (no better match
+        # anywhere), so real degradation is recorded, not "fixed away".
         self._truth_offset: int | None = None
-        self._calibrate_max_search = 240            # frames to scan for the skew
-        self._calibrate_min_db = 20.0               # require a real match to lock
+        self._calibrate_max_search = 300            # initial wide skew scan (frames)
+        self._lock_db = 25.0                        # min PSNR to accept an offset lock
+        self._relock_trigger_db = 22.0              # below this, suspect a shift
+        self._relock_window = 40                    # +/- search around current offset
+        self._relock_min_gain_db = 10.0             # new match must beat current by this
+        self._n_relocks = 0
         self._n_matched = 0
         self._n_unmatched = 0
         self._n_size_mismatch = 0
@@ -1073,33 +1081,54 @@ class DecodedPsnr(Metric):
         finally:
             buf.unmap(mapinfo)
 
-        # Calibrate the startup offset once, by content. truth_index =
-        # frame_n + offset; scan for the offset that best matches this frame.
+        # Initial calibration: wide content scan for the startup skew.
         if self._truth_offset is None:
-            best_off, best_db = 0, -1.0
-            for cand in range(0, self._calibrate_max_search):
-                t = self._truth_frames.get(frame_n + cand)
-                if t is None:
-                    continue
-                p = _psnr_y(decoded_y, t)
-                if p > best_db:
-                    best_off, best_db = cand, p
-            if best_db < self._calibrate_min_db:
-                # No convincing match yet (e.g. early loss/corruption);
-                # defer calibration to a later, cleaner frame.
+            best_off, best_db = self._search_offset(
+                decoded_y, frame_n, 0, self._calibrate_max_search)
+            if best_db < self._lock_db:
+                # No convincing match yet (early loss/corruption); defer.
                 self._n_unmatched += 1
                 return Gst.PadProbeReturn.OK
             self._truth_offset = best_off
 
         truth = self._truth_frames.get(frame_n + self._truth_offset)
+        psnr = _psnr_y(decoded_y, truth) if truth is not None else -1.0
+
+        # Self-healing: a low score may be misalignment (the rtp_ts<->decoded
+        # association shifted at a jitter-buffer drop) OR genuine quality loss.
+        # Re-search nearby; re-lock ONLY if a different offset matches clearly
+        # better. A real degraded frame has no sharp match anywhere, so it is
+        # recorded as-is rather than masked.
+        if psnr < self._relock_trigger_db:
+            lo = self._truth_offset - self._relock_window
+            hi = self._truth_offset + self._relock_window + 1
+            cand_off, cand_db = self._search_offset(decoded_y, frame_n, lo, hi)
+            if cand_db >= self._lock_db and cand_db >= psnr + self._relock_min_gain_db:
+                self._truth_offset = cand_off
+                self._n_relocks += 1
+                truth = self._truth_frames.get(frame_n + self._truth_offset)
+                psnr = cand_db
+
         if truth is None:
             self._n_unmatched += 1
             return Gst.PadProbeReturn.OK
 
-        psnr = _psnr_y(decoded_y, truth)
         self.samples.append([int(pts), frame_n, round(psnr, 3)])
         self._n_matched += 1
         return Gst.PadProbeReturn.OK
+
+    def _search_offset(self, decoded_y: bytes, frame_n: int, lo: int, hi: int):
+        """Return (best_offset, best_psnr_db) over truth[frame_n + off] for
+        off in [lo, hi). Skips offsets with no truth frame."""
+        best_off, best_db = self._truth_offset or 0, -1.0
+        for off in range(lo, hi):
+            t = self._truth_frames.get(frame_n + off)
+            if t is None:
+                continue
+            p = _psnr_y(decoded_y, t)
+            if p > best_db:
+                best_off, best_db = off, p
+        return best_off, best_db
 
     def detach(self):
         if self._truth_pipeline is not None:
@@ -1117,6 +1146,7 @@ class DecodedPsnr(Metric):
             "n_matched": self._n_matched,
             "n_unmatched": self._n_unmatched,
             "n_size_mismatch": self._n_size_mismatch,
+            "n_relocks": self._n_relocks,
         }
         if psnrs:
             psnrs_sorted = sorted(psnrs)
