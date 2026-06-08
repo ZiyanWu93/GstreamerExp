@@ -239,6 +239,10 @@ def main():
                              "or a path to a .yaml")
     parser.add_argument("--list", action="store_true",
                         help="List available experiment specs and exit")
+    parser.add_argument("--resume", action="store_true",
+                        help="Skip (config, rep) cells already completed with "
+                             "exit_code 0 in the existing record, and append new "
+                             "runs to it. Safe to re-run after a kill/failure.")
     args = parser.parse_args()
 
     if args.list:
@@ -265,7 +269,25 @@ def main():
     record_path = expt_dir / f"{name}.json"
 
     runs: list[dict] = []
+    done_cells: set[tuple] = set()
     started_at = _dt.datetime.now().isoformat()
+
+    # Resume: load completed (config, rep) cells from the existing record so a
+    # killed/failed sweep continues instead of redoing finished work. Only
+    # exit_code 0 cells count as done; failed/partial cells are re-run.
+    if args.resume and record_path.is_file():
+        try:
+            prior = json.loads(record_path.read_text())
+            for r in prior.get("runs", []):
+                if r.get("exit_code") == 0 and r.get("run_id"):
+                    runs.append(r)
+                    done_cells.add((str(r["config"]), int(r["rep"])))
+            started_at = prior.get("started_at", started_at)
+            print(f"[experiment] resume: {len(done_cells)} completed cells "
+                  f"loaded from {record_path}")
+        except (json.JSONDecodeError, KeyError, ValueError) as e:
+            print(f"[experiment] resume: could not read prior record ({e}); "
+                  f"starting fresh")
 
     print(f"[experiment] {name}: configs={config_ids} reps={reps}")
     print(f"[experiment] record will land at {record_path}")
@@ -275,6 +297,10 @@ def main():
     for rep in range(reps):
         for cid in config_ids:
             n += 1
+            if (str(cid), rep) in done_cells:
+                print(f"\n[experiment] rep={rep} config={cid} ({n}/{total}) — "
+                      f"already done, skipping", flush=True)
+                continue
             before = _runs_for_config(cid)
             print(f"\n[experiment] rep={rep} config={cid} ({n}/{total})", flush=True)
             r = subprocess.run(
