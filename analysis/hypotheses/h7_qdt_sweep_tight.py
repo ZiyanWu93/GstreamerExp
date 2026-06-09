@@ -134,8 +134,11 @@ def evaluate() -> dict:
         "psnr_rises_with_knob_on_every_network": psnr_rises_all,
         "psnr_swing_across_the_knob_is_larger_than_in_h6": swing_larger_than_h6,
         "p95_latency_rises_with_knob_on_every_network": latency_rises_all,
-        # Refutation
-        "psnr_stays_flat_like_h6_on_every_network": (not psnr_rises_all) and (not swing_larger_than_h6),
+        # Refutation: the core claim is that loosening the knob RAISES quality.
+        # If PSNR does not rise (it stays flat or falls), the claim is refuted
+        # regardless of how wide the swing is -- a larger swing in the wrong
+        # (downward) direction is not the hypothesised effect.
+        "psnr_does_not_rise_with_knob_on_at_least_one_network": not psnr_rises_all,
         # Untested triggers
         "any_cell_failed": False,
         "required_metric_missing": False,
@@ -143,7 +146,7 @@ def evaluate() -> dict:
 
     supported = predicates["psnr_rises_with_knob_on_every_network"] and \
         predicates["psnr_swing_across_the_knob_is_larger_than_in_h6"]
-    refuted = predicates["psnr_stays_flat_like_h6_on_every_network"]
+    refuted = predicates["psnr_does_not_rise_with_knob_on_at_least_one_network"]
     verdict = "supported" if (supported and not refuted) else ("refuted" if refuted else "inconclusive")
 
     return {

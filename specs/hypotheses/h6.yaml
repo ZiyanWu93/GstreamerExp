@@ -60,10 +60,11 @@ results:
 conclusions:
   established:
     - The control loop responds the right way to the knob. As the knob goes from 10 ms to 500 ms on every network, p95 latency moves with it — tighter knob, less latency; looser knob, more latency. SCReAM is doing what its specification says it should.
-    - The encoder does not benefit from extra room at this workload. Decoded picture quality (PSNR) stays roughly flat across the knob range — about a 1 dB swing on each network, which is within run-to-run noise at 3 reps. VP8 at the tested bitrates already has enough budget to encode this clip; loosening the knob does not give it useful extra room.
+    - The encoder does not benefit from extra room at this loose ceiling. Decoded picture quality (PSNR) stays roughly flat and high across the knob range — about 37.7 to 39.5 dB on the steady network, 35.6 to 38.9 dB on the wobbly network, 31.8 to 34.1 dB on the 5G recording. The only consistent trend is a slight DROP at the loosest setting (500 ms), so loosening the knob never raises quality. VP8 at this 4000 kbps ceiling already has enough budget to encode this clip; extra buffering does not give it useful extra room.
+    - The quality numbers are trustworthy. The decoded_psnr metric was fixed before this run (frame-accurate self-healing alignment); these ~32 to 39 dB values are believable for the clip and ceiling, and the metric separates this loose ceiling from the tight 800 kbps ceiling in H7 (19 to 34 dB). The earlier broken metric pinned everything near 10 dB and could not.
   limits:
     - Workload-specific. Tested with realmotion-avi (1280×1024 MJPEG, 10 fps, 60 s). A higher-motion or longer clip might saturate the encoder differently.
-    - Bitrate-specific. Tested with init / min / max bitrate = 1500 / 200 / 4000 kbps. A tighter ceiling, or a more demanding source, might let the knob bite into quality.
+    - Bitrate-specific. Tested at init / min / max = 1500 / 200 / 4000 kbps. H7 re-ran the same sweep at a tight 800 kbps ceiling; the knob still did not raise quality there either.
     - The "no quality response" claim rests on PSNR. SSIM or VMAF might surface a smaller effect that PSNR misses.
-    - 3 reps per cell. PSNR effects smaller than about 1 dB are within noise.
+    - 3 reps per cell; effects smaller than the run-to-run spread are not resolved.
     - Absolute latency numbers carry a clock-skew artifact between aum and veda (same one H4 flagged). The relative comparison across knob values within one sweep is unaffected.

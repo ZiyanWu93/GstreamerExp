@@ -1051,9 +1051,9 @@
                 "failed_runs": 0,
                 "missing_summaries": 0,
                 "run_ids": [
-                  "2026-06-04T11-55-09",
-                  "2026-06-04T12-02-04",
-                  "2026-06-04T12-08-56"
+                  "2026-06-07T20-42-45",
+                  "2026-06-07T20-51-12",
+                  "2026-06-07T20-58-04"
                 ]
               },
               "102": {
@@ -1061,9 +1061,9 @@
                 "failed_runs": 0,
                 "missing_summaries": 0,
                 "run_ids": [
-                  "2026-06-04T11-56-20",
-                  "2026-06-04T12-03-12",
-                  "2026-06-04T12-10-04"
+                  "2026-06-07T20-43-57",
+                  "2026-06-07T20-52-21",
+                  "2026-06-07T20-59-13"
                 ]
               },
               "103": {
@@ -1071,9 +1071,9 @@
                 "failed_runs": 0,
                 "missing_summaries": 0,
                 "run_ids": [
-                  "2026-06-04T11-57-28",
-                  "2026-06-04T12-04-20",
-                  "2026-06-04T12-11-12"
+                  "2026-06-07T20-45-05",
+                  "2026-06-07T20-53-29",
+                  "2026-06-07T21-00-21"
                 ]
               },
               "104": {
@@ -1081,9 +1081,9 @@
                 "failed_runs": 0,
                 "missing_summaries": 0,
                 "run_ids": [
-                  "2026-06-04T11-58-37",
-                  "2026-06-04T12-05-29",
-                  "2026-06-04T12-12-20"
+                  "2026-06-07T20-47-45",
+                  "2026-06-07T20-54-37",
+                  "2026-06-07T21-01-32"
                 ]
               },
               "105": {
@@ -1091,9 +1091,9 @@
                 "failed_runs": 0,
                 "missing_summaries": 0,
                 "run_ids": [
-                  "2026-06-04T11-59-45",
-                  "2026-06-04T12-06-37",
-                  "2026-06-04T12-13-31"
+                  "2026-06-07T20-48-53",
+                  "2026-06-07T20-55-48",
+                  "2026-06-08T22-51-17"
                 ]
               },
               "106": {
@@ -1101,9 +1101,9 @@
                 "failed_runs": 0,
                 "missing_summaries": 0,
                 "run_ids": [
-                  "2026-06-04T12-00-53",
-                  "2026-06-04T12-07-48",
-                  "2026-06-04T12-14-40"
+                  "2026-06-07T20-50-04",
+                  "2026-06-07T20-56-56",
+                  "2026-06-08T22-49-00"
                 ]
               }
             },
@@ -1125,9 +1125,9 @@
                 "failed_runs": 0,
                 "missing_summaries": 0,
                 "run_ids": [
-                  "2026-06-04T12-16-34",
-                  "2026-06-04T12-23-27",
-                  "2026-06-04T12-30-22"
+                  "2026-06-08T22-52-25",
+                  "2026-06-08T22-59-18",
+                  "2026-06-08T23-06-10"
                 ]
               },
               "108": {
@@ -1135,9 +1135,9 @@
                 "failed_runs": 0,
                 "missing_summaries": 0,
                 "run_ids": [
-                  "2026-06-04T12-17-42",
-                  "2026-06-04T12-24-38",
-                  "2026-06-04T12-31-30"
+                  "2026-06-08T22-53-33",
+                  "2026-06-08T23-00-26",
+                  "2026-06-08T23-07-22"
                 ]
               },
               "109": {
@@ -1145,9 +1145,9 @@
                 "failed_runs": 0,
                 "missing_summaries": 0,
                 "run_ids": [
-                  "2026-06-04T12-18-53",
-                  "2026-06-04T12-25-46",
-                  "2026-06-04T12-32-39"
+                  "2026-06-08T22-54-41",
+                  "2026-06-08T23-01-37",
+                  "2026-06-08T23-08-30"
                 ]
               },
               "110": {
@@ -1155,9 +1155,9 @@
                 "failed_runs": 0,
                 "missing_summaries": 0,
                 "run_ids": [
-                  "2026-06-04T12-20-01",
-                  "2026-06-04T12-26-54",
-                  "2026-06-04T12-33-47"
+                  "2026-06-08T22-55-52",
+                  "2026-06-08T23-02-45",
+                  "2026-06-08T23-09-38"
                 ]
               },
               "111": {
@@ -1165,9 +1165,9 @@
                 "failed_runs": 0,
                 "missing_summaries": 0,
                 "run_ids": [
-                  "2026-06-04T12-21-10",
-                  "2026-06-04T12-28-02",
-                  "2026-06-04T12-34-55"
+                  "2026-06-08T22-57-01",
+                  "2026-06-08T23-03-53",
+                  "2026-06-08T23-10-47"
                 ]
               },
               "112": {
@@ -1175,9 +1175,9 @@
                 "failed_runs": 0,
                 "missing_summaries": 0,
                 "run_ids": [
-                  "2026-06-04T12-22-18",
-                  "2026-06-04T12-29-11",
-                  "2026-06-04T12-36-06"
+                  "2026-06-08T22-58-09",
+                  "2026-06-08T23-05-02",
+                  "2026-06-08T23-11-55"
                 ]
               }
             },
@@ -1199,9 +1199,9 @@
                 "failed_runs": 0,
                 "missing_summaries": 0,
                 "run_ids": [
-                  "2026-06-04T12-37-15",
-                  "2026-06-04T12-44-08",
-                  "2026-06-04T12-51-01"
+                  "2026-06-08T23-13-07",
+                  "2026-06-08T23-20-02",
+                  "2026-06-08T23-26-58"
                 ]
               },
               "114": {
@@ -1209,9 +1209,9 @@
                 "failed_runs": 0,
                 "missing_summaries": 0,
                 "run_ids": [
-                  "2026-06-04T12-38-24",
-                  "2026-06-04T12-45-16",
-                  "2026-06-04T12-52-09"
+                  "2026-06-08T23-14-16",
+                  "2026-06-08T23-21-11",
+                  "2026-06-08T23-28-07"
                 ]
               },
               "115": {
@@ -1219,9 +1219,9 @@
                 "failed_runs": 0,
                 "missing_summaries": 0,
                 "run_ids": [
-                  "2026-06-04T12-39-32",
-                  "2026-06-04T12-46-24",
-                  "2026-06-04T12-53-20"
+                  "2026-06-08T23-15-24",
+                  "2026-06-08T23-22-21",
+                  "2026-06-08T23-29-15"
                 ]
               },
               "116": {
@@ -1229,9 +1229,9 @@
                 "failed_runs": 0,
                 "missing_summaries": 0,
                 "run_ids": [
-                  "2026-06-04T12-40-40",
-                  "2026-06-04T12-47-35",
-                  "2026-06-04T12-54-29"
+                  "2026-06-08T23-16-33",
+                  "2026-06-08T23-23-29",
+                  "2026-06-08T23-30-27"
                 ]
               },
               "117": {
@@ -1239,9 +1239,9 @@
                 "failed_runs": 0,
                 "missing_summaries": 0,
                 "run_ids": [
-                  "2026-06-04T12-41-52",
-                  "2026-06-04T12-48-44",
-                  "2026-06-04T12-55-37"
+                  "2026-06-08T23-17-42",
+                  "2026-06-08T23-24-41",
+                  "2026-06-08T23-31-35"
                 ]
               },
               "118": {
@@ -1249,9 +1249,9 @@
                 "failed_runs": 0,
                 "missing_summaries": 0,
                 "run_ids": [
-                  "2026-06-04T12-43-00",
-                  "2026-06-04T12-49-52",
-                  "2026-06-04T12-56-45"
+                  "2026-06-08T23-18-54",
+                  "2026-06-08T23-25-49",
+                  "2026-06-08T23-32-44"
                 ]
               }
             },
@@ -1265,13 +1265,14 @@
       "conclusions": {
         "established": [
           "The control loop responds the right way to the knob. As the knob goes from 10 ms to 500 ms on every network, p95 latency moves with it \u2014 tighter knob, less latency; looser knob, more latency. SCReAM is doing what its specification says it should.",
-          "The encoder does not benefit from extra room at this workload. Decoded picture quality (PSNR) stays roughly flat across the knob range \u2014 about a 1 dB swing on each network, which is within run-to-run noise at 3 reps. VP8 at the tested bitrates already has enough budget to encode this clip; loosening the knob does not give it useful extra room."
+          "The encoder does not benefit from extra room at this loose ceiling. Decoded picture quality (PSNR) stays roughly flat and high across the knob range \u2014 about 37.7 to 39.5 dB on the steady network, 35.6 to 38.9 dB on the wobbly network, 31.8 to 34.1 dB on the 5G recording. The only consistent trend is a slight DROP at the loosest setting (500 ms), so loosening the knob never raises quality. VP8 at this 4000 kbps ceiling already has enough budget to encode this clip; extra buffering does not give it useful extra room.",
+          "The quality numbers are trustworthy. The decoded_psnr metric was fixed before this run (frame-accurate self-healing alignment); these ~32 to 39 dB values are believable for the clip and ceiling, and the metric separates this loose ceiling from the tight 800 kbps ceiling in H7 (19 to 34 dB). The earlier broken metric pinned everything near 10 dB and could not."
         ],
         "limits": [
           "Workload-specific. Tested with realmotion-avi (1280\u00d71024 MJPEG, 10 fps, 60 s). A higher-motion or longer clip might saturate the encoder differently.",
-          "Bitrate-specific. Tested with init / min / max bitrate = 1500 / 200 / 4000 kbps. A tighter ceiling, or a more demanding source, might let the knob bite into quality.",
+          "Bitrate-specific. Tested at init / min / max = 1500 / 200 / 4000 kbps. H7 re-ran the same sweep at a tight 800 kbps ceiling; the knob still did not raise quality there either.",
           "The \"no quality response\" claim rests on PSNR. SSIM or VMAF might surface a smaller effect that PSNR misses.",
-          "3 reps per cell. PSNR effects smaller than about 1 dB are within noise.",
+          "3 reps per cell; effects smaller than the run-to-run spread are not resolved.",
           "Absolute latency numbers carry a clock-skew artifact between aum and veda (same one H4 flagged). The relative comparison across knob values within one sweep is unaffected."
         ]
       },
@@ -1298,7 +1299,7 @@
           "psnr_swing_across_the_knob_is_larger_than_in_h6"
         ],
         "refuted_when_any": [
-          "psnr_stays_flat_like_h6_on_every_network"
+          "psnr_does_not_rise_with_knob_on_at_least_one_network"
         ],
         "untested_when_any": [
           "any_cell_failed",
@@ -1389,9 +1390,9 @@
                 "failed_runs": 0,
                 "missing_summaries": 0,
                 "run_ids": [
-                  "2026-06-04T20-22-57",
-                  "2026-06-04T20-29-52",
-                  "2026-06-04T20-36-45"
+                  "2026-06-08T23-33-53",
+                  "2026-06-08T23-40-45",
+                  "2026-06-08T23-47-40"
                 ]
               },
               "120": {
@@ -1399,9 +1400,9 @@
                 "failed_runs": 0,
                 "missing_summaries": 0,
                 "run_ids": [
-                  "2026-06-04T20-24-08",
-                  "2026-06-04T20-31-00",
-                  "2026-06-04T20-37-53"
+                  "2026-06-08T23-35-01",
+                  "2026-06-08T23-41-56",
+                  "2026-06-08T23-48-49"
                 ]
               },
               "121": {
@@ -1409,9 +1410,9 @@
                 "failed_runs": 0,
                 "missing_summaries": 0,
                 "run_ids": [
-                  "2026-06-04T20-25-17",
-                  "2026-06-04T20-32-09",
-                  "2026-06-04T20-39-01"
+                  "2026-06-08T23-36-12",
+                  "2026-06-08T23-43-05",
+                  "2026-06-08T23-49-57"
                 ]
               },
               "122": {
@@ -1419,9 +1420,9 @@
                 "failed_runs": 0,
                 "missing_summaries": 0,
                 "run_ids": [
-                  "2026-06-04T20-26-25",
-                  "2026-06-04T20-33-17",
-                  "2026-06-04T20-40-09"
+                  "2026-06-08T23-37-20",
+                  "2026-06-08T23-44-13",
+                  "2026-06-08T23-51-05"
                 ]
               },
               "123": {
@@ -1429,9 +1430,9 @@
                 "failed_runs": 0,
                 "missing_summaries": 0,
                 "run_ids": [
-                  "2026-06-04T20-27-33",
-                  "2026-06-04T20-34-25",
-                  "2026-06-04T20-41-20"
+                  "2026-06-08T23-38-29",
+                  "2026-06-08T23-45-21",
+                  "2026-06-08T23-52-13"
                 ]
               },
               "124": {
@@ -1439,9 +1440,9 @@
                 "failed_runs": 0,
                 "missing_summaries": 0,
                 "run_ids": [
-                  "2026-06-04T20-28-41",
-                  "2026-06-04T20-35-36",
-                  "2026-06-04T20-42-28"
+                  "2026-06-08T23-39-37",
+                  "2026-06-08T23-46-29",
+                  "2026-06-08T23-53-24"
                 ]
               }
             },
@@ -1463,9 +1464,9 @@
                 "failed_runs": 0,
                 "missing_summaries": 0,
                 "run_ids": [
-                  "2026-06-04T20-43-37",
-                  "2026-06-04T20-50-48",
-                  "2026-06-04T20-58-17"
+                  "2026-06-08T23-54-33",
+                  "2026-06-09T00-01-27",
+                  "2026-06-09T00-08-21"
                 ]
               },
               "126": {
@@ -1473,9 +1474,9 @@
                 "failed_runs": 0,
                 "missing_summaries": 0,
                 "run_ids": [
-                  "2026-06-04T20-44-45",
-                  "2026-06-04T20-52-33",
-                  "2026-06-04T20-59-26"
+                  "2026-06-08T23-55-41",
+                  "2026-06-09T00-02-35",
+                  "2026-06-09T00-09-29"
                 ]
               },
               "127": {
@@ -1483,9 +1484,9 @@
                 "failed_runs": 0,
                 "missing_summaries": 0,
                 "run_ids": [
-                  "2026-06-04T20-45-53",
-                  "2026-06-04T20-53-41",
-                  "2026-06-04T21-00-34"
+                  "2026-06-08T23-56-49",
+                  "2026-06-09T00-03-43",
+                  "2026-06-09T00-10-41"
                 ]
               },
               "128": {
@@ -1493,9 +1494,9 @@
                 "failed_runs": 0,
                 "missing_summaries": 0,
                 "run_ids": [
-                  "2026-06-04T20-47-04",
-                  "2026-06-04T20-54-50",
-                  "2026-06-04T21-01-42"
+                  "2026-06-08T23-57-58",
+                  "2026-06-09T00-04-55",
+                  "2026-06-09T00-11-49"
                 ]
               },
               "129": {
@@ -1503,9 +1504,9 @@
                 "failed_runs": 0,
                 "missing_summaries": 0,
                 "run_ids": [
-                  "2026-06-04T20-48-12",
-                  "2026-06-04T20-55-58",
-                  "2026-06-04T21-02-50"
+                  "2026-06-08T23-59-09",
+                  "2026-06-09T00-06-04",
+                  "2026-06-09T00-12-57"
                 ]
               },
               "130": {
@@ -1513,9 +1514,9 @@
                 "failed_runs": 0,
                 "missing_summaries": 0,
                 "run_ids": [
-                  "2026-06-04T20-49-21",
-                  "2026-06-04T20-57-06",
-                  "2026-06-04T21-04-02"
+                  "2026-06-09T00-00-18",
+                  "2026-06-09T00-07-12",
+                  "2026-06-09T00-14-05"
                 ]
               }
             },
@@ -1537,9 +1538,9 @@
                 "failed_runs": 0,
                 "missing_summaries": 0,
                 "run_ids": [
-                  "2026-06-04T21-05-10",
-                  "2026-06-04T21-12-03",
-                  "2026-06-04T21-18-56"
+                  "2026-06-09T00-15-14",
+                  "2026-06-09T00-22-13",
+                  "2026-06-09T00-29-07"
                 ]
               },
               "132": {
@@ -1547,9 +1548,9 @@
                 "failed_runs": 0,
                 "missing_summaries": 0,
                 "run_ids": [
-                  "2026-06-04T21-06-18",
-                  "2026-06-04T21-13-12",
-                  "2026-06-04T21-20-04"
+                  "2026-06-09T00-16-26",
+                  "2026-06-09T00-23-22",
+                  "2026-06-09T00-30-16"
                 ]
               },
               "133": {
@@ -1557,9 +1558,9 @@
                 "failed_runs": 0,
                 "missing_summaries": 0,
                 "run_ids": [
-                  "2026-06-04T21-07-27",
-                  "2026-06-04T21-14-20",
-                  "2026-06-04T21-21-15"
+                  "2026-06-09T00-17-35",
+                  "2026-06-09T00-24-30",
+                  "2026-06-09T00-31-25"
                 ]
               },
               "134": {
@@ -1567,9 +1568,9 @@
                 "failed_runs": 0,
                 "missing_summaries": 0,
                 "run_ids": [
-                  "2026-06-04T21-08-35",
-                  "2026-06-04T21-15-31",
-                  "2026-06-04T21-22-24"
+                  "2026-06-09T00-18-43",
+                  "2026-06-09T00-25-38",
+                  "2026-06-09T00-32-33"
                 ]
               },
               "135": {
@@ -1577,9 +1578,9 @@
                 "failed_runs": 0,
                 "missing_summaries": 0,
                 "run_ids": [
-                  "2026-06-04T21-09-47",
-                  "2026-06-04T21-16-39",
-                  "2026-06-04T21-23-32"
+                  "2026-06-09T00-19-52",
+                  "2026-06-09T00-26-47",
+                  "2026-06-09T00-33-44"
                 ]
               },
               "136": {
@@ -1587,9 +1588,9 @@
                 "failed_runs": 0,
                 "missing_summaries": 0,
                 "run_ids": [
-                  "2026-06-04T21-10-55",
-                  "2026-06-04T21-17-48",
-                  "2026-06-04T21-24-40"
+                  "2026-06-09T00-21-01",
+                  "2026-06-09T00-27-58",
+                  "2026-06-09T00-34-53"
                 ]
               }
             },
@@ -1602,14 +1603,15 @@
       },
       "conclusions": {
         "established": [
-          "Starving the encoder did not turn the knob into a quality knob. With the ceiling dropped to 800 kbps, picture quality (PSNR) still stays flat as the knob loosens \u2014 about a 1 dB swing on each network, the same flat pattern H6 saw at 4000 kbps. So the queue-delay-target is a latency knob, not a quality knob, at both ceilings for this workload.",
-          "The robust takeaway across H6 and H7 is one finding, now tested twice -- the knob moves latency, not quality."
+          "Starving the encoder did not turn the knob into a quality knob. At the tight 800 kbps ceiling, loosening the knob does not raise picture quality. On the steady network PSNR is dead flat (34.2 dB at every knob value); on the wobbly network it actually falls as the knob loosens (26.4 dB at 10 ms down to about 19 dB at 100 ms and beyond); on the 5G recording it drifts slightly down (31.8 to 30.6 dB). So the queue-delay-target is a latency knob, not a quality knob, at both the loose (H6) and tight (H7) ceilings for this workload.",
+          "The quality numbers are now trustworthy. The decoded_psnr metric was fixed before this run (frame-accurate self-healing alignment), and the values track the bitrate ceiling as they should -- about 32 to 39 dB at the loose 4000 kbps ceiling (H6) versus 19 to 34 dB at the tight 800 kbps ceiling here. The metric clearly separates the two ceilings, which the earlier broken metric (pinned near 10 dB everywhere) could not.",
+          "The robust takeaway across H6 and H7 is one finding, tested at two ceilings with a trustworthy quality axis -- the knob moves latency, not quality, and on a wobbly link a looser knob slightly hurts quality rather than helping."
         ],
         "limits": [
-          "Measurement caveat \u2014 read before trusting the absolute numbers: the PSNR values in H6 and H7 sit at 10\u201313 dB on every single cell. That is far below what a working pipeline should produce (a heavily compressed VP8 stream is normally 28\u201340 dB). A value near 10 dB is the signature of comparing misaligned frames \u2014 decoded frame N against source frame M not equal to N, or a resolution / colour-plane mismatch in the decoded_psnr truth pipeline.",
-          "What this caveat does and does not undermine. The relative finding (quality does not move with the knob) holds, because every cell uses the same metric and the comparison is internal. Any absolute quality claim is suspect until the metric is checked against a known-good baseline.",
-          "Next verification step is a one-cell sanity check \u2014 clean loopback, no impairment, near-lossless encode. If PSNR there is also ~10 dB the metric is misaligned and needs fixing; if it is ~40 dB the metric is sound and the stressed-network numbers are genuine.",
-          "Same workload and clock-skew caveats as H6."
+          "Workload-specific (realmotion-avi, 1280x1024 MJPEG, 10 fps, 60 s) and bitrate-specific (the two ceilings tested). A different clip or ceiling could behave differently.",
+          "The quality axis is PSNR; SSIM or VMAF might surface a smaller effect PSNR misses.",
+          "3 reps per cell; effects smaller than the run-to-run spread are not resolved.",
+          "Absolute latency carries the aum/veda clock-skew artifact (as in H4/H6); the comparison across knob values within one sweep is unaffected."
         ]
       },
       "spec_path": "specs/hypotheses/h7.yaml"

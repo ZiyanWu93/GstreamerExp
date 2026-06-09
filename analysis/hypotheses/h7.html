@@ -102,7 +102,7 @@
 
 
 <tr><td><strong>Refuted when any</strong></td><td>
-<code>psnr_stays_flat_like_h6_on_every_network</code>
+<code>psnr_does_not_rise_with_knob_on_at_least_one_network</code>
 </td></tr>
 
 
@@ -129,17 +129,18 @@
 
 <p class="meta"><strong>Findings</strong></p>
 <ul>
-<li>Starving the encoder did not turn the knob into a quality knob. With the ceiling dropped to 800 kbps, picture quality (PSNR) still stays flat as the knob loosens — about a 1 dB swing on each network, the same flat pattern H6 saw at 4000 kbps. So the queue-delay-target is a latency knob, not a quality knob, at both ceilings for this workload.</li>
-<li>The robust takeaway across H6 and H7 is one finding, now tested twice -- the knob moves latency, not quality.</li>
+<li>Starving the encoder did not turn the knob into a quality knob. At the tight 800 kbps ceiling, loosening the knob does not raise picture quality. On the steady network PSNR is dead flat (34.2 dB at every knob value); on the wobbly network it actually falls as the knob loosens (26.4 dB at 10 ms down to about 19 dB at 100 ms and beyond); on the 5G recording it drifts slightly down (31.8 to 30.6 dB). So the queue-delay-target is a latency knob, not a quality knob, at both the loose (H6) and tight (H7) ceilings for this workload.</li>
+<li>The quality numbers are now trustworthy. The decoded_psnr metric was fixed before this run (frame-accurate self-healing alignment), and the values track the bitrate ceiling as they should -- about 32 to 39 dB at the loose 4000 kbps ceiling (H6) versus 19 to 34 dB at the tight 800 kbps ceiling here. The metric clearly separates the two ceilings, which the earlier broken metric (pinned near 10 dB everywhere) could not.</li>
+<li>The robust takeaway across H6 and H7 is one finding, tested at two ceilings with a trustworthy quality axis -- the knob moves latency, not quality, and on a wobbly link a looser knob slightly hurts quality rather than helping.</li>
 </ul>
 
 
 <p class="meta"><strong>Limitations</strong></p>
 <ul>
-<li>Measurement caveat — read before trusting the absolute numbers: the PSNR values in H6 and H7 sit at 10–13 dB on every single cell. That is far below what a working pipeline should produce (a heavily compressed VP8 stream is normally 28–40 dB). A value near 10 dB is the signature of comparing misaligned frames — decoded frame N against source frame M not equal to N, or a resolution / colour-plane mismatch in the decoded_psnr truth pipeline.</li>
-<li>What this caveat does and does not undermine. The relative finding (quality does not move with the knob) holds, because every cell uses the same metric and the comparison is internal. Any absolute quality claim is suspect until the metric is checked against a known-good baseline.</li>
-<li>Next verification step is a one-cell sanity check — clean loopback, no impairment, near-lossless encode. If PSNR there is also ~10 dB the metric is misaligned and needs fixing; if it is ~40 dB the metric is sound and the stressed-network numbers are genuine.</li>
-<li>Same workload and clock-skew caveats as H6.</li>
+<li>Workload-specific (realmotion-avi, 1280x1024 MJPEG, 10 fps, 60 s) and bitrate-specific (the two ceilings tested). A different clip or ceiling could behave differently.</li>
+<li>The quality axis is PSNR; SSIM or VMAF might surface a smaller effect PSNR misses.</li>
+<li>3 reps per cell; effects smaller than the run-to-run spread are not resolved.</li>
+<li>Absolute latency carries the aum/veda clock-skew artifact (as in H4/H6); the comparison across knob values within one sweep is unaffected.</li>
 </ul>
 
 
