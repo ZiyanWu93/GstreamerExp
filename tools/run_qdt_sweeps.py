@@ -96,19 +96,32 @@ def main() -> int:
             print(f"[chain] {name}: already complete ({done}/{target}) — skipping",
                   flush=True)
             continue
-        print(f"[chain] {name}: running ({done}/{target} done) with --resume",
-              flush=True)
-        r = subprocess.run(
-            ["python3", str(ROOT / "experiment.py"), name, "--resume"],
-            cwd=str(ROOT),
-        )
-        write_manifest(status())
-        if r.returncode != 0:
-            # A cell failed. Stop the chain so the failure is visible and the
-            # operator can decide; re-running resumes from here.
-            print(f"[chain] {name}: experiment.py exited {r.returncode}; "
-                  f"stopping chain. Re-run this script to resume.", flush=True)
-            return r.returncode
+        # Bounded auto-retry: a transient worker hiccup (SSH blip, camera
+        # rc=1) fails one cell. Re-running with --resume retries only the
+        # still-failed cells, so we give each sweep a few attempts before
+        # giving up. This pushes through transient failures without losing
+        # the fail-visible property for a persistently broken cell.
+        max_attempts = 4
+        for attempt in range(1, max_attempts + 1):
+            done = sweep_done_count(name)
+            print(f"[chain] {name}: attempt {attempt}/{max_attempts} "
+                  f"({done}/{target} done) with --resume", flush=True)
+            r = subprocess.run(
+                ["python3", str(ROOT / "experiment.py"), name, "--resume"],
+                cwd=str(ROOT),
+            )
+            write_manifest(status())
+            if sweep_done_count(name) >= target:
+                break
+            if attempt < max_attempts:
+                print(f"[chain] {name}: {sweep_done_count(name)}/{target} done "
+                      f"after attempt {attempt} (exit {r.returncode}); retrying "
+                      f"the failed cell(s).", flush=True)
+        if sweep_done_count(name) < target:
+            print(f"[chain] {name}: still {sweep_done_count(name)}/{target} after "
+                  f"{max_attempts} attempts; stopping chain. Re-run to resume.",
+                  flush=True)
+            return 1
 
     rows = status()
     write_manifest(rows)
