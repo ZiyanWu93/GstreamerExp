@@ -1,6 +1,6 @@
 id: H7
 slug: h7
-title: With the encoder starved, the queue-delay-target knob starts trading picture quality
+title: Queue-delay-target under a tight ceiling
 claim: H6 found the queue-delay-target knob moves latency but not picture quality, because the encoder had bytes to spare. With the bitrate ceiling dropped from 4000 to 800 kbps, the encoder is hungry, so loosening the knob should now raise picture quality (PSNR) as well as latency.
 status: refuted
 source: Goal 2.2 (knob sensitivity), follow-up to H6

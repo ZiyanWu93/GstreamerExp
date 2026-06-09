@@ -1,6 +1,6 @@
 id: H4
 slug: h4
-title: SCReAM keeps more video watchable than GCC on tight 5G recordings
+title: Usable video on tight 5G
 claim: On 5G recordings squeezed to one-third of their original capacity, SCReAM delivers more decoded frames to the viewer than GCC does, while the camera actually sends fewer bytes — on the two harder recordings (handover and resource-block).
 status: supported
 source: Project-internal 5G-recording SCReAM / GCC experiment

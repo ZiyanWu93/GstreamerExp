@@ -1,6 +1,6 @@
 id: H5
 slug: h5
-title: Our SCReAM follows changing bandwidth; UMN's does not — because UMN's controller never reaches its encoder
+title: Why UMN's SCReAM won't adapt
 claim: When the link's bandwidth keeps changing, our SCReAM raises and lowers its sending rate to match. UMN's reimplementation holds a nearly constant rate. The cause is a wiring problem inside UMN — the controller computes a target sending rate but that target is never applied to the video encoder — not a flaw in the SCReAM algorithm and not how often the loop runs.
 status: supported
 source: Project-internal cross-implementation comparison vs UMN Teleop-Gopher-streamer (scream-integration branch 502533c)

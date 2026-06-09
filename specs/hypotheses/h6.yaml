@@ -1,6 +1,6 @@
 id: H6
 slug: h6
-title: SCReAM's queue-delay-target moves latency but not picture quality
+title: "Queue-delay-target: latency, not quality"
 claim: Turning SCReAM's queue-delay-target changes p95 latency on every network we tested, but does not change decoded picture quality (PSNR) — at this workload there is no quality gain to trade for the added latency.
 status: refuted
 source: Goal 2.2 (knob sensitivity), project-internal

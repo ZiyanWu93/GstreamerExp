@@ -5,7 +5,7 @@
     {
       "id": "H1",
       "slug": "h1",
-      "title": "SCReAM uses less of the link than GCC when the network drops capacity",
+      "title": "Link use under a capacity drop",
       "claim": "When the network's bandwidth drops sharply, SCReAM sends less than GCC does \u2014 at least on the runs we tested.",
       "declared_status": "regime-dependent",
       "execution_status": "analyzable",
@@ -171,7 +171,7 @@
     {
       "id": "H2",
       "slug": "h2",
-      "title": "On a wobbly network, GCC delivers more frames than SCReAM regardless of deadline or retransmit settings",
+      "title": "Frame delivery on a fluctuating link",
       "claim": "When the link's bandwidth keeps changing, the viewer gets more frames with GCC than with SCReAM, and turning retransmits on or off or tightening the late-frame deadline does not change which one wins.",
       "declared_status": "supported",
       "execution_status": "analyzable",
@@ -399,7 +399,7 @@
     {
       "id": "H3",
       "slug": "h3",
-      "title": "The test video is too lightweight to compare SCReAM and GCC on 5G recordings",
+      "title": "Is the test video heavy enough?",
       "claim": "The current test video (ball-720p30) sends nowhere near enough data to use up the bandwidth in the 5G recordings, so any controller comparison on those recordings is not yet meaningful.",
       "declared_status": "supported",
       "execution_status": "analyzable",
@@ -623,7 +623,7 @@
     {
       "id": "H4",
       "slug": "h4",
-      "title": "SCReAM keeps more video watchable than GCC on tight 5G recordings",
+      "title": "Usable video on tight 5G",
       "claim": "On 5G recordings squeezed to one-third of their original capacity, SCReAM delivers more decoded frames to the viewer than GCC does, while the camera actually sends fewer bytes \u2014 on the two harder recordings (handover and resource-block).",
       "declared_status": "supported",
       "execution_status": "analyzable",
@@ -846,7 +846,7 @@
     {
       "id": "H5",
       "slug": "h5",
-      "title": "Our SCReAM follows changing bandwidth; UMN's does not \u2014 because UMN's controller never reaches its encoder",
+      "title": "Why UMN's SCReAM won't adapt",
       "claim": "When the link's bandwidth keeps changing, our SCReAM raises and lowers its sending rate to match. UMN's reimplementation holds a nearly constant rate. The cause is a wiring problem inside UMN \u2014 the controller computes a target sending rate but that target is never applied to the video encoder \u2014 not a flaw in the SCReAM algorithm and not how often the loop runs.",
       "declared_status": "supported",
       "execution_status": "untested",
@@ -937,7 +937,7 @@
     {
       "id": "H6",
       "slug": "h6",
-      "title": "SCReAM's queue-delay-target moves latency but not picture quality",
+      "title": "Queue-delay-target: latency, not quality",
       "claim": "Turning SCReAM's queue-delay-target changes p95 latency on every network we tested, but does not change decoded picture quality (PSNR) \u2014 at this workload there is no quality gain to trade for the added latency.",
       "declared_status": "refuted",
       "execution_status": "analyzable",
@@ -1281,7 +1281,7 @@
     {
       "id": "H7",
       "slug": "h7",
-      "title": "With the encoder starved, the queue-delay-target knob starts trading picture quality",
+      "title": "Queue-delay-target under a tight ceiling",
       "claim": "H6 found the queue-delay-target knob moves latency but not picture quality, because the encoder had bytes to spare. With the bitrate ceiling dropped from 4000 to 800 kbps, the encoder is hungry, so loosening the knob should now raise picture quality (PSNR) as well as latency.",
       "declared_status": "refuted",
       "execution_status": "analyzable",

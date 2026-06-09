@@ -1,6 +1,6 @@
 id: H2
 slug: h2
-title: On a wobbly network, GCC delivers more frames than SCReAM regardless of deadline or retransmit settings
+title: Frame delivery on a fluctuating link
 claim: When the link's bandwidth keeps changing, the viewer gets more frames with GCC than with SCReAM, and turning retransmits on or off or tightening the late-frame deadline does not change which one wins.
 status: supported
 source: Project-internal fluctuating-network deadline / retransmit experiment

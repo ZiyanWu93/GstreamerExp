@@ -1,6 +1,6 @@
 id: H1
 slug: h1
-title: SCReAM uses less of the link than GCC when the network drops capacity
+title: Link use under a capacity drop
 claim: When the network's bandwidth drops sharply, SCReAM sends less than GCC does — at least on the runs we tested.
 status: regime-dependent
 source: Zhang 2019 SIMUtools + project fast-transition extension

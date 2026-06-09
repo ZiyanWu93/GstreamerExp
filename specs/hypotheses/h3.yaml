@@ -1,6 +1,6 @@
 id: H3
 slug: h3
-title: The test video is too lightweight to compare SCReAM and GCC on 5G recordings
+title: Is the test video heavy enough?
 claim: The current test video (ball-720p30) sends nowhere near enough data to use up the bandwidth in the 5G recordings, so any controller comparison on those recordings is not yet meaningful.
 status: supported
 source: Project-internal validity check for 5G-recording SCReAM / GCC experiments
