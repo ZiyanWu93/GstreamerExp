@@ -191,8 +191,22 @@ def evaluate() -> dict:
     }
 
 
+def _sweeps_meta() -> list[dict]:
+    cfg = list(range(101, 119))  # 101..118, 6 per regime in REGIME order
+    return [
+        {"name": SWEEP_BY_REGIME[reg], "configs": cfg[i * len(QDT_MS):(i + 1) * len(QDT_MS)],
+         "knob_ms": list(QDT_MS), "reps": 3,
+         "record_path": f"runs/experiments/{SWEEP_BY_REGIME[reg]}.json",
+         "description": f"queue-delay-target sweep on the {reg} network, loose 4000 kbps ceiling."}
+        for i, reg in enumerate(REGIMES)
+    ]
+
+
 def main() -> int:
+    from _qdt_report import build_extras
     report = evaluate()
+    report.update(build_extras("h6", report["per_regime"], list(REGIMES),
+                               list(QDT_MS), _sweeps_meta()))
     RESULT_PATH.parent.mkdir(parents=True, exist_ok=True)
     RESULT_PATH.write_text(json.dumps(report, indent=2))
     print(f"H6 verdict: {report['verdict']}")

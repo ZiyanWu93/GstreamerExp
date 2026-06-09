@@ -146,10 +146,61 @@
 
 
 
+<h2>Figures</h2>
+<figure>
+  <img src="results/h7_psnr_by_knob.svg" alt="Decoded PSNR vs queue-delay-target. Flat or falling on every network — loosening the knob does not raise quality.">
+  <figcaption>Decoded PSNR vs queue-delay-target. Flat or falling on every network — loosening the knob does not raise quality.</figcaption>
+</figure>
+<figure>
+  <img src="results/h7_latency_by_knob.svg" alt="p95 frame latency vs queue-delay-target. Latency tracks the knob (the relative trend within a sweep is what matters; the absolute offset carries the aum/veda clock-skew artifact).">
+  <figcaption>p95 frame latency vs queue-delay-target. Latency tracks the knob (the relative trend within a sweep is what matters; the absolute offset carries the aum/veda clock-skew artifact).</figcaption>
+</figure>
 
+
+
+<h2>Tables</h2>
+<h3 style="font-size:14px;margin:14px 0 4px 0;">Decoded PSNR (dB) by queue-delay-target</h3>
+<table>
+<thead><tr><th>network</th><th>10 ms</th><th>30 ms</th><th>60 ms</th><th>100 ms</th><th>200 ms</th><th>500 ms</th></tr></thead>
+<tbody>
+<tr><td>steady 5 Mbps</td><td class="num">34.18</td><td class="num">34.19</td><td class="num">34.19</td><td class="num">34.18</td><td class="num">34.19</td><td class="num">34.17</td></tr>
+<tr><td>wobbly 5 Mbps/300 kbps</td><td class="num">26.39</td><td class="num">26.06</td><td class="num">25.92</td><td class="num">19.37</td><td class="num">19.28</td><td class="num">19.49</td></tr>
+<tr><td>5G CQI recording</td><td class="num">31.84</td><td class="num">31.72</td><td class="num">31.21</td><td class="num">30.90</td><td class="num">30.86</td><td class="num">30.59</td></tr>
+</tbody>
+</table>
+<h3 style="font-size:14px;margin:14px 0 4px 0;">p95 frame latency (ms) by queue-delay-target</h3>
+<table>
+<thead><tr><th>network</th><th>10 ms</th><th>30 ms</th><th>60 ms</th><th>100 ms</th><th>200 ms</th><th>500 ms</th></tr></thead>
+<tbody>
+<tr><td>steady 5 Mbps</td><td class="num">-66.32</td><td class="num">-66.24</td><td class="num">-66.25</td><td class="num">-66.67</td><td class="num">-66.83</td><td class="num">-67.01</td></tr>
+<tr><td>wobbly 5 Mbps/300 kbps</td><td class="num">-40.32</td><td class="num">12.52</td><td class="num">12.34</td><td class="num">-14.19</td><td class="num">12.22</td><td class="num">-14.20</td></tr>
+<tr><td>5G CQI recording</td><td class="num">-46.49</td><td class="num">-31.99</td><td class="num">-28.45</td><td class="num">-27.13</td><td class="num">-30.23</td><td class="num">-26.59</td></tr>
+</tbody>
+</table>
 
 
 <h2>Experimental setup</h2>
+<div class="panel">
+<strong class="label">h7-qdt-sweep-static</strong>
+<p>queue-delay-target sweep on the static network, tight 800 kbps ceiling.</p>
+<p class="meta">Configurations: <code>119</code> (scream qdt=10ms), <code>120</code> (scream qdt=30ms), <code>121</code> (scream qdt=60ms), <code>122</code> (scream qdt=100ms), <code>123</code> (scream qdt=200ms), <code>124</code> (scream qdt=500ms) · reps: 3</p>
+<p class="meta">Spec: <code>specs/experiments/h7-qdt-sweep-static.yaml</code> · Record: <code>runs/experiments/h7-qdt-sweep-static.json</code> · Run: <code>python3 tools/run_qdt_sweeps.py  # or experiment.py h7-qdt-sweep-static --resume</code></p>
+<p class="meta">Status: 18 of 18 runs completed.</p>
+</div>
+<div class="panel">
+<strong class="label">h7-qdt-sweep-fluct</strong>
+<p>queue-delay-target sweep on the fluct network, tight 800 kbps ceiling.</p>
+<p class="meta">Configurations: <code>125</code> (scream qdt=10ms), <code>126</code> (scream qdt=30ms), <code>127</code> (scream qdt=60ms), <code>128</code> (scream qdt=100ms), <code>129</code> (scream qdt=200ms), <code>130</code> (scream qdt=500ms) · reps: 3</p>
+<p class="meta">Spec: <code>specs/experiments/h7-qdt-sweep-fluct.yaml</code> · Record: <code>runs/experiments/h7-qdt-sweep-fluct.json</code> · Run: <code>python3 tools/run_qdt_sweeps.py  # or experiment.py h7-qdt-sweep-fluct --resume</code></p>
+<p class="meta">Status: 18 of 18 runs completed.</p>
+</div>
+<div class="panel">
+<strong class="label">h7-qdt-sweep-5g</strong>
+<p>queue-delay-target sweep on the 5g network, tight 800 kbps ceiling.</p>
+<p class="meta">Configurations: <code>131</code> (scream qdt=10ms), <code>132</code> (scream qdt=30ms), <code>133</code> (scream qdt=60ms), <code>134</code> (scream qdt=100ms), <code>135</code> (scream qdt=200ms), <code>136</code> (scream qdt=500ms) · reps: 3</p>
+<p class="meta">Spec: <code>specs/experiments/h7-qdt-sweep-5g.yaml</code> · Record: <code>runs/experiments/h7-qdt-sweep-5g.json</code> · Run: <code>python3 tools/run_qdt_sweeps.py  # or experiment.py h7-qdt-sweep-5g --resume</code></p>
+<p class="meta">Status: 18 of 18 runs completed.</p>
+</div>
 
 
 <h2>Required metrics</h2>

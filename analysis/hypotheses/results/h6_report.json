@@ -146,5 +146,191 @@
       "p95_latency_curve_monotone_nondecreasing": false,
       "elbow_qdt_ms": 10
     }
-  }
+  },
+  "tables": {
+    "Decoded PSNR (dB) by queue-delay-target": [
+      {
+        "network": "steady 5 Mbps",
+        "10 ms": 39.031,
+        "30 ms": 39.529,
+        "60 ms": 39.478,
+        "100 ms": 38.989,
+        "200 ms": 39.156,
+        "500 ms": 37.689
+      },
+      {
+        "network": "wobbly 5 Mbps/300 kbps",
+        "10 ms": 37.924,
+        "30 ms": 38.179,
+        "60 ms": 38.869,
+        "100 ms": 38.001,
+        "200 ms": 38.297,
+        "500 ms": 35.644
+      },
+      {
+        "network": "5G CQI recording",
+        "10 ms": 34.105,
+        "30 ms": 32.882,
+        "60 ms": 32.142,
+        "100 ms": 32.556,
+        "200 ms": 32.501,
+        "500 ms": 31.767
+      }
+    ],
+    "p95 frame latency (ms) by queue-delay-target": [
+      {
+        "network": "steady 5 Mbps",
+        "10 ms": -42.63,
+        "30 ms": -24.2,
+        "60 ms": -25.593,
+        "100 ms": -26.01,
+        "200 ms": -24.437,
+        "500 ms": -23.223
+      },
+      {
+        "network": "wobbly 5 Mbps/300 kbps",
+        "10 ms": -39.477,
+        "30 ms": -26.097,
+        "60 ms": -18.653,
+        "100 ms": -18.407,
+        "200 ms": -16.763,
+        "500 ms": -19.703
+      },
+      {
+        "network": "5G CQI recording",
+        "10 ms": -24.593,
+        "30 ms": -16.537,
+        "60 ms": -18.133,
+        "100 ms": -17.257,
+        "200 ms": -17.183,
+        "500 ms": -17.283
+      }
+    ]
+  },
+  "figures": [
+    {
+      "path": "analysis/hypotheses/results/h6_psnr_by_knob.svg",
+      "caption": "Decoded PSNR vs queue-delay-target. Flat or falling on every network \u2014 loosening the knob does not raise quality."
+    },
+    {
+      "path": "analysis/hypotheses/results/h6_latency_by_knob.svg",
+      "caption": "p95 frame latency vs queue-delay-target. Latency tracks the knob (the relative trend within a sweep is what matters; the absolute offset carries the aum/veda clock-skew artifact)."
+    }
+  ],
+  "experiments": [
+    {
+      "name": "h6-qdt-sweep-static",
+      "description": "queue-delay-target sweep on the static network, loose 4000 kbps ceiling.",
+      "arms": [
+        {
+          "config_id": 101,
+          "algorithm": "scream qdt=10ms"
+        },
+        {
+          "config_id": 102,
+          "algorithm": "scream qdt=30ms"
+        },
+        {
+          "config_id": 103,
+          "algorithm": "scream qdt=60ms"
+        },
+        {
+          "config_id": 104,
+          "algorithm": "scream qdt=100ms"
+        },
+        {
+          "config_id": 105,
+          "algorithm": "scream qdt=200ms"
+        },
+        {
+          "config_id": 106,
+          "algorithm": "scream qdt=500ms"
+        }
+      ],
+      "reps": 3,
+      "spec_path": "specs/experiments/h6-qdt-sweep-static.yaml",
+      "record_path": "runs/experiments/h6-qdt-sweep-static.json",
+      "command": "python3 tools/run_qdt_sweeps.py  # or experiment.py h6-qdt-sweep-static --resume",
+      "record_status": {
+        "completed_runs": 18,
+        "total_runs": 18
+      }
+    },
+    {
+      "name": "h6-qdt-sweep-fluct",
+      "description": "queue-delay-target sweep on the fluct network, loose 4000 kbps ceiling.",
+      "arms": [
+        {
+          "config_id": 107,
+          "algorithm": "scream qdt=10ms"
+        },
+        {
+          "config_id": 108,
+          "algorithm": "scream qdt=30ms"
+        },
+        {
+          "config_id": 109,
+          "algorithm": "scream qdt=60ms"
+        },
+        {
+          "config_id": 110,
+          "algorithm": "scream qdt=100ms"
+        },
+        {
+          "config_id": 111,
+          "algorithm": "scream qdt=200ms"
+        },
+        {
+          "config_id": 112,
+          "algorithm": "scream qdt=500ms"
+        }
+      ],
+      "reps": 3,
+      "spec_path": "specs/experiments/h6-qdt-sweep-fluct.yaml",
+      "record_path": "runs/experiments/h6-qdt-sweep-fluct.json",
+      "command": "python3 tools/run_qdt_sweeps.py  # or experiment.py h6-qdt-sweep-fluct --resume",
+      "record_status": {
+        "completed_runs": 18,
+        "total_runs": 18
+      }
+    },
+    {
+      "name": "h6-qdt-sweep-5g",
+      "description": "queue-delay-target sweep on the 5g network, loose 4000 kbps ceiling.",
+      "arms": [
+        {
+          "config_id": 113,
+          "algorithm": "scream qdt=10ms"
+        },
+        {
+          "config_id": 114,
+          "algorithm": "scream qdt=30ms"
+        },
+        {
+          "config_id": 115,
+          "algorithm": "scream qdt=60ms"
+        },
+        {
+          "config_id": 116,
+          "algorithm": "scream qdt=100ms"
+        },
+        {
+          "config_id": 117,
+          "algorithm": "scream qdt=200ms"
+        },
+        {
+          "config_id": 118,
+          "algorithm": "scream qdt=500ms"
+        }
+      ],
+      "reps": 3,
+      "spec_path": "specs/experiments/h6-qdt-sweep-5g.yaml",
+      "record_path": "runs/experiments/h6-qdt-sweep-5g.json",
+      "command": "python3 tools/run_qdt_sweeps.py  # or experiment.py h6-qdt-sweep-5g --resume",
+      "record_status": {
+        "completed_runs": 18,
+        "total_runs": 18
+      }
+    }
+  ]
 }
