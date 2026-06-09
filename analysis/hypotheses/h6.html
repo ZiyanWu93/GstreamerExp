@@ -131,7 +131,7 @@
 <p class="meta"><strong>Findings</strong></p>
 <ul>
 <li>The control loop responds the right way to the knob. As the knob goes from 10 ms to 500 ms on every network, p95 latency moves with it — tighter knob, less latency; looser knob, more latency. SCReAM is doing what its specification says it should.</li>
-<li>The encoder does not benefit from extra room at this loose ceiling. Decoded picture quality (PSNR) stays roughly flat and high across the knob range — about 37.7 to 39.5 dB on the steady network, 35.6 to 38.9 dB on the wobbly network, 31.8 to 34.1 dB on the 5G recording. The only consistent trend is a slight DROP at the loosest setting (500 ms), so loosening the knob never raises quality. VP8 at this 4000 kbps ceiling already has enough budget to encode this clip; extra buffering does not give it useful extra room.</li>
+<li>The encoder does not benefit from extra room at this loose ceiling. Decoded picture quality (PSNR) stays roughly flat and high across the knob range — about 37.7 to 39.5 dB on the fixed 5 Mbps link, 35.6 to 38.9 dB on the capacity-step link (5 Mbps drops to 300 kbps and recovers), 31.8 to 34.1 dB on the 5G CQI trace. The only consistent trend is a slight DROP at the loosest setting (500 ms), so loosening the knob never raises quality. VP8 at this 4000 kbps ceiling already has enough budget to encode this clip; extra buffering does not give it useful extra room.</li>
 <li>The quality numbers are trustworthy. The decoded_psnr metric was fixed before this run (frame-accurate self-healing alignment); these ~32 to 39 dB values are believable for the clip and ceiling, and the metric separates this loose ceiling from the tight 800 kbps ceiling in H7 (19 to 34 dB). The earlier broken metric pinned everything near 10 dB and could not.</li>
 </ul>
 
@@ -165,18 +165,18 @@
 <table>
 <thead><tr><th>network</th><th>10 ms</th><th>30 ms</th><th>60 ms</th><th>100 ms</th><th>200 ms</th><th>500 ms</th></tr></thead>
 <tbody>
-<tr><td>steady 5 Mbps</td><td class="num">39.03</td><td class="num">39.53</td><td class="num">39.48</td><td class="num">38.99</td><td class="num">39.16</td><td class="num">37.69</td></tr>
-<tr><td>wobbly 5 Mbps/300 kbps</td><td class="num">37.92</td><td class="num">38.18</td><td class="num">38.87</td><td class="num">38.00</td><td class="num">38.30</td><td class="num">35.64</td></tr>
-<tr><td>5G CQI recording</td><td class="num">34.10</td><td class="num">32.88</td><td class="num">32.14</td><td class="num">32.56</td><td class="num">32.50</td><td class="num">31.77</td></tr>
+<tr><td>fixed 5 Mbps</td><td class="num">39.03</td><td class="num">39.53</td><td class="num">39.48</td><td class="num">38.99</td><td class="num">39.16</td><td class="num">37.69</td></tr>
+<tr><td>capacity step (5 Mbps ⇄ 300 kbps)</td><td class="num">37.92</td><td class="num">38.18</td><td class="num">38.87</td><td class="num">38.00</td><td class="num">38.30</td><td class="num">35.64</td></tr>
+<tr><td>5G CQI trace</td><td class="num">34.10</td><td class="num">32.88</td><td class="num">32.14</td><td class="num">32.56</td><td class="num">32.50</td><td class="num">31.77</td></tr>
 </tbody>
 </table>
 <h3 style="font-size:14px;margin:14px 0 4px 0;">p95 frame latency (ms) by queue-delay-target</h3>
 <table>
 <thead><tr><th>network</th><th>10 ms</th><th>30 ms</th><th>60 ms</th><th>100 ms</th><th>200 ms</th><th>500 ms</th></tr></thead>
 <tbody>
-<tr><td>steady 5 Mbps</td><td class="num">-42.63</td><td class="num">-24.20</td><td class="num">-25.59</td><td class="num">-26.01</td><td class="num">-24.44</td><td class="num">-23.22</td></tr>
-<tr><td>wobbly 5 Mbps/300 kbps</td><td class="num">-39.48</td><td class="num">-26.10</td><td class="num">-18.65</td><td class="num">-18.41</td><td class="num">-16.76</td><td class="num">-19.70</td></tr>
-<tr><td>5G CQI recording</td><td class="num">-24.59</td><td class="num">-16.54</td><td class="num">-18.13</td><td class="num">-17.26</td><td class="num">-17.18</td><td class="num">-17.28</td></tr>
+<tr><td>fixed 5 Mbps</td><td class="num">-42.63</td><td class="num">-24.20</td><td class="num">-25.59</td><td class="num">-26.01</td><td class="num">-24.44</td><td class="num">-23.22</td></tr>
+<tr><td>capacity step (5 Mbps ⇄ 300 kbps)</td><td class="num">-39.48</td><td class="num">-26.10</td><td class="num">-18.65</td><td class="num">-18.41</td><td class="num">-16.76</td><td class="num">-19.70</td></tr>
+<tr><td>5G CQI trace</td><td class="num">-24.59</td><td class="num">-16.54</td><td class="num">-18.13</td><td class="num">-17.26</td><td class="num">-17.18</td><td class="num">-17.28</td></tr>
 </tbody>
 </table>
 

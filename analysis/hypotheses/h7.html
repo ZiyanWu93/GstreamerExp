@@ -129,9 +129,9 @@
 
 <p class="meta"><strong>Findings</strong></p>
 <ul>
-<li>Starving the encoder did not turn the knob into a quality knob. At the tight 800 kbps ceiling, loosening the knob does not raise picture quality. On the steady network PSNR is dead flat (34.2 dB at every knob value); on the wobbly network it actually falls as the knob loosens (26.4 dB at 10 ms down to about 19 dB at 100 ms and beyond); on the 5G recording it drifts slightly down (31.8 to 30.6 dB). So the queue-delay-target is a latency knob, not a quality knob, at both the loose (H6) and tight (H7) ceilings for this workload.</li>
+<li>Starving the encoder did not turn the knob into a quality knob. At the tight 800 kbps ceiling, loosening the knob does not raise picture quality. On the fixed 5 Mbps link PSNR is dead flat (34.2 dB at every knob value); on the capacity-step link (5 Mbps drops to 300 kbps and recovers) it actually falls as the knob loosens (26.4 dB at 10 ms down to about 19 dB at 100 ms and beyond); on the 5G CQI trace it drifts slightly down (31.8 to 30.6 dB). So the queue-delay-target is a latency knob, not a quality knob, at both the loose (H6) and tight (H7) ceilings for this workload.</li>
 <li>The quality numbers are now trustworthy. The decoded_psnr metric was fixed before this run (frame-accurate self-healing alignment), and the values track the bitrate ceiling as they should -- about 32 to 39 dB at the loose 4000 kbps ceiling (H6) versus 19 to 34 dB at the tight 800 kbps ceiling here. The metric clearly separates the two ceilings, which the earlier broken metric (pinned near 10 dB everywhere) could not.</li>
-<li>The robust takeaway across H6 and H7 is one finding, tested at two ceilings with a trustworthy quality axis -- the knob moves latency, not quality, and on a wobbly link a looser knob slightly hurts quality rather than helping.</li>
+<li>The robust takeaway across H6 and H7 is one finding, tested at two ceilings with a trustworthy quality axis -- the knob moves latency, not quality, and on the capacity-step link a looser queue-delay-target slightly hurts quality rather than helping (more data buffered through the 300 kbps trough arrives stale or lost).</li>
 </ul>
 
 
@@ -163,18 +163,18 @@
 <table>
 <thead><tr><th>network</th><th>10 ms</th><th>30 ms</th><th>60 ms</th><th>100 ms</th><th>200 ms</th><th>500 ms</th></tr></thead>
 <tbody>
-<tr><td>steady 5 Mbps</td><td class="num">34.18</td><td class="num">34.19</td><td class="num">34.19</td><td class="num">34.18</td><td class="num">34.19</td><td class="num">34.17</td></tr>
-<tr><td>wobbly 5 Mbps/300 kbps</td><td class="num">26.39</td><td class="num">26.06</td><td class="num">25.92</td><td class="num">19.37</td><td class="num">19.28</td><td class="num">19.49</td></tr>
-<tr><td>5G CQI recording</td><td class="num">31.84</td><td class="num">31.72</td><td class="num">31.21</td><td class="num">30.90</td><td class="num">30.86</td><td class="num">30.59</td></tr>
+<tr><td>fixed 5 Mbps</td><td class="num">34.18</td><td class="num">34.19</td><td class="num">34.19</td><td class="num">34.18</td><td class="num">34.19</td><td class="num">34.17</td></tr>
+<tr><td>capacity step (5 Mbps ⇄ 300 kbps)</td><td class="num">26.39</td><td class="num">26.06</td><td class="num">25.92</td><td class="num">19.37</td><td class="num">19.28</td><td class="num">19.49</td></tr>
+<tr><td>5G CQI trace</td><td class="num">31.84</td><td class="num">31.72</td><td class="num">31.21</td><td class="num">30.90</td><td class="num">30.86</td><td class="num">30.59</td></tr>
 </tbody>
 </table>
 <h3 style="font-size:14px;margin:14px 0 4px 0;">p95 frame latency (ms) by queue-delay-target</h3>
 <table>
 <thead><tr><th>network</th><th>10 ms</th><th>30 ms</th><th>60 ms</th><th>100 ms</th><th>200 ms</th><th>500 ms</th></tr></thead>
 <tbody>
-<tr><td>steady 5 Mbps</td><td class="num">-66.32</td><td class="num">-66.24</td><td class="num">-66.25</td><td class="num">-66.67</td><td class="num">-66.83</td><td class="num">-67.01</td></tr>
-<tr><td>wobbly 5 Mbps/300 kbps</td><td class="num">-40.32</td><td class="num">12.52</td><td class="num">12.34</td><td class="num">-14.19</td><td class="num">12.22</td><td class="num">-14.20</td></tr>
-<tr><td>5G CQI recording</td><td class="num">-46.49</td><td class="num">-31.99</td><td class="num">-28.45</td><td class="num">-27.13</td><td class="num">-30.23</td><td class="num">-26.59</td></tr>
+<tr><td>fixed 5 Mbps</td><td class="num">-66.32</td><td class="num">-66.24</td><td class="num">-66.25</td><td class="num">-66.67</td><td class="num">-66.83</td><td class="num">-67.01</td></tr>
+<tr><td>capacity step (5 Mbps ⇄ 300 kbps)</td><td class="num">-40.32</td><td class="num">12.52</td><td class="num">12.34</td><td class="num">-14.19</td><td class="num">12.22</td><td class="num">-14.20</td></tr>
+<tr><td>5G CQI trace</td><td class="num">-46.49</td><td class="num">-31.99</td><td class="num">-28.45</td><td class="num">-27.13</td><td class="num">-30.23</td><td class="num">-26.59</td></tr>
 </tbody>
 </table>
 

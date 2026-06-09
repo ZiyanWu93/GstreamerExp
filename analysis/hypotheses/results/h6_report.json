@@ -150,7 +150,7 @@
   "tables": {
     "Decoded PSNR (dB) by queue-delay-target": [
       {
-        "network": "steady 5 Mbps",
+        "network": "fixed 5 Mbps",
         "10 ms": 39.031,
         "30 ms": 39.529,
         "60 ms": 39.478,
@@ -159,7 +159,7 @@
         "500 ms": 37.689
       },
       {
-        "network": "wobbly 5 Mbps/300 kbps",
+        "network": "capacity step (5 Mbps \u21c4 300 kbps)",
         "10 ms": 37.924,
         "30 ms": 38.179,
         "60 ms": 38.869,
@@ -168,7 +168,7 @@
         "500 ms": 35.644
       },
       {
-        "network": "5G CQI recording",
+        "network": "5G CQI trace",
         "10 ms": 34.105,
         "30 ms": 32.882,
         "60 ms": 32.142,
@@ -179,7 +179,7 @@
     ],
     "p95 frame latency (ms) by queue-delay-target": [
       {
-        "network": "steady 5 Mbps",
+        "network": "fixed 5 Mbps",
         "10 ms": -42.63,
         "30 ms": -24.2,
         "60 ms": -25.593,
@@ -188,7 +188,7 @@
         "500 ms": -23.223
       },
       {
-        "network": "wobbly 5 Mbps/300 kbps",
+        "network": "capacity step (5 Mbps \u21c4 300 kbps)",
         "10 ms": -39.477,
         "30 ms": -26.097,
         "60 ms": -18.653,
@@ -197,7 +197,7 @@
         "500 ms": -19.703
       },
       {
-        "network": "5G CQI recording",
+        "network": "5G CQI trace",
         "10 ms": -24.593,
         "30 ms": -16.537,
         "60 ms": -18.133,

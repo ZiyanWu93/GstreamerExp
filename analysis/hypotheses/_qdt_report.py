@@ -21,8 +21,9 @@ import matplotlib.pyplot as plt
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 RESULTS_DIR = PROJECT_ROOT / "analysis" / "hypotheses" / "results"
 
-REGIME_LABEL = {"static": "steady 5 Mbps", "fluct": "wobbly 5 Mbps/300 kbps",
-                "5g": "5G CQI recording"}
+REGIME_LABEL = {"static": "fixed 5 Mbps",
+                "fluct": "capacity step (5 Mbps ⇄ 300 kbps)",
+                "5g": "5G CQI trace"}
 REGIME_COLOR = {"static": "#d62728", "fluct": "#1f77b4", "5g": "#2ca02c"}
 
 
