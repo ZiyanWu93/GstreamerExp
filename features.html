@@ -479,7 +479,10 @@
         <li><a class="sub" href="#roadmap-strategic">Strategic question</a></li>
       </ul>
       <ul class="group">
-        <li><a class="top" href="#todo">6 · Status &amp; punch list</a></li>
+        <li><a class="top" href="#hypotheses">6 · Hypotheses (H1–H7)</a></li>
+      </ul>
+      <ul class="group">
+        <li><a class="top" href="#todo">7 · Status &amp; punch list</a></li>
         <li><a class="sub" href="#todo-goal1">Goal 1: capabilities</a></li>
         <li><a class="subsub" href="#todo-source">Source</a></li>
         <li><a class="subsub" href="#todo-encoder">Encoder</a></li>
@@ -497,7 +500,7 @@
         <li><a class="subsub" href="#todo-sweep-boundary">Boundary behaviour</a></li>
       </ul>
       <ul class="group">
-        <li><a class="top" href="#reference">7 · Reference</a></li>
+        <li><a class="top" href="#reference">8 · Reference</a></li>
         <li><a class="sub" href="#ref-umn">UMN Teleop-Gopher design</a></li>
       </ul>
     </nav>
@@ -512,8 +515,8 @@
   covers the system architecture, the runtime execution model, the
   programming model, the pipelines, the goals and roadmap (Goal 1:
   match UMN's stack; Goal 2: characterize SCReAM through its
-  configuration space, including findings to date), the current status
-  and punch list, and reference materials.
+  configuration space), the tested hypotheses (H1–H7), the current
+  status and punch list, and reference materials.
 </p>
 
 <section class="page-section" data-section="model">
@@ -1989,8 +1992,9 @@ latency_budget_ms: 0</code></pre>
 <div class="feature-block">
   <ul>
     <li>
-      <strong>Queue-delay target.</strong> Not systematically swept;
-      its effect across network conditions is unmapped.
+      <strong>Queue-delay target.</strong> Swept (10–500 ms) across
+      three networks at two bitrate ceilings — see H6 / H7 below. It
+      moves latency, not picture quality, for this workload.
     </li>
     <li>
       <strong>Loss backoff.</strong> H1 and H4 touched the loss-based
@@ -2010,6 +2014,11 @@ latency_budget_ms: 0</code></pre>
     </li>
   </ul>
 </div>
+
+<p class="small"><strong>Findings to date:</strong>
+  <a href="#hypo-h6">H6</a> (queue-delay-target, loose 4000 kbps ceiling) and
+  <a href="#hypo-h7">H7</a> (tight 800 kbps ceiling) — full cards in
+  <a href="#hypotheses">§6 Hypotheses</a>.</p>
 
 <h3 id="roadmap-goal2-regimes">Goal 2.3 · Network conditions covered</h3>
 
@@ -2042,38 +2051,11 @@ latency_budget_ms: 0</code></pre>
   </ul>
 </div>
 
-<h4 style="margin-top: 20px;">Findings to date</h4>
-
-<div class="hypo-grid">
-
-  <a class="hypo-card linked" id="hypo-h1" href="analysis/hypotheses/h1.html">
-    <div class="id">H1</div>
-    <div class="claim">When the network's bandwidth drops sharply, SCReAM sends less than GCC does. Whether the viewer also gets fewer frames depends on how fast the bandwidth changes.</div>
-    <div class="hypo-footer">
-      <span class="badge regime">tested · depends on the network</span>
-      <span class="target">→ h1.html</span>
-    </div>
-  </a>
-
-  <a class="hypo-card linked" id="hypo-h3" href="analysis/hypotheses/h3.html">
-    <div class="id">H3</div>
-    <div class="claim">The current test video is too lightweight to compare SCReAM and GCC on 5G recordings — it doesn't keep the recordings busy.</div>
-    <div class="hypo-footer">
-      <span class="badge supported">tested · test video too light for the recordings</span>
-      <span class="target">→ h3.html</span>
-    </div>
-  </a>
-
-  <a class="hypo-card linked" id="hypo-h4" href="analysis/hypotheses/h4.html">
-    <div class="id">H4</div>
-    <div class="claim">On tight 5G recordings (handover, resource-block), SCReAM keeps more frames watchable than GCC while the camera sends fewer bytes.</div>
-    <div class="hypo-footer">
-      <span class="badge supported">tested · SCReAM ahead on the harder recordings</span>
-      <span class="target">→ h4.html</span>
-    </div>
-  </a>
-
-</div>
+<p class="small"><strong>Findings to date:</strong>
+  <a href="#hypo-h1">H1</a> (capacity drop),
+  <a href="#hypo-h3">H3</a> (workload calibration),
+  <a href="#hypo-h4">H4</a> (tight 5G traces) — full cards in
+  <a href="#hypotheses">§6 Hypotheses</a>.</p>
 
 <h3 id="roadmap-goal2-mechanism">Goal 2.4 · Mechanism contributions</h3>
 
@@ -2107,20 +2089,9 @@ latency_budget_ms: 0</code></pre>
   </ul>
 </div>
 
-<h4 style="margin-top: 20px;">Findings to date</h4>
-
-<div class="hypo-grid">
-
-  <a class="hypo-card linked" id="hypo-h5" href="analysis/hypotheses/h5.html">
-    <div class="id">H5</div>
-    <div class="claim">Our SCReAM follows changing bandwidth; UMN's does not. The cause is a wiring problem — UMN's controller picks a rate but that rate never reaches the encoder — not the algorithm or how often the loop runs.</div>
-    <div class="hypo-footer">
-      <span class="badge supported">tested · ours uses more of the link, cause isolated</span>
-      <span class="target">→ h5.html</span>
-    </div>
-  </a>
-
-</div>
+<p class="small"><strong>Findings to date:</strong>
+  <a href="#hypo-h5">H5</a> (our SCReAM vs UMN's — a controller-to-encoder
+  wiring gap) — full card in <a href="#hypotheses">§6 Hypotheses</a>.</p>
 
 <h3 id="roadmap-goal2-interactions">Goal 2.5 · Interactions with other features</h3>
 
@@ -2151,20 +2122,9 @@ latency_budget_ms: 0</code></pre>
   </ul>
 </div>
 
-<h4 style="margin-top: 20px;">Findings to date</h4>
-
-<div class="hypo-grid">
-
-  <a class="hypo-card linked" id="hypo-h2" href="analysis/hypotheses/h2.html">
-    <div class="id">H2</div>
-    <div class="claim">On a wobbly network, the viewer gets more frames with GCC than with SCReAM. Turning retransmits on or tightening the late-frame deadline does not change which one wins.</div>
-    <div class="hypo-footer">
-      <span class="badge supported">tested · GCC ahead in every setting</span>
-      <span class="target">→ h2.html</span>
-    </div>
-  </a>
-
-</div>
+<p class="small"><strong>Findings to date:</strong>
+  <a href="#hypo-h2">H2</a> (GCC vs SCReAM across deadline / retransmit
+  settings) — full card in <a href="#hypotheses">§6 Hypotheses</a>.</p>
 
 <h3 id="roadmap-goal2-boundary">Goal 2.6 · Boundary behaviour</h3>
 
@@ -2296,8 +2256,74 @@ latency_budget_ms: 0</code></pre>
 <!-- =================================================================== -->
 </section>
 
+<section class="page-section" data-section="hypotheses">
+<!-- =================================================================== -->
+<h2 id="hypotheses">6 · Hypotheses</h2>
+
+<p>
+  Every empirical claim the project has tested, in one place. Each is a
+  falsifiable hypothesis run end to end against the spec + verifier
+  framework (§2), with an explicit pass / fail rule. Click a card for the
+  full writeup — claim, predictions, verdict, the result figures and
+  tables, and the experimental setup. H1–H5 compare SCReAM against GCC
+  and against UMN's reimplementation; H6–H7 characterize SCReAM's
+  queue-delay-target knob (Goal 2.2).
+</p>
+<p class="small">
+  Structured index for tooling:
+  <a href="analysis/hypotheses/results/index.json"><code>analysis/hypotheses/results/index.json</code></a>.
+</p>
+
+<div class="hypo-grid">
+
+  <a class="hypo-card linked" id="hypo-h1" href="analysis/hypotheses/h1.html">
+    <div class="id">H1</div>
+    <div class="claim">When the network's bandwidth drops sharply, SCReAM sends less than GCC. Whether the viewer also gets fewer frames depends on how fast the bandwidth changes.</div>
+    <div class="hypo-footer"><span class="badge regime">tested · depends on the network</span><span class="target">→ h1.html</span></div>
+  </a>
+
+  <a class="hypo-card linked" id="hypo-h2" href="analysis/hypotheses/h2.html">
+    <div class="id">H2</div>
+    <div class="claim">On a capacity-step network, the viewer gets more frames with GCC than SCReAM — turning on retransmits or tightening the deadline doesn't change which wins.</div>
+    <div class="hypo-footer"><span class="badge supported">tested · GCC ahead in every setting</span><span class="target">→ h2.html</span></div>
+  </a>
+
+  <a class="hypo-card linked" id="hypo-h3" href="analysis/hypotheses/h3.html">
+    <div class="id">H3</div>
+    <div class="claim">The current test video is too lightweight to compare SCReAM and GCC on 5G recordings — it doesn't keep the link busy.</div>
+    <div class="hypo-footer"><span class="badge supported">tested · test video too light</span><span class="target">→ h3.html</span></div>
+  </a>
+
+  <a class="hypo-card linked" id="hypo-h4" href="analysis/hypotheses/h4.html">
+    <div class="id">H4</div>
+    <div class="claim">On tight 5G recordings (handover, resource-block), SCReAM keeps more frames watchable than GCC while the camera sends fewer bytes.</div>
+    <div class="hypo-footer"><span class="badge supported">tested · SCReAM ahead on the harder recordings</span><span class="target">→ h4.html</span></div>
+  </a>
+
+  <a class="hypo-card linked" id="hypo-h5" href="analysis/hypotheses/h5.html">
+    <div class="id">H5</div>
+    <div class="claim">Our SCReAM follows changing bandwidth; UMN's does not. The cause is a wiring problem — UMN's controller picks a rate that never reaches the encoder — not the algorithm.</div>
+    <div class="hypo-footer"><span class="badge supported">tested · cause isolated to a wiring gap</span><span class="target">→ h5.html</span></div>
+  </a>
+
+  <a class="hypo-card linked" id="hypo-h6" href="analysis/hypotheses/h6.html">
+    <div class="id">H6</div>
+    <div class="claim">SCReAM's queue-delay-target moves p95 latency on every network, but does not change picture quality — at the loose 4000 kbps ceiling there is no quality to trade for the added latency.</div>
+    <div class="hypo-footer"><span class="badge refuted">tested · latency knob, not quality</span><span class="target">→ h6.html</span></div>
+  </a>
+
+  <a class="hypo-card linked" id="hypo-h7" href="analysis/hypotheses/h7.html">
+    <div class="id">H7</div>
+    <div class="claim">Even with the encoder starved (800 kbps ceiling), loosening the queue-delay-target still doesn't raise quality — flat on a fixed link, and falling on a capacity-step link.</div>
+    <div class="hypo-footer"><span class="badge refuted">tested · still not a quality knob</span><span class="target">→ h7.html</span></div>
+  </a>
+
+</div>
+
+</section>
+
 <section class="page-section" data-section="todo">
-<h2 id="todo">6 · Status &amp; punch list</h2>
+<h2 id="todo">7 · Status &amp; punch list</h2>
 
 <p>
   The deliverables that close the gaps named in <a href="#roadmap">§5</a>,
@@ -2514,7 +2540,7 @@ latency_budget_ms: 0</code></pre>
 
 <section class="page-section" data-section="reference">
 <!-- =================================================================== -->
-<h2 id="reference">7 · Reference</h2>
+<h2 id="reference">8 · Reference</h2>
 
 <p>
   Companion documents that ground this page's framing.
