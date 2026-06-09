@@ -1,0 +1,42 @@
+meta:
+  name: h8_mulinc_0.2_5g
+  description: "H8 cell \u2014 mul_increase 0.2 on mahimahi-5g-cqi-100ms-x0p33, VP8\
+    \ + SCReAM loose 4000 kbps ceiling, queue-delay-target 0.06s, streaming realmotion-avi."
+  flags:
+  - scream
+video: realmotion-avi
+network: mahimahi-5g-cqi-100ms-x0p33
+scenario:
+  actors:
+    camera: {}
+    viewer: {}
+  setup_delay_seconds: 3.0
+  drain_delay_seconds: 1.0
+  metrics:
+  - frame_count
+  - encoder_target_kbps
+  - wire_bytes
+  - encoded_bitrate
+  - frame_latency
+  - decoder_errors
+  - decoded_psnr
+codec: vp8
+encoder:
+  bitrate_kbps: 1500
+  keyframe_interval_frames: 60
+congestion_control:
+  algorithm: scream
+  init_bitrate_kbps: 1500
+  min_bitrate_kbps: 200
+  max_bitrate_kbps: 4000
+  scream:
+    delay_target_seconds: 0.06
+    mul_increase: 0.2
+sink:
+  backend: fake
+  sync: false
+recovery:
+  nack: false
+  pli: false
+  fec: false
+latency_budget_ms: 0

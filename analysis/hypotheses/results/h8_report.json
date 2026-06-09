@@ -1,0 +1,33 @@
+{
+  "verdict": "untested",
+  "predicates": {
+    "psnr_rises_with_ramp_on_the_capacity_step_network": true,
+    "psnr_effect_larger_on_capacity_step_than_on_fixed_control": false,
+    "p95_latency_stays_bounded_as_ramp_increases": true,
+    "psnr_does_not_rise_on_the_capacity_step_network": false,
+    "any_cell_failed": false,
+    "required_metric_missing": true
+  },
+  "psnr_swing_capacity_step_db": 0.0,
+  "psnr_swing_fixed_control_db": 0.0,
+  "per_regime": {
+    "static": {
+      "cells": [],
+      "psnr_curve_monotone_nondecreasing": true,
+      "psnr_swing_db": 0.0,
+      "p95_latency_swing_ms": 0.0
+    },
+    "fluct": {
+      "cells": [],
+      "psnr_curve_monotone_nondecreasing": true,
+      "psnr_swing_db": 0.0,
+      "p95_latency_swing_ms": 0.0
+    },
+    "5g": {
+      "cells": [],
+      "psnr_curve_monotone_nondecreasing": true,
+      "psnr_swing_db": 0.0,
+      "p95_latency_swing_ms": 0.0
+    }
+  }
+}

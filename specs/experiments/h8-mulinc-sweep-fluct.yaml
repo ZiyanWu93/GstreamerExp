@@ -1,0 +1,27 @@
+name: h8-mulinc-sweep-fluct
+description: "H8 \u2014 SCReAM multiplicative-increase (ramp) sweep on fluctuating-5mbps-300kbps, streaming\n\
+  realmotion-avi at a loose 4000 kbps ceiling with queue-delay-target held\nat its 0.06 s default. Six\
+  \ mul_increase values {0.02, 0.05, 0.1, 0.2, 0.3, 0.5},\nthree reps each. This network is the capacity-step\
+  \ link (5 Mbps drops to 300 kbps and recovers) where a faster ramp should recover quality sooner.\n"
+reps: 3
+varies:
+- congestion_control.scream.mul_increase
+configurations:
+- id: 207
+  label: mul 0.02
+  color: '#fee5d9'
+- id: 208
+  label: mul 0.05
+  color: '#fcae91'
+- id: 209
+  label: mul 0.1
+  color: '#fb6a4a'
+- id: 210
+  label: mul 0.2
+  color: '#de2d26'
+- id: 211
+  label: mul 0.3
+  color: '#a50f15'
+- id: 212
+  label: mul 0.5
+  color: '#67000d'

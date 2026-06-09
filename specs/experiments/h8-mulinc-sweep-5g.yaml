@@ -1,0 +1,27 @@
+name: h8-mulinc-sweep-5g
+description: "H8 \u2014 SCReAM multiplicative-increase (ramp) sweep on mahimahi-5g-cqi-100ms-x0p33, streaming\n\
+  realmotion-avi at a loose 4000 kbps ceiling with queue-delay-target held\nat its 0.06 s default. Six\
+  \ mul_increase values {0.02, 0.05, 0.1, 0.2, 0.3, 0.5},\nthree reps each. This network is the 5G CQI\
+  \ trace.\n"
+reps: 3
+varies:
+- congestion_control.scream.mul_increase
+configurations:
+- id: 213
+  label: mul 0.02
+  color: '#fee5d9'
+- id: 214
+  label: mul 0.05
+  color: '#fcae91'
+- id: 215
+  label: mul 0.1
+  color: '#fb6a4a'
+- id: 216
+  label: mul 0.2
+  color: '#de2d26'
+- id: 217
+  label: mul 0.3
+  color: '#a50f15'
+- id: 218
+  label: mul 0.5
+  color: '#67000d'

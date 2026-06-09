@@ -1,0 +1,27 @@
+name: h8-mulinc-sweep-static
+description: "H8 \u2014 SCReAM multiplicative-increase (ramp) sweep on fixed-5mbps-20ms, streaming\nrealmotion-avi\
+  \ at a loose 4000 kbps ceiling with queue-delay-target held\nat its 0.06 s default. Six mul_increase\
+  \ values {0.02, 0.05, 0.1, 0.2, 0.3, 0.5},\nthree reps each. This network is the fixed-5 Mbps control\
+  \ link (no capacity change, so ramp speed should not matter).\n"
+reps: 3
+varies:
+- congestion_control.scream.mul_increase
+configurations:
+- id: 201
+  label: mul 0.02
+  color: '#fee5d9'
+- id: 202
+  label: mul 0.05
+  color: '#fcae91'
+- id: 203
+  label: mul 0.1
+  color: '#fb6a4a'
+- id: 204
+  label: mul 0.2
+  color: '#de2d26'
+- id: 205
+  label: mul 0.3
+  color: '#a50f15'
+- id: 206
+  label: mul 0.5
+  color: '#67000d'

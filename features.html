@@ -2230,10 +2230,11 @@ latency_budget_ms: 0</code></pre>
   <h3>Knob sensitivity <span class="small">→ <a href="#roadmap-goal2-knobs">§7.4</a></span></h3>
   <ul>
     <li class="done">Queue-delay-target swept across three networks at two bitrate ceilings (<a href="#hypo-h6">H6</a>, <a href="#hypo-h7">H7</a>)</li>
+    <li class="todo">Ramp aggressiveness (mul_increase) — <strong>staged as <a href="#hypo-h8">H8</a></strong>: 18 cells × 3 reps, ready to run</li>
     <li class="todo">Loss-backoff multiplier — not isolated · <strong>runnable now</strong></li>
     <li class="todo">Bitrate bounds (init / min / max) sensitivity surface — not mapped · <strong>runnable now</strong></li>
     <li class="todo">ECN / L4S — never run · may need GStreamer ≥ 1.20</li>
-    <li class="todo">Pacing and the ~10 remaining SCReAM knobs — at default, untouched · <strong>runnable now</strong></li>
+    <li class="todo">Pacing and the other SCReAM knobs (headrooms, microburst, reorder) — at default, untouched · <strong>runnable now</strong></li>
   </ul>
 </div>
 
@@ -2321,6 +2322,11 @@ latency_budget_ms: 0</code></pre>
     <div class="title">Queue-delay-target under a tight ceiling</div>
     <div class="claim">Even with the encoder starved (800 kbps ceiling), loosening the queue-delay-target still doesn't raise quality — flat on a fixed link, and falling on a capacity-step link.</div>
     <div class="hypo-footer"><span class="badge refuted">tested · still not a quality knob</span><span class="target">→ h7.html</span></div>
+  </a><a class="hypo-card linked" id="hypo-h8" href="analysis/hypotheses/h8.html">
+    <div class="id">H8</div>
+    <div class="title">Ramp speed and capacity-step recovery</div>
+    <div class="claim">Does a faster SCReAM ramp (mul_increase) recover picture quality after the capacity step? Pre-registered; the 18-cell × 3-rep sweep is staged, not yet run.</div>
+    <div class="hypo-footer"><span class="badge untested">staged · not yet run</span><span class="target">→ h8.html</span></div>
   </a></div><h3 id="roadmap-goal2-regimes">7.5 Network conditions</h3>
 
 <p>

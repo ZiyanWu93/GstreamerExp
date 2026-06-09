@@ -37,6 +37,9 @@ SWEEPS = [
     "h7-qdt-sweep-static",
     "h7-qdt-sweep-fluct",
     "h7-qdt-sweep-5g",
+    "h8-mulinc-sweep-static",
+    "h8-mulinc-sweep-fluct",
+    "h8-mulinc-sweep-5g",
 ]
 
 

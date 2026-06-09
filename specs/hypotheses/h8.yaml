@@ -1,0 +1,62 @@
+id: H8
+slug: h8
+title: Ramp speed and capacity-step recovery
+claim: H6 and H7 found the queue-delay-target is a latency knob, not a quality knob, and on the capacity-step link a looser target slightly hurt quality because data buffered through the 300 kbps trough arrives stale. SCReAM's multiplicative-increase coefficient (mul_increase) sets how fast the controller ramps its rate back up after capacity returns. A more aggressive ramp should recover picture quality faster after the step, so on the capacity-step network decoded PSNR should rise with mul_increase and swing more than on the fixed-link control, while p95 latency stays bounded.
+status: untested
+source: Goal 2.2 (knob sensitivity), follow-up to H6/H7
+page: analysis/hypotheses/h8.html
+verifier: analysis/hypotheses/h8_mulinc_sweep.py
+predictions:
+  - psnr_rises_with_ramp_on_the_capacity_step_network
+  - psnr_effect_larger_on_capacity_step_than_on_fixed_control
+  - p95_latency_stays_bounded_as_ramp_increases
+verdict:
+  supported_when_all:
+    - psnr_rises_with_ramp_on_the_capacity_step_network
+    - psnr_effect_larger_on_capacity_step_than_on_fixed_control
+  refuted_when_any:
+    - psnr_does_not_rise_on_the_capacity_step_network
+  untested_when_any:
+    - any_cell_failed
+    - required_metric_missing
+setup:
+  environment:
+    topology: controller-worker
+    hosts: { camera: aum, viewer: veda }
+    shaper: tc-qdisc
+    workload: realmotion-avi
+  experiments:
+    - name: h8-mulinc-sweep-static
+      configurations: [201, 202, 203, 204, 205, 206]
+      role: mulinc-sweep-static-control
+      minimum_completed_reps: 3
+    - name: h8-mulinc-sweep-fluct
+      configurations: [207, 208, 209, 210, 211, 212]
+      role: mulinc-sweep-fluct-treatment
+      minimum_completed_reps: 3
+    - name: h8-mulinc-sweep-5g
+      configurations: [213, 214, 215, 216, 217, 218]
+      role: mulinc-sweep-5g
+      minimum_completed_reps: 3
+  required_metrics:
+    - frame_count
+    - encoder_target_kbps
+    - wire_bytes
+    - encoded_bitrate
+    - frame_latency
+    - decoder_errors
+    - decoded_psnr
+results:
+  expected_records:
+    - runs/experiments/h8-mulinc-sweep-static.json
+    - runs/experiments/h8-mulinc-sweep-fluct.json
+    - runs/experiments/h8-mulinc-sweep-5g.json
+  report: analysis/hypotheses/results/h8_report.json
+conclusions:
+  established: []
+  limits:
+    - Pre-registered: predictions and the verdict rule are fixed before the run. Results are pending the sweep on the aum/veda testbed.
+    - Mean PSNR is whole-run, not windowed to the post-step recovery phase. A real recovery effect should still register as a higher whole-run mean, but a windowed metric would be sharper.
+    - Workload-specific (realmotion-avi, 1280x1024 MJPEG, 10 fps, 60 s) and ceiling-specific (loose 4000 kbps). mul_increase sweeps {0.02, 0.05, 0.1, 0.2, 0.3, 0.5}; the default is 0.05.
+    - 3 reps per cell; effects smaller than the run-to-run spread are not resolved.
+    - Absolute latency carries the aum/veda clock-skew artifact (as in H4/H6/H7); the comparison across mul_increase values within one sweep is unaffected.
