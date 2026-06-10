@@ -1,0 +1,19 @@
+{
+  "verdict": "untested",
+  "predicates": {
+    "usable_delivery_at_zero_loss": false,
+    "delivery_collapses_across_the_loss_range": false,
+    "usable_threshold_found_below_max_loss": false,
+    "delivery_robust_across_whole_range": false,
+    "any_cell_failed": false,
+    "required_metric_missing": true
+  },
+  "delivery_at_zero_loss": null,
+  "delivery_at_max_loss": null,
+  "usable_threshold_pct": null,
+  "per_regime": {
+    "loss": {
+      "cells": []
+    }
+  }
+}

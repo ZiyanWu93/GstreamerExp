@@ -79,6 +79,21 @@ RTT = Knob(
                  "carries the aum/veda clock-skew artifact."),
 )
 
+LOSS = Knob(
+    key="loss_pct",
+    axis_label="uniform packet loss (%)",
+    log_scale=False,
+    col_fmt="{q}%",
+    arm_fmt="scream loss={q}%",
+    psnr_table_title="Decoded PSNR (dB) by packet loss",
+    lat_table_title="p95 frame latency (ms) by packet loss",
+    psnr_caption=("Decoded PSNR vs uniform packet loss (the loss boundary). With "
+                  "recovery off, the degeneration point is the loss rate at which "
+                  "quality cliffs."),
+    lat_caption=("p95 frame latency vs packet loss. The within-sweep trend is what "
+                 "matters; the absolute offset carries the aum/veda clock-skew artifact."),
+)
+
 MULINC = Knob(
     key="mul_increase",
     axis_label="mul_increase (multiplicative-increase coefficient, log scale)",

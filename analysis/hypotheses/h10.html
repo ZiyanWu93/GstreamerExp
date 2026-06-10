@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>H10 — Where packet loss breaks SCReAM's quality</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --ink: #1f2328;
+    --muted: #5f6b7a;
+    --rule: #d9dde5;
+    --accent: #2563eb;
+    --good-bg: #ecf7ec; --good-fg: #1d6f1d;
+    --warn-bg: #fdf3e7; --warn-fg: #a14a02;
+    --info-bg: #f0f4fa; --info-fg: #1e3a73;
+    --panel-bg: #fafbfc;
+    --table-head: #f4f6f9;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                 Helvetica, Arial, sans-serif;
+    max-width: 880px; margin: 32px auto; padding: 0 18px 60px;
+    color: var(--ink); line-height: 1.55; background: var(--bg);
+  }
+  h1 { font-size: 22px; margin: 0 0 4px 0; }
+  h2 { font-size: 17px; margin: 28px 0 8px 0;
+       border-bottom: 1px solid var(--rule); padding-bottom: 4px; }
+  p { margin: 8px 0; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .nav { font-size: 13px; margin-bottom: 14px; }
+  .tag { display: inline-block; font-size: 12px; padding: 2px 8px;
+         border-radius: 10px; background: var(--info-bg);
+         color: var(--info-fg); margin-right: 6px; }
+  .tag.supported    { background: var(--good-bg); color: var(--good-fg); }
+  .tag.refuted      { background: var(--warn-bg); color: var(--warn-fg); }
+  .tag.regime-dependent { background: var(--warn-bg); color: var(--warn-fg); }
+  .panel { background: var(--panel-bg); border: 1px solid var(--rule);
+           border-radius: 6px; padding: 12px 16px; margin: 14px 0; }
+  .panel strong.label { display: block; font-size: 12px;
+                        text-transform: uppercase; letter-spacing: 0.5px;
+                        color: var(--muted); margin-bottom: 4px; }
+  ul { padding-left: 22px; margin: 8px 0; }
+  ul li { margin-bottom: 4px; }
+  figure { margin: 14px 0; }
+  figure img { max-width: 100%; height: auto;
+               border: 1px solid var(--rule); border-radius: 4px;
+               background: white; padding: 6px; }
+  figure figcaption { font-size: 13px; color: var(--muted);
+                      margin-top: 6px; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px;
+          margin: 10px 0 18px 0; }
+  th, td { border: 1px solid var(--rule); padding: 4px 8px;
+           text-align: left; vertical-align: top; }
+  th { background: var(--table-head); font-weight: 600; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  pre, code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+              font-size: 13px; }
+  pre { background: var(--panel-bg); border: 1px solid var(--rule);
+        padding: 8px 10px; border-radius: 4px; overflow-x: auto; }
+  .meta { font-size: 13px; color: var(--muted); }
+  .source { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .footer { font-size: 12px; color: var(--muted); margin-top: 36px;
+            border-top: 1px solid var(--rule); padding-top: 10px; }
+  dl.glossary { margin: 8px 0 18px 0; }
+  dl.glossary dt { font-weight: 600; margin-top: 10px; }
+  dl.glossary dd { margin: 2px 0 0 0; color: var(--ink); font-size: 14px; }
+</style>
+</head>
+<body>
+
+<p class="nav"><a href="../../index.html">← GstreamerExp hub</a> · <a href="../../README.md">README</a> · <a href="../../docs/HYPOTHESES.md">Hypothesis catalog</a></p>
+
+<h1>H10 — Where packet loss breaks SCReAM's quality</h1>
+<p><span class="tag untested">untested</span><span class="meta">Goal 2 boundary behaviour (§7.8)</span></p>
+
+<h2>Claim</h2>
+<p>With loss recovery off, a lost packet corrupts VP8 until the next keyframe (60 frames here), so packet loss should break delivery at a low rate. On a fixed 5 Mbps / 20 ms link, as uniform iid loss rises from 0 to 2 percent, frame delivery (frames the viewer reconstructs over frames the camera sent) should stay high at low loss and collapse past some rate, marking a degeneration boundary. PSNR of the frames that do arrive is reported alongside but is not the boundary signal, since the survivors stay clean. If delivery holds across the range, the system tolerates up to 2 percent loss here.</p>
+
+<h2>Predictions</h2>
+
+<ul>
+<li><code>usable_delivery_at_zero_loss</code></li>
+<li><code>delivery_collapses_across_the_loss_range</code></li>
+<li><code>usable_threshold_found_below_max_loss</code></li>
+</ul>
+
+
+<h2>Verdict</h2>
+
+<table>
+<thead><tr><th>Outcome</th><th>Predicates</th></tr></thead>
+<tbody>
+
+
+
+<tr><td><strong>Supported when all</strong></td><td>
+<code>usable_delivery_at_zero_loss</code><br><code>delivery_collapses_across_the_loss_range</code>
+</td></tr>
+
+
+
+<tr><td><strong>Refuted when any</strong></td><td>
+<code>delivery_robust_across_whole_range</code>
+</td></tr>
+
+
+
+
+
+<tr><td><strong>Untested when any</strong></td><td>
+<code>any_cell_failed</code><br><code>required_metric_missing</code>
+</td></tr>
+
+
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+<h2>Findings and Limitations</h2>
+
+
+<p class="meta"><strong>Limitations</strong></p>
+<ul>
+<li>{'Pre-registered': 'predictions and the verdict rule are fixed before the run. Results are pending the sweep on the aum/veda testbed.'}</li>
+<li>Recovery is off (nack/pli/fec false), matching H6-H9. This measures the raw loss sensitivity of SCReAM + VP8 with no retransmission; with NACK/RTX on the boundary would move substantially, and that contrast is itself worth a follow-up.</li>
+<li>Single arm (only scream|gcc exist, no bare sender), so the boundary is read off SCReAM's own quality-vs-loss curve.</li>
+<li>Uniform iid loss is swept {0, 0.1, 0.25, 0.5, 1, 2} %; a bursty (Gilbert-Elliott) loss model would degrade differently at the same mean rate.</li>
+<li>{'Workload-specific (realmotion-avi, 1280x1024 MJPEG, 10 fps, 60 s), 4000 kbps ceiling, keyframe interval 60 frames. 3 reps per cell. Boundary signal is frame delivery': 'usable line at 80% delivery, collapse below 50%.'}</li>
+</ul>
+
+
+
+
+
+
+
+<h2>Experimental setup</h2>
+
+
+<h2>Required metrics</h2>
+<ul>
+<li><code>frame_count</code></li>
+<li><code>encoder_target_kbps</code></li>
+<li><code>wire_bytes</code></li>
+<li><code>encoded_bitrate</code></li>
+<li><code>frame_latency</code></li>
+<li><code>decoder_errors</code></li>
+<li><code>decoded_psnr</code></li>
+</ul>
+
+
+
+<h2>Reproducibility</h2>
+<p>This page is generated from <code>specs/hypotheses/h10.yaml</code> + <code>analysis/hypotheses/results/h10_report.json</code> + figures under <code>analysis/hypotheses/results/</code>.</p>
+<pre>python3 analysis/hypotheses/build_reports.py
+python3 analysis/hypotheses/build_pages.py
+python3 analysis/hypotheses/h10_loss_boundary.py</pre>
+
+<p class="source">Source: Goal 2 boundary behaviour (§7.8)</p>
+
+<p class="footer">Generated by <code>analysis/hypotheses/build_pages.py</code>. Do not hand-edit; modify <code>specs/hypotheses/h10.yaml</code> or the template instead.</p>
+
+</body>
+</html>

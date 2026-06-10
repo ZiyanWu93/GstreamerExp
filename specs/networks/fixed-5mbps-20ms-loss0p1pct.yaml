@@ -1,0 +1,15 @@
+name: fixed-5mbps-20ms-loss0p1pct
+description: 'Static impairment via tc on $NIC: 5 Mbps, 20 ms delay, 0.1% uniform iid
+
+  packet loss. One of the loss-boundary sweep networks (H10), recovery off.
+
+  '
+camera_steps:
+- duration: 0
+  rate_kbps: 5000
+  delay_ms: 20
+  loss:
+    model: uniform
+    pct: 0.1
+  label: "5 Mbps \xB7 20 ms \xB7 0.1% loss"
+viewer_steps: []

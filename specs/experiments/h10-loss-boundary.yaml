@@ -1,0 +1,27 @@
+name: h10-loss-boundary
+description: "H10 \u2014 SCReAM loss-boundary sweep on a fixed 5 Mbps / 20 ms link, streaming\nrealmotion-avi\
+  \ at a loose 4000 kbps ceiling, recovery off. Six uniform iid\nloss levels {0, 0.1, 0.25, 0.5, 1, 2}\
+  \ %, three reps each. Single arm: finds\nthe loss rate at which frame delivery collapses.\n"
+reps: 3
+varies:
+- network
+- hooks.pre_run
+configurations:
+- id: 307
+  label: 0.0%
+  color: '#fee5d9'
+- id: 308
+  label: 0.1%
+  color: '#fcae91'
+- id: 309
+  label: 0.25%
+  color: '#fb6a4a'
+- id: 310
+  label: 0.5%
+  color: '#de2d26'
+- id: 311
+  label: 1.0%
+  color: '#a50f15'
+- id: 312
+  label: 2.0%
+  color: '#67000d'
