@@ -1,0 +1,19 @@
+{
+  "verdict": "untested",
+  "predicates": {
+    "usable_delivery_at_zero_jitter": false,
+    "delivery_collapses_across_the_jitter_range": false,
+    "usable_threshold_found_below_max_jitter": false,
+    "delivery_robust_across_whole_range": false,
+    "any_cell_failed": false,
+    "required_metric_missing": true
+  },
+  "delivery_at_zero_jitter": null,
+  "delivery_at_max_jitter": null,
+  "usable_threshold_ms": null,
+  "per_regime": {
+    "jitter": {
+      "cells": []
+    }
+  }
+}

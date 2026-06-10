@@ -150,6 +150,7 @@ _VALID_METRICS = {
 # model on either, that's a localized rewrite.
 _NETWORK_SPEC_KEYS = {"name", "description", "camera_steps", "viewer_steps"}
 _STEP_KEYS = {"duration", "rate_kbps", "delay_ms", "loss", "label"}
+_STEP_OPTIONAL_KEYS = {"jitter_ms"}   # netem delay jitter; absent means 0
 _LOSS_MODELS = {"none", "uniform", "bursty"}
 _LOSS_REQUIRED_BY_MODEL = {
     "none":    {"model"},
@@ -212,10 +213,12 @@ def _validate_steps_block(steps, label: str, where: str) -> None:
         missing = _STEP_KEYS - set(s)
         if missing:
             sys.exit(f"{where}: {label}[{i}] missing key(s) {sorted(missing)}")
-        unknown = set(s) - _STEP_KEYS
+        unknown = set(s) - _STEP_KEYS - _STEP_OPTIONAL_KEYS
         if unknown:
             sys.exit(f"{where}: {label}[{i}] unknown key(s) {sorted(unknown)}; "
-                     f"expected {sorted(_STEP_KEYS)}")
+                     f"expected {sorted(_STEP_KEYS | _STEP_OPTIONAL_KEYS)}")
+        if "jitter_ms" in s and not isinstance(s["jitter_ms"], (int, float)):
+            sys.exit(f"{where}: {label}[{i}].jitter_ms must be a number")
         _validate_step_loss(s["loss"], f"{where}: {label}[{i}]",
                             lambda m: sys.exit(m))
 
@@ -254,7 +257,10 @@ def _compile_role_steps(role: str, steps: list) -> dict | None:
         return f"loss gemodel {p:.4f} {r:.4f}"
 
     def _netem_clause(s):
-        clauses = [f"delay {s['delay_ms']}ms"]
+        delay = f"delay {s['delay_ms']}ms"
+        if s.get("jitter_ms"):
+            delay += f" {s['jitter_ms']}ms"   # netem: delay <mean> <jitter>
+        clauses = [delay]
         loss = _loss_clause(s)
         if loss is not None:
             clauses.append(loss)
@@ -314,8 +320,9 @@ def _compile_role_steps(role: str, steps: list) -> dict | None:
                 f"(B={loss['burst']}, p={p:.2f}%, r={r:.1f}%)")
 
     def _step_log(idx: int, s: dict) -> str:
+        jit = f" jitter={s['jitter_ms']}ms" if s.get("jitter_ms") else ""
         return (f"{role} step {idx+1}: rate={s['rate_kbps']}kbit "
-                f"delay={s['delay_ms']}ms {_loss_descr(s)} — {s['label']}")
+                f"delay={s['delay_ms']}ms{jit} {_loss_descr(s)} — {s['label']}")
 
     s0 = steps[0]
     pre_lines = [

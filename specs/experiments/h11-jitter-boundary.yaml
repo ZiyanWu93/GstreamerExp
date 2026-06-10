@@ -1,0 +1,27 @@
+name: h11-jitter-boundary
+description: "H11 \u2014 SCReAM jitter-boundary sweep on a fixed 5 Mbps / 20 ms link, streaming\nrealmotion-avi\
+  \ at a loose 4000 kbps ceiling, recovery off. Six netem jitter\nlevels {0, 5, 10, 20, 50, 100} ms, three\
+  \ reps each. Single arm: finds the jitter\nat which delivered video degrades.\n"
+reps: 3
+varies:
+- network
+- hooks.pre_run
+configurations:
+- id: 313
+  label: 0 ms
+  color: '#fee5d9'
+- id: 314
+  label: 5 ms
+  color: '#fcae91'
+- id: 315
+  label: 10 ms
+  color: '#fb6a4a'
+- id: 316
+  label: 20 ms
+  color: '#de2d26'
+- id: 317
+  label: 50 ms
+  color: '#a50f15'
+- id: 318
+  label: 100 ms
+  color: '#67000d'

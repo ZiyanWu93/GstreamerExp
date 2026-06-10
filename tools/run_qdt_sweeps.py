@@ -42,6 +42,7 @@ SWEEPS = [
     "h8-mulinc-sweep-5g",
     "h9-rtt-boundary",
     "h10-loss-boundary",
+    "h11-jitter-boundary",
 ]
 
 

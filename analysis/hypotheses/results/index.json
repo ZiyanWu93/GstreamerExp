@@ -335,6 +335,142 @@
       "spec_path": "specs/hypotheses/h10.yaml"
     },
     {
+      "id": "H11",
+      "slug": "h11",
+      "title": "Where jitter breaks delivery",
+      "claim": "Jitter reorders and delays packets, so beyond the receiver jitter buffer they arrive too late and are dropped. On a fixed 5 Mbps / 20 ms link with no loss and recovery off, as netem jitter rises from 0 to 100 ms, frame delivery should stay high while the buffer absorbs the jitter and then collapse once jitter exceeds what the buffer can reorder, marking a degeneration boundary. PSNR of delivered frames and p95 latency are reported alongside. If delivery holds across the range, the jitter buffer absorbs up to 100 ms here.",
+      "declared_status": "untested",
+      "execution_status": "untested",
+      "source": "Goal 2 boundary behaviour (\u00a77.8)",
+      "page": "analysis/hypotheses/h11.html",
+      "verifier": "analysis/hypotheses/h11_jitter_boundary.py",
+      "predictions": [
+        "usable_delivery_at_zero_jitter",
+        "delivery_collapses_across_the_jitter_range",
+        "usable_threshold_found_below_max_jitter"
+      ],
+      "verdict": {
+        "supported_when_all": [
+          "usable_delivery_at_zero_jitter",
+          "delivery_collapses_across_the_jitter_range"
+        ],
+        "refuted_when_any": [
+          "delivery_robust_across_whole_range"
+        ],
+        "untested_when_any": [
+          "any_cell_failed",
+          "required_metric_missing"
+        ]
+      },
+      "setup": {
+        "environment": {
+          "topology": "controller-worker",
+          "hosts": {
+            "camera": "aum",
+            "viewer": "veda"
+          },
+          "shaper": "tc-qdisc",
+          "workload": "realmotion-avi"
+        },
+        "experiments": [
+          {
+            "name": "h11-jitter-boundary",
+            "configurations": [
+              313,
+              314,
+              315,
+              316,
+              317,
+              318
+            ],
+            "role": "jitter-boundary-single-arm",
+            "minimum_completed_reps": 3
+          }
+        ],
+        "required_metrics": [
+          "frame_count",
+          "encoder_target_kbps",
+          "wire_bytes",
+          "encoded_bitrate",
+          "frame_latency",
+          "decoder_errors",
+          "decoded_psnr"
+        ]
+      },
+      "results": {
+        "expected_records": [
+          "runs/experiments/h11-jitter-boundary.json"
+        ],
+        "report": "analysis/hypotheses/results/h11_report.json"
+      },
+      "execution": {
+        "experiments": [
+          {
+            "name": "h11-jitter-boundary",
+            "spec_path": "specs/experiments/h11-jitter-boundary.yaml",
+            "record_path": "runs/experiments/h11-jitter-boundary.json",
+            "spec_exists": true,
+            "record_exists": false,
+            "expected_reps": 3,
+            "configurations": {
+              "313": {
+                "completed_runs": 0,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": []
+              },
+              "314": {
+                "completed_runs": 0,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": []
+              },
+              "315": {
+                "completed_runs": 0,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": []
+              },
+              "316": {
+                "completed_runs": 0,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": []
+              },
+              "317": {
+                "completed_runs": 0,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": []
+              },
+              "318": {
+                "completed_runs": 0,
+                "failed_runs": 0,
+                "missing_summaries": 0,
+                "run_ids": []
+              }
+            },
+            "execution_status": "untested"
+          }
+        ]
+      },
+      "conclusions": {
+        "established": [],
+        "limits": [
+          {
+            "Pre-registered": "predictions and the verdict rule are fixed before the run. Results are pending the sweep on the aum/veda testbed."
+          },
+          "Recovery is off (nack/pli/fec false), matching H6-H10. With NACK/RTX on, late-but-recoverable packets could be retransmitted and the boundary would move.",
+          "netem jitter uses a uniform distribution around a 20 ms base delay; a normal or pareto distribution would reorder differently at the same nominal jitter.",
+          "The receiver jitter buffer size (rtpjitterbuffer latency) sets where absorption ends; this measures the system as configured, not a tuned buffer.",
+          {
+            "Single arm (only scream|gcc exist). Workload-specific (realmotion-avi, 1280x1024 MJPEG, 10 fps, 60 s), 4000 kbps ceiling. 3 reps per cell. Boundary signal is frame delivery": "usable line 80%, collapse below 50%."
+          }
+        ]
+      },
+      "spec_path": "specs/hypotheses/h11.yaml"
+    },
+    {
       "id": "H2",
       "slug": "h2",
       "title": "Frame delivery on a fluctuating link",
