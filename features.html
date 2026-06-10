@@ -486,6 +486,7 @@
         <li><a class="sub" href="#roadmap-goal2-mechanism">Mechanism → H5</a></li>
         <li><a class="sub" href="#roadmap-goal2-interactions">Interactions → H2</a></li>
         <li><a class="sub" href="#roadmap-goal2-boundary">Boundary behaviour</a></li>
+        <li><a class="sub" href="#goal2-plan">What's next — the plan</a></li>
       </ul>
       <ul class="group">
         <li><a class="top" href="#reference">8 · Reference</a></li>
@@ -2027,18 +2028,56 @@ stop_session(session_id)           → ack</pre>
 <section class="page-section" data-section="goal2">
 <h2 id="goal2">7 · Goal 2 — Characterize SCReAM</h2>
 <p>
-  The research goal: map how SCReAM actually behaves across its
-  configuration space, so a claim like "SCReAM beats GCC on network X"
-  carries past the few cells we have run. The work is organized by
-  characterization axis; each axis states what is open (the gaps) and the
-  hypotheses that have answered part of it (the evidence):
-  <strong>configuration space</strong> (§7.2, the knobs and conditions),
-  <strong>status by axis</strong> (§7.3), then <strong>knob sensitivity</strong> (§7.4 → H6, H7),
-  <strong>network conditions</strong> (§7.5 → H1, H3, H4),
-  <strong>mechanism</strong> (§7.6 → H5),
-  <strong>interactions</strong> (§7.7 → H2), and
-  <strong>boundary behaviour</strong> (§7.8, not yet tested).
+  <strong>In plain terms.</strong> SCReAM is a congestion controller. It decides
+  how fast to send video over a network whose capacity keeps changing. We are
+  stress-testing it to answer three questions anyone would ask: when does it
+  help, when does it not, and why? Every claim rests on a measurement, not a
+  hope. We test one idea at a time as a hypothesis with a pass/fail rule fixed in
+  advance, so a result can come back wrong, and several have.
 </p>
+
+<div class="panel" id="goal2-questions">
+  <strong class="label">The questions we are answering</strong>
+  <table style="margin-bottom: 6px;">
+    <thead><tr><th>Question</th><th>Status</th><th>What we found</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Is SCReAM better than the standard alternative (GCC)?</td>
+        <td><span class="badge regime">partly</span></td>
+        <td>It depends on the network. SCReAM keeps more video watchable on hard 5G traces; GCC delivers more frames on a constantly-shifting link
+          (<a href="#hypo-h1">H1</a>, <a href="#hypo-h2">H2</a>, <a href="#hypo-h4">H4</a>).</td>
+      </tr>
+      <tr>
+        <td>Is our test even fair?</td>
+        <td><span class="badge supported">answered</span></td>
+        <td>Our first test video was too easy and under-drove the network; we switched to a heavier real video (<a href="#hypo-h3">H3</a>).</td>
+      </tr>
+      <tr>
+        <td>Is our SCReAM better than the other lab's (UMN)?</td>
+        <td><span class="badge supported">answered</span></td>
+        <td>Yes. Ours follows the changing link; theirs holds a near-constant rate. We found the exact reason: their controller never reaches its encoder (<a href="#hypo-h5">H5</a>).</td>
+      </tr>
+      <tr>
+        <td>Do SCReAM's tuning knobs improve picture quality?</td>
+        <td><span class="badge refuted">so far, no</span></td>
+        <td>Two knobs tested, both move latency but not quality; a more aggressive setting slightly hurts
+          (<a href="#hypo-h6">H6</a>, <a href="#hypo-h7">H7</a>, <a href="#hypo-h8">H8</a>).</td>
+      </tr>
+      <tr>
+        <td>Where does SCReAM break down?</td>
+        <td><span class="badge untested">not started</span></td>
+        <td>Open. Pushing the network until SCReAM stops helping (the plan, §7.9).</td>
+      </tr>
+      <tr>
+        <td>Does all this hold on other videos?</td>
+        <td><span class="badge untested">not started</span></td>
+        <td>Open, and the most important next step (§7.9).</td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="small" style="margin: 0;">Four of six questions have first answers; the two open ones are the plan (§7.9).
+    The detailed, by-axis view is §7.2–§7.8.</p>
+</div>
 <h3 id="roadmap-goal2">7.1 What we are characterizing</h3>
 
 <p>
@@ -2463,6 +2502,49 @@ latency_budget_ms: 0</code></pre>
 </p>
 
 <p class="small">No hypothesis tested yet on this axis.</p>
+
+<h3 id="goal2-plan">7.9 What's next — the plan</h3>
+<p>
+  Three knob sweeps now agree: SCReAM's tuning knobs move latency, not picture
+  quality, for this workload, and a more aggressive setting slightly hurts. So
+  the next steps are not "more knobs." They are the things that make that finding
+  trustworthy and map where SCReAM actually breaks. Four phases, each a small
+  family of hypotheses in the existing framework. Phases 1–3 run on the current
+  testbed; phase 4 waits on Goal 1.
+</p>
+
+<div class="feature-block">
+  <h3>Phase 1 · Make the knob finding trustworthy <span class="small">(runnable now · highest priority)</span></h3>
+  <ul>
+    <li class="todo"><strong>A second video.</strong> Re-run the knob question on a harder clip (more motion or higher resolution). If the knobs still do not move quality, the finding is real. If they suddenly do, the encoder's bitrate ceiling was the real constraint all along, which is itself a key result.</li>
+    <li class="todo"><strong>A sharper quality measure.</strong> Add a windowed post-step PSNR (and optionally SSIM) so a recovery effect that whole-run averages wash out cannot hide.</li>
+  </ul>
+</div>
+
+<div class="feature-block">
+  <h3>Phase 2 · Find where SCReAM breaks <span class="small">(runnable now)</span></h3>
+  <ul>
+    <li class="todo">Push base delay, loss, and jitter one at a time until SCReAM stops beating plain transport. Three breaking-point thresholds — the empty boundary axis (<a href="#roadmap-goal2-boundary">§7.8</a>).</li>
+  </ul>
+</div>
+
+<div class="feature-block">
+  <h3>Phase 3 · Breadth <span class="small">(runnable now)</span></h3>
+  <ul>
+    <li class="todo">Clean delay / jitter / matched-loss network axes (<a href="#roadmap-goal2-regimes">§7.5</a>).</li>
+    <li class="todo">The loss-recovery cross-product (NACK/RTX × PLI × FEC) and how it biases SCReAM (<a href="#roadmap-goal2-interactions">§7.7</a>).</li>
+  </ul>
+</div>
+
+<div class="feature-block">
+  <h3>Phase 4 · Blocked on Goal 1</h3>
+  <ul>
+    <li class="todo">SCReAM × codec (VP8 vs H.264) — needs the <a href="#contract-encoder">Encoder contract</a>.</li>
+    <li class="todo">SCReAM × multi-stream — needs the multi-stream refactor.</li>
+  </ul>
+</div>
+
+<p class="small"><strong>Recommended first move:</strong> Phase 1's second-video run. It is what turns "the knobs do not matter" from a one-clip observation into a finding we can stand behind.</p>
 </section>
 
 <section class="page-section" data-section="reference">
