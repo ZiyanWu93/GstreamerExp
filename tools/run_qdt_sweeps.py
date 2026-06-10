@@ -40,6 +40,7 @@ SWEEPS = [
     "h8-mulinc-sweep-static",
     "h8-mulinc-sweep-fluct",
     "h8-mulinc-sweep-5g",
+    "h9-rtt-boundary",
 ]
 
 

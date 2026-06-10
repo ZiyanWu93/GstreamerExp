@@ -1,0 +1,28 @@
+name: h9-rtt-boundary
+description: "H9 \u2014 SCReAM RTT-boundary sweep on a fixed 5 Mbps link, streaming\nrealmotion-avi at\
+  \ a loose 4000 kbps ceiling. Six base one-way delays\n{20, 50, 100, 200, 400, 800} ms, three reps each.\
+  \ Single arm: finds the\ndelay at which SCReAM's delay-based control degenerates (quality or\nlatency\
+  \ cliffs).\n"
+reps: 3
+varies:
+- network
+- hooks.pre_run
+configurations:
+- id: 301
+  label: 20 ms
+  color: '#fee5d9'
+- id: 302
+  label: 50 ms
+  color: '#fcae91'
+- id: 303
+  label: 100 ms
+  color: '#fb6a4a'
+- id: 304
+  label: 200 ms
+  color: '#de2d26'
+- id: 305
+  label: 400 ms
+  color: '#a50f15'
+- id: 306
+  label: 800 ms
+  color: '#67000d'

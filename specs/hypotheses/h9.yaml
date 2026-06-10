@@ -1,0 +1,53 @@
+id: H9
+slug: h9
+title: Where rising delay breaks SCReAM's control
+claim: SCReAM is a delay-based congestion controller, so growing base path delay should be the stressor that breaks it first. On a fixed 5 Mbps link with no loss, as the one-way delay rises from 20 ms toward 800 ms, SCReAM's decoded picture quality should stay usable at low delay and then fall off past some delay, marking a degeneration boundary. If quality instead holds flat across the whole range, SCReAM tolerates delays up to 800 ms here and no boundary exists in this range.
+status: untested
+source: Goal 2 boundary behaviour (§7.8)
+page: analysis/hypotheses/h9.html
+verifier: analysis/hypotheses/h9_rtt_boundary.py
+predictions:
+  - usable_quality_at_low_delay
+  - quality_degrades_across_the_delay_range
+  - degeneration_threshold_found_below_max_delay
+verdict:
+  supported_when_all:
+    - usable_quality_at_low_delay
+    - quality_degrades_across_the_delay_range
+  refuted_when_any:
+    - quality_robust_across_whole_range
+  untested_when_any:
+    - any_cell_failed
+    - required_metric_missing
+setup:
+  environment:
+    topology: controller-worker
+    hosts: { camera: aum, viewer: veda }
+    shaper: tc-qdisc
+    workload: realmotion-avi
+  experiments:
+    - name: h9-rtt-boundary
+      configurations: [301, 302, 303, 304, 305, 306]
+      role: rtt-boundary-single-arm
+      minimum_completed_reps: 3
+  required_metrics:
+    - frame_count
+    - encoder_target_kbps
+    - wire_bytes
+    - encoded_bitrate
+    - frame_latency
+    - decoder_errors
+    - decoded_psnr
+results:
+  expected_records:
+    - runs/experiments/h9-rtt-boundary.json
+  report: analysis/hypotheses/results/h9_report.json
+conclusions:
+  established: []
+  limits:
+    - Pre-registered: predictions and the verdict rule are fixed before the run. Results are pending the sweep on the aum/veda testbed.
+    - Single arm. The testbed exposes only scream and gcc, no bare/no-CC sender, so the boundary is read off SCReAM's own quality-vs-delay curve rather than against a no-control baseline. A bare reference would sharpen it.
+    - Recovery is off (nack/pli/fec false), matching H6-H8, so this isolates the controller and codec without retransmission. With recovery on the boundary could move.
+    - One-way netem delay is swept {20, 50, 100, 200, 400, 800} ms; RTT is roughly twice that plus the wired base. The usable floor is set at 25 dB and a clear drop at 5 dB.
+    - Workload-specific (realmotion-avi, 1280x1024 MJPEG, 10 fps, 60 s) and ceiling-specific (loose 4000 kbps). 3 reps per cell.
+    - Absolute latency carries the aum/veda clock-skew artifact and the added netem delay itself; the boundary is read from decoded quality, not absolute latency.

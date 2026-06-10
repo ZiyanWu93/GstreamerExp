@@ -1,0 +1,39 @@
+meta:
+  name: h9_rtt_200ms
+  description: "H9 cell \u2014 base delay 200 ms on fixed 5 Mbps, VP8 + SCReAM loose\
+    \ 4000 kbps ceiling, streaming realmotion-avi. RTT-boundary sweep."
+  flags:
+  - scream
+video: realmotion-avi
+network: fixed-5mbps-200ms
+scenario:
+  actors:
+    camera: {}
+    viewer: {}
+  setup_delay_seconds: 3.0
+  drain_delay_seconds: 1.0
+  metrics:
+  - frame_count
+  - encoder_target_kbps
+  - wire_bytes
+  - encoded_bitrate
+  - frame_latency
+  - decoder_errors
+  - decoded_psnr
+codec: vp8
+encoder:
+  bitrate_kbps: 1500
+  keyframe_interval_frames: 60
+congestion_control:
+  algorithm: scream
+  init_bitrate_kbps: 1500
+  min_bitrate_kbps: 200
+  max_bitrate_kbps: 4000
+sink:
+  backend: fake
+  sync: false
+recovery:
+  nack: false
+  pli: false
+  fec: false
+latency_budget_ms: 0

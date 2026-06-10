@@ -29,8 +29,10 @@ RESULTS_DIR = PROJECT_ROOT / "analysis" / "hypotheses" / "results"
 
 REGIME_LABEL = {"static": "fixed 5 Mbps",
                 "fluct": "capacity step (5 Mbps ⇄ 300 kbps)",
-                "5g": "5G CQI trace"}
-REGIME_COLOR = {"static": "#d62728", "fluct": "#1f77b4", "5g": "#2ca02c"}
+                "5g": "5G CQI trace",
+                "rtt": "SCReAM, fixed 5 Mbps"}
+REGIME_COLOR = {"static": "#d62728", "fluct": "#1f77b4", "5g": "#2ca02c",
+                "rtt": "#1f77b4"}
 
 
 @dataclass(frozen=True)
@@ -60,6 +62,21 @@ QDT = Knob(
     lat_caption=("p95 frame latency vs queue-delay-target. Latency tracks the knob "
                  "(the relative trend within a sweep is what matters; the absolute "
                  "offset carries the aum/veda clock-skew artifact)."),
+)
+
+RTT = Knob(
+    key="rtt_ms",
+    axis_label="base one-way delay (ms, log scale)",
+    log_scale=True,
+    col_fmt="{q} ms",
+    arm_fmt="scream delay={q}ms",
+    psnr_table_title="Decoded PSNR (dB) by base delay",
+    lat_table_title="p95 frame latency (ms) by base delay",
+    psnr_caption=("Decoded PSNR vs base one-way delay (the RTT boundary). The "
+                  "degeneration point, if any, is the delay at which quality cliffs."),
+    lat_caption=("p95 frame latency vs base delay. Latency rises partly because the "
+                 "added netem delay is itself in the path; the absolute offset also "
+                 "carries the aum/veda clock-skew artifact."),
 )
 
 MULINC = Knob(

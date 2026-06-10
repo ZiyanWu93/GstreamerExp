@@ -1,0 +1,18 @@
+name: fixed-5mbps-50ms
+description: 'Static impairment via tc on $NIC at the sender: 5 Mbps, 50 ms one-way
+
+  delay, no loss. Single step that holds for the run. One of the RTT-boundary
+
+  sweep networks (H9): used to find the base delay at which SCReAM''s
+
+  delay-based control degenerates. NIC set via network_env: { NIC: <ifname> }.
+
+  '
+camera_steps:
+- duration: 0
+  rate_kbps: 5000
+  delay_ms: 50
+  loss:
+    model: none
+  label: "5 Mbps \xB7 50 ms"
+viewer_steps: []

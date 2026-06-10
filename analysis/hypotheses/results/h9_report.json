@@ -1,0 +1,19 @@
+{
+  "verdict": "untested",
+  "predicates": {
+    "usable_quality_at_low_delay": false,
+    "quality_degrades_across_the_delay_range": false,
+    "degeneration_threshold_found_below_max_delay": false,
+    "quality_robust_across_whole_range": false,
+    "any_cell_failed": false,
+    "required_metric_missing": true
+  },
+  "psnr_at_low_delay_db": null,
+  "psnr_at_max_delay_db": null,
+  "degeneration_threshold_ms": null,
+  "per_regime": {
+    "rtt": {
+      "cells": []
+    }
+  }
+}
