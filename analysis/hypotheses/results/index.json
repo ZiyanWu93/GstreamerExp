@@ -173,8 +173,8 @@
       "slug": "h10",
       "title": "Where packet loss breaks SCReAM's quality",
       "claim": "With loss recovery off, a lost packet corrupts VP8 until the next keyframe (60 frames here), so packet loss should break delivery at a low rate. On a fixed 5 Mbps / 20 ms link, as uniform iid loss rises from 0 to 2 percent, frame delivery (frames the viewer reconstructs over frames the camera sent) should stay high at low loss and collapse past some rate, marking a degeneration boundary. PSNR of the frames that do arrive is reported alongside but is not the boundary signal, since the survivors stay clean. If delivery holds across the range, the system tolerates up to 2 percent loss here.",
-      "declared_status": "untested",
-      "execution_status": "untested",
+      "declared_status": "supported",
+      "execution_status": "analyzable",
       "source": "Goal 2 boundary behaviour (\u00a77.8)",
       "page": "analysis/hypotheses/h10.html",
       "verifier": "analysis/hypotheses/h10_loss_boundary.py",
@@ -244,56 +244,86 @@
             "spec_path": "specs/experiments/h10-loss-boundary.yaml",
             "record_path": "runs/experiments/h10-loss-boundary.json",
             "spec_exists": true,
-            "record_exists": false,
+            "record_exists": true,
             "expected_reps": 3,
             "configurations": {
               "307": {
-                "completed_runs": 0,
+                "completed_runs": 3,
                 "failed_runs": 0,
                 "missing_summaries": 0,
-                "run_ids": []
+                "run_ids": [
+                  "2026-06-10T17-26-39",
+                  "2026-06-10T17-33-36",
+                  "2026-06-10T17-40-30"
+                ]
               },
               "308": {
-                "completed_runs": 0,
+                "completed_runs": 3,
                 "failed_runs": 0,
                 "missing_summaries": 0,
-                "run_ids": []
+                "run_ids": [
+                  "2026-06-10T17-27-51",
+                  "2026-06-10T17-34-44",
+                  "2026-06-10T17-41-38"
+                ]
               },
               "309": {
-                "completed_runs": 0,
+                "completed_runs": 3,
                 "failed_runs": 0,
                 "missing_summaries": 0,
-                "run_ids": []
+                "run_ids": [
+                  "2026-06-10T17-28-59",
+                  "2026-06-10T17-35-53",
+                  "2026-06-10T17-42-47"
+                ]
               },
               "310": {
-                "completed_runs": 0,
+                "completed_runs": 3,
                 "failed_runs": 0,
                 "missing_summaries": 0,
-                "run_ids": []
+                "run_ids": [
+                  "2026-06-10T17-30-07",
+                  "2026-06-10T17-37-01",
+                  "2026-06-10T17-43-55"
+                ]
               },
               "311": {
-                "completed_runs": 0,
+                "completed_runs": 3,
                 "failed_runs": 0,
                 "missing_summaries": 0,
-                "run_ids": []
+                "run_ids": [
+                  "2026-06-10T17-31-15",
+                  "2026-06-10T17-38-09",
+                  "2026-06-10T17-45-07"
+                ]
               },
               "312": {
-                "completed_runs": 0,
+                "completed_runs": 3,
                 "failed_runs": 0,
                 "missing_summaries": 0,
-                "run_ids": []
+                "run_ids": [
+                  "2026-06-10T17-32-24",
+                  "2026-06-10T17-39-21",
+                  "2026-06-10T17-46-15"
+                ]
               }
             },
-            "execution_status": "untested"
+            "completed_runs": 18,
+            "failed_runs": 0,
+            "expected_runs": 18,
+            "execution_status": "analyzable"
           }
         ]
       },
       "conclusions": {
-        "established": [],
-        "limits": [
+        "established": [
+          "Without loss recovery, the system cannot tolerate even 0.1% packet loss. Frame delivery falls from 96% at 0% loss to 36% at 0.1%, 28% at 0.25%, 23% at 0.5%, 18% at 1%, and 17% at 2%. The usable line (80% delivery) is already crossed below 0.1%, so the recovery-off loss boundary is effectively zero.",
           {
-            "Pre-registered": "predictions and the verdict rule are fixed before the run. Results are pending the sweep on the aum/veda testbed."
+            "Both signals degrade, delivery first. PSNR of the frames that do arrive also falls (39.4 dB at 0% loss, then 30.0, 26.4, 23.8, 18.9, 18.3 dB) because corruption propagates into some delivered frames, but the dominant effect is missing frames, not blurry ones": "a lost packet corrupts VP8 until the next keyframe (6 s here), so each loss costs many frames."
           },
+          "This is a direct, quantified argument for loss recovery (a Goal 1 capability). NACK/RTX or FEC should move this boundary by orders of magnitude; re-running with recovery on is the natural follow-up and would isolate SCReAM's controller-level loss tolerance from VP8's raw fragility. Next to H9's delay boundary (~200 ms, graceful), the loss boundary is a cliff at zero."
+        ],
+        "limits": [
           "Recovery is off (nack/pli/fec false), matching H6-H9. This measures the raw loss sensitivity of SCReAM + VP8 with no retransmission; with NACK/RTX on the boundary would move substantially, and that contrast is itself worth a follow-up.",
           "Single arm (only scream|gcc exist, no bare sender), so the boundary is read off SCReAM's own quality-vs-loss curve.",
           "Uniform iid loss is swept {0, 0.1, 0.25, 0.5, 1, 2} %; a bursty (Gilbert-Elliott) loss model would degrade differently at the same mean rate.",

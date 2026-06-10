@@ -1,19 +1,128 @@
 {
-  "verdict": "untested",
+  "verdict": "supported",
   "predicates": {
-    "usable_delivery_at_zero_loss": false,
-    "delivery_collapses_across_the_loss_range": false,
-    "usable_threshold_found_below_max_loss": false,
+    "usable_delivery_at_zero_loss": true,
+    "delivery_collapses_across_the_loss_range": true,
+    "usable_threshold_found_below_max_loss": true,
     "delivery_robust_across_whole_range": false,
     "any_cell_failed": false,
-    "required_metric_missing": true
+    "required_metric_missing": false
   },
-  "delivery_at_zero_loss": null,
-  "delivery_at_max_loss": null,
-  "usable_threshold_pct": null,
+  "delivery_at_zero_loss": 0.9572,
+  "delivery_at_max_loss": 0.1711,
+  "usable_threshold_pct": 0.1,
   "per_regime": {
     "loss": {
-      "cells": []
+      "cells": [
+        {
+          "loss_pct": 0.0,
+          "mean_delivery": 0.9572,
+          "mean_psnr_db": 39.419,
+          "n_reps": 3
+        },
+        {
+          "loss_pct": 0.1,
+          "mean_delivery": 0.3617,
+          "mean_psnr_db": 29.961,
+          "n_reps": 3
+        },
+        {
+          "loss_pct": 0.25,
+          "mean_delivery": 0.2783,
+          "mean_psnr_db": 26.405,
+          "n_reps": 3
+        },
+        {
+          "loss_pct": 0.5,
+          "mean_delivery": 0.2289,
+          "mean_psnr_db": 23.809,
+          "n_reps": 3
+        },
+        {
+          "loss_pct": 1.0,
+          "mean_delivery": 0.1811,
+          "mean_psnr_db": 18.879,
+          "n_reps": 3
+        },
+        {
+          "loss_pct": 2.0,
+          "mean_delivery": 0.1711,
+          "mean_psnr_db": 18.25,
+          "n_reps": 3
+        }
+      ]
     }
-  }
+  },
+  "figures": [
+    {
+      "path": "analysis/hypotheses/results/h10_delivery_by_loss.svg",
+      "caption": "Frame delivery vs uniform packet loss (recovery off). The boundary is where delivery falls through the usable line \u2014 most frames stop arriving."
+    },
+    {
+      "path": "analysis/hypotheses/results/h10_psnr_by_loss.svg",
+      "caption": "PSNR of the frames that do arrive. It stays high because the survivors are clean; the loss damage shows up as missing frames (delivery), not blur."
+    }
+  ],
+  "tables": {
+    "Delivery and PSNR by packet loss": [
+      {
+        "metric": "frame delivery",
+        "0.0%": 0.957,
+        "0.1%": 0.362,
+        "0.25%": 0.278,
+        "0.5%": 0.229,
+        "1.0%": 0.181,
+        "2.0%": 0.171
+      },
+      {
+        "metric": "PSNR of delivered (dB)",
+        "0.0%": 39.419,
+        "0.1%": 29.961,
+        "0.25%": 26.405,
+        "0.5%": 23.809,
+        "1.0%": 18.879,
+        "2.0%": 18.25
+      }
+    ]
+  },
+  "experiments": [
+    {
+      "name": "h10-loss-boundary",
+      "description": "SCReAM loss-boundary sweep on a fixed 5 Mbps / 20 ms link, recovery off.",
+      "arms": [
+        {
+          "config_id": 307,
+          "algorithm": "scream loss=0.0%"
+        },
+        {
+          "config_id": 308,
+          "algorithm": "scream loss=0.1%"
+        },
+        {
+          "config_id": 309,
+          "algorithm": "scream loss=0.25%"
+        },
+        {
+          "config_id": 310,
+          "algorithm": "scream loss=0.5%"
+        },
+        {
+          "config_id": 311,
+          "algorithm": "scream loss=1.0%"
+        },
+        {
+          "config_id": 312,
+          "algorithm": "scream loss=2.0%"
+        }
+      ],
+      "reps": 3,
+      "spec_path": "specs/experiments/h10-loss-boundary.yaml",
+      "record_path": "runs/experiments/h10-loss-boundary.json",
+      "command": "python3 tools/run_qdt_sweeps.py  # or experiment.py h10-loss-boundary --resume",
+      "record_status": {
+        "completed_runs": 18,
+        "total_runs": 18
+      }
+    }
+  ]
 }
