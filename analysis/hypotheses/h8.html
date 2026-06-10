@@ -73,7 +73,7 @@
 <p class="nav"><a href="../../index.html">← GstreamerExp hub</a> · <a href="../../README.md">README</a> · <a href="../../docs/HYPOTHESES.md">Hypothesis catalog</a></p>
 
 <h1>H8 — Ramp speed and capacity-step recovery</h1>
-<p><span class="tag untested">untested</span><span class="meta">Goal 2.2 (knob sensitivity), follow-up to H6/H7</span></p>
+<p><span class="tag refuted">refuted</span><span class="meta">Goal 2.2 (knob sensitivity), follow-up to H6/H7</span></p>
 
 <h2>Claim</h2>
 <p>H6 and H7 found the queue-delay-target is a latency knob, not a quality knob, and on the capacity-step link a looser target slightly hurt quality because data buffered through the 300 kbps trough arrives stale. SCReAM's multiplicative-increase coefficient (mul_increase) sets how fast the controller ramps its rate back up after capacity returns. A more aggressive ramp should recover picture quality faster after the step, so on the capacity-step network decoded PSNR should rise with mul_increase and swing more than on the fixed-link control, while p95 latency stays bounded.</p>
@@ -127,10 +127,16 @@
 
 <h2>Findings and Limitations</h2>
 
+<p class="meta"><strong>Findings</strong></p>
+<ul>
+<li>A faster ramp does not recover quality on the capacity-step link. Decoded PSNR is highest at the slowest ramp (mul_increase 0.02 gives 38.8 dB) and declines as the ramp gets more aggressive, bottoming at 0.2 (36.6 dB) and recovering only partially to 37.5 dB at 0.5. It never rises above the slow-ramp baseline, so the prediction that PSNR rises with the ramp is refuted.</li>
+<li>The fixed-link control behaved as predicted. With no capacity change, ramp speed barely moves PSNR (39.3 to 39.7 dB, swing 0.46 dB). That the effect appears only on the capacity-step link (swing 2.20 dB) confirms it is a real network-dependent response, not a workload artifact. The 5G trace is also non-rising (32.2 down to 30.2 dB, swing 2.03 dB).</li>
+<li>{'Two SCReAM knobs now fail to be quality levers for this workload': 'the queue-delay-target (H6, H7) and the multiplicative-increase ramp (H8). If anything a more aggressive ramp slightly hurts on the capacity-step link, consistent with overshoot causing queue buildup and loss so frames arrive stale through the 300 kbps trough. The conservative slow ramp wins.'}</li>
+</ul>
+
 
 <p class="meta"><strong>Limitations</strong></p>
 <ul>
-<li>{'Pre-registered': 'predictions and the verdict rule are fixed before the run. Results are pending the sweep on the aum/veda testbed.'}</li>
 <li>Mean PSNR is whole-run, not windowed to the post-step recovery phase. A real recovery effect should still register as a higher whole-run mean, but a windowed metric would be sharper.</li>
 <li>Workload-specific (realmotion-avi, 1280x1024 MJPEG, 10 fps, 60 s) and ceiling-specific (loose 4000 kbps). mul_increase sweeps {0.02, 0.05, 0.1, 0.2, 0.3, 0.5}; the default is 0.05.</li>
 <li>3 reps per cell; effects smaller than the run-to-run spread are not resolved.</li>
@@ -140,10 +146,61 @@
 
 
 
+<h2>Figures</h2>
+<figure>
+  <img src="results/h8_psnr_by_knob.svg" alt="Decoded PSNR vs mul_increase (ramp aggressiveness). The fixed 5 Mbps link is the control, where ramp speed should not matter; the capacity-step link is where a faster ramp should recover quality after the step.">
+  <figcaption>Decoded PSNR vs mul_increase (ramp aggressiveness). The fixed 5 Mbps link is the control, where ramp speed should not matter; the capacity-step link is where a faster ramp should recover quality after the step.</figcaption>
+</figure>
+<figure>
+  <img src="results/h8_latency_by_knob.svg" alt="p95 frame latency vs mul_increase. The within-sweep trend is what matters; the absolute offset carries the aum/veda clock-skew artifact.">
+  <figcaption>p95 frame latency vs mul_increase. The within-sweep trend is what matters; the absolute offset carries the aum/veda clock-skew artifact.</figcaption>
+</figure>
 
+
+
+<h2>Tables</h2>
+<h3 style="font-size:14px;margin:14px 0 4px 0;">Decoded PSNR (dB) by mul_increase</h3>
+<table>
+<thead><tr><th>network</th><th>mul 0.02</th><th>mul 0.05</th><th>mul 0.1</th><th>mul 0.2</th><th>mul 0.3</th><th>mul 0.5</th></tr></thead>
+<tbody>
+<tr><td>fixed 5 Mbps</td><td class="num">39.41</td><td class="num">39.72</td><td class="num">39.39</td><td class="num">39.53</td><td class="num">39.26</td><td class="num">39.33</td></tr>
+<tr><td>capacity step (5 Mbps ⇄ 300 kbps)</td><td class="num">38.80</td><td class="num">38.49</td><td class="num">38.49</td><td class="num">36.61</td><td class="num">37.45</td><td class="num">37.49</td></tr>
+<tr><td>5G CQI trace</td><td class="num">32.22</td><td class="num">32.24</td><td class="num">32.12</td><td class="num">31.32</td><td class="num">31.96</td><td class="num">30.21</td></tr>
+</tbody>
+</table>
+<h3 style="font-size:14px;margin:14px 0 4px 0;">p95 frame latency (ms) by mul_increase</h3>
+<table>
+<thead><tr><th>network</th><th>mul 0.02</th><th>mul 0.05</th><th>mul 0.1</th><th>mul 0.2</th><th>mul 0.3</th><th>mul 0.5</th></tr></thead>
+<tbody>
+<tr><td>fixed 5 Mbps</td><td class="num">-24.98</td><td class="num">-23.57</td><td class="num">-20.54</td><td class="num">-23.87</td><td class="num">-20.19</td><td class="num">-21.18</td></tr>
+<tr><td>capacity step (5 Mbps ⇄ 300 kbps)</td><td class="num">-18.62</td><td class="num">-20.84</td><td class="num">-21.50</td><td class="num">-19.51</td><td class="num">-23.37</td><td class="num">-22.28</td></tr>
+<tr><td>5G CQI trace</td><td class="num">-19.13</td><td class="num">-17.65</td><td class="num">-16.82</td><td class="num">-17.76</td><td class="num">-17.91</td><td class="num">-14.97</td></tr>
+</tbody>
+</table>
 
 
 <h2>Experimental setup</h2>
+<div class="panel">
+<strong class="label">h8-mulinc-sweep-static</strong>
+<p>mul_increase (ramp) sweep on the static network, loose 4000 kbps ceiling.</p>
+<p class="meta">Configurations: <code>201</code> (scream mul_increase=0.02), <code>202</code> (scream mul_increase=0.05), <code>203</code> (scream mul_increase=0.1), <code>204</code> (scream mul_increase=0.2), <code>205</code> (scream mul_increase=0.3), <code>206</code> (scream mul_increase=0.5) · reps: 3</p>
+<p class="meta">Spec: <code>specs/experiments/h8-mulinc-sweep-static.yaml</code> · Record: <code>runs/experiments/h8-mulinc-sweep-static.json</code> · Run: <code>python3 tools/run_qdt_sweeps.py  # or experiment.py h8-mulinc-sweep-static --resume</code></p>
+<p class="meta">Status: 18 of 18 runs completed.</p>
+</div>
+<div class="panel">
+<strong class="label">h8-mulinc-sweep-fluct</strong>
+<p>mul_increase (ramp) sweep on the fluct network, loose 4000 kbps ceiling.</p>
+<p class="meta">Configurations: <code>207</code> (scream mul_increase=0.02), <code>208</code> (scream mul_increase=0.05), <code>209</code> (scream mul_increase=0.1), <code>210</code> (scream mul_increase=0.2), <code>211</code> (scream mul_increase=0.3), <code>212</code> (scream mul_increase=0.5) · reps: 3</p>
+<p class="meta">Spec: <code>specs/experiments/h8-mulinc-sweep-fluct.yaml</code> · Record: <code>runs/experiments/h8-mulinc-sweep-fluct.json</code> · Run: <code>python3 tools/run_qdt_sweeps.py  # or experiment.py h8-mulinc-sweep-fluct --resume</code></p>
+<p class="meta">Status: 18 of 18 runs completed.</p>
+</div>
+<div class="panel">
+<strong class="label">h8-mulinc-sweep-5g</strong>
+<p>mul_increase (ramp) sweep on the 5g network, loose 4000 kbps ceiling.</p>
+<p class="meta">Configurations: <code>213</code> (scream mul_increase=0.02), <code>214</code> (scream mul_increase=0.05), <code>215</code> (scream mul_increase=0.1), <code>216</code> (scream mul_increase=0.2), <code>217</code> (scream mul_increase=0.3), <code>218</code> (scream mul_increase=0.5) · reps: 3</p>
+<p class="meta">Spec: <code>specs/experiments/h8-mulinc-sweep-5g.yaml</code> · Record: <code>runs/experiments/h8-mulinc-sweep-5g.json</code> · Run: <code>python3 tools/run_qdt_sweeps.py  # or experiment.py h8-mulinc-sweep-5g --resume</code></p>
+<p class="meta">Status: 18 of 18 runs completed.</p>
+</div>
 
 
 <h2>Required metrics</h2>

@@ -1,33 +1,330 @@
 {
-  "verdict": "untested",
+  "verdict": "refuted",
   "predicates": {
-    "psnr_rises_with_ramp_on_the_capacity_step_network": true,
-    "psnr_effect_larger_on_capacity_step_than_on_fixed_control": false,
+    "psnr_rises_with_ramp_on_the_capacity_step_network": false,
+    "psnr_effect_larger_on_capacity_step_than_on_fixed_control": true,
     "p95_latency_stays_bounded_as_ramp_increases": true,
-    "psnr_does_not_rise_on_the_capacity_step_network": false,
+    "psnr_does_not_rise_on_the_capacity_step_network": true,
     "any_cell_failed": false,
-    "required_metric_missing": true
+    "required_metric_missing": false
   },
-  "psnr_swing_capacity_step_db": 0.0,
-  "psnr_swing_fixed_control_db": 0.0,
+  "psnr_swing_capacity_step_db": 2.198,
+  "psnr_swing_fixed_control_db": 0.457,
   "per_regime": {
     "static": {
-      "cells": [],
-      "psnr_curve_monotone_nondecreasing": true,
-      "psnr_swing_db": 0.0,
-      "p95_latency_swing_ms": 0.0
+      "cells": [
+        {
+          "mul_increase": 0.02,
+          "mean_psnr_db": 39.407,
+          "mean_p95_latency_ms": -24.977,
+          "n_reps": 3
+        },
+        {
+          "mul_increase": 0.05,
+          "mean_psnr_db": 39.718,
+          "mean_p95_latency_ms": -23.57,
+          "n_reps": 3
+        },
+        {
+          "mul_increase": 0.1,
+          "mean_psnr_db": 39.391,
+          "mean_p95_latency_ms": -20.54,
+          "n_reps": 3
+        },
+        {
+          "mul_increase": 0.2,
+          "mean_psnr_db": 39.534,
+          "mean_p95_latency_ms": -23.867,
+          "n_reps": 3
+        },
+        {
+          "mul_increase": 0.3,
+          "mean_psnr_db": 39.261,
+          "mean_p95_latency_ms": -20.193,
+          "n_reps": 3
+        },
+        {
+          "mul_increase": 0.5,
+          "mean_psnr_db": 39.331,
+          "mean_p95_latency_ms": -21.177,
+          "n_reps": 3
+        }
+      ],
+      "psnr_curve_monotone_nondecreasing": false,
+      "psnr_swing_db": 0.457,
+      "p95_latency_swing_ms": 4.784
     },
     "fluct": {
-      "cells": [],
-      "psnr_curve_monotone_nondecreasing": true,
-      "psnr_swing_db": 0.0,
-      "p95_latency_swing_ms": 0.0
+      "cells": [
+        {
+          "mul_increase": 0.02,
+          "mean_psnr_db": 38.805,
+          "mean_p95_latency_ms": -18.617,
+          "n_reps": 3
+        },
+        {
+          "mul_increase": 0.05,
+          "mean_psnr_db": 38.495,
+          "mean_p95_latency_ms": -20.84,
+          "n_reps": 3
+        },
+        {
+          "mul_increase": 0.1,
+          "mean_psnr_db": 38.488,
+          "mean_p95_latency_ms": -21.5,
+          "n_reps": 3
+        },
+        {
+          "mul_increase": 0.2,
+          "mean_psnr_db": 36.607,
+          "mean_p95_latency_ms": -19.513,
+          "n_reps": 3
+        },
+        {
+          "mul_increase": 0.3,
+          "mean_psnr_db": 37.449,
+          "mean_p95_latency_ms": -23.373,
+          "n_reps": 3
+        },
+        {
+          "mul_increase": 0.5,
+          "mean_psnr_db": 37.49,
+          "mean_p95_latency_ms": -22.283,
+          "n_reps": 3
+        }
+      ],
+      "psnr_curve_monotone_nondecreasing": false,
+      "psnr_swing_db": 2.198,
+      "p95_latency_swing_ms": 4.756
     },
     "5g": {
-      "cells": [],
-      "psnr_curve_monotone_nondecreasing": true,
-      "psnr_swing_db": 0.0,
-      "p95_latency_swing_ms": 0.0
+      "cells": [
+        {
+          "mul_increase": 0.02,
+          "mean_psnr_db": 32.224,
+          "mean_p95_latency_ms": -19.133,
+          "n_reps": 3
+        },
+        {
+          "mul_increase": 0.05,
+          "mean_psnr_db": 32.241,
+          "mean_p95_latency_ms": -17.647,
+          "n_reps": 3
+        },
+        {
+          "mul_increase": 0.1,
+          "mean_psnr_db": 32.121,
+          "mean_p95_latency_ms": -16.823,
+          "n_reps": 3
+        },
+        {
+          "mul_increase": 0.2,
+          "mean_psnr_db": 31.321,
+          "mean_p95_latency_ms": -17.76,
+          "n_reps": 3
+        },
+        {
+          "mul_increase": 0.3,
+          "mean_psnr_db": 31.963,
+          "mean_p95_latency_ms": -17.907,
+          "n_reps": 3
+        },
+        {
+          "mul_increase": 0.5,
+          "mean_psnr_db": 30.214,
+          "mean_p95_latency_ms": -14.973,
+          "n_reps": 3
+        }
+      ],
+      "psnr_curve_monotone_nondecreasing": false,
+      "psnr_swing_db": 2.027,
+      "p95_latency_swing_ms": 4.16
     }
-  }
+  },
+  "tables": {
+    "Decoded PSNR (dB) by mul_increase": [
+      {
+        "network": "fixed 5 Mbps",
+        "mul 0.02": 39.407,
+        "mul 0.05": 39.718,
+        "mul 0.1": 39.391,
+        "mul 0.2": 39.534,
+        "mul 0.3": 39.261,
+        "mul 0.5": 39.331
+      },
+      {
+        "network": "capacity step (5 Mbps \u21c4 300 kbps)",
+        "mul 0.02": 38.805,
+        "mul 0.05": 38.495,
+        "mul 0.1": 38.488,
+        "mul 0.2": 36.607,
+        "mul 0.3": 37.449,
+        "mul 0.5": 37.49
+      },
+      {
+        "network": "5G CQI trace",
+        "mul 0.02": 32.224,
+        "mul 0.05": 32.241,
+        "mul 0.1": 32.121,
+        "mul 0.2": 31.321,
+        "mul 0.3": 31.963,
+        "mul 0.5": 30.214
+      }
+    ],
+    "p95 frame latency (ms) by mul_increase": [
+      {
+        "network": "fixed 5 Mbps",
+        "mul 0.02": -24.977,
+        "mul 0.05": -23.57,
+        "mul 0.1": -20.54,
+        "mul 0.2": -23.867,
+        "mul 0.3": -20.193,
+        "mul 0.5": -21.177
+      },
+      {
+        "network": "capacity step (5 Mbps \u21c4 300 kbps)",
+        "mul 0.02": -18.617,
+        "mul 0.05": -20.84,
+        "mul 0.1": -21.5,
+        "mul 0.2": -19.513,
+        "mul 0.3": -23.373,
+        "mul 0.5": -22.283
+      },
+      {
+        "network": "5G CQI trace",
+        "mul 0.02": -19.133,
+        "mul 0.05": -17.647,
+        "mul 0.1": -16.823,
+        "mul 0.2": -17.76,
+        "mul 0.3": -17.907,
+        "mul 0.5": -14.973
+      }
+    ]
+  },
+  "figures": [
+    {
+      "path": "analysis/hypotheses/results/h8_psnr_by_knob.svg",
+      "caption": "Decoded PSNR vs mul_increase (ramp aggressiveness). The fixed 5 Mbps link is the control, where ramp speed should not matter; the capacity-step link is where a faster ramp should recover quality after the step."
+    },
+    {
+      "path": "analysis/hypotheses/results/h8_latency_by_knob.svg",
+      "caption": "p95 frame latency vs mul_increase. The within-sweep trend is what matters; the absolute offset carries the aum/veda clock-skew artifact."
+    }
+  ],
+  "experiments": [
+    {
+      "name": "h8-mulinc-sweep-static",
+      "description": "mul_increase (ramp) sweep on the static network, loose 4000 kbps ceiling.",
+      "arms": [
+        {
+          "config_id": 201,
+          "algorithm": "scream mul_increase=0.02"
+        },
+        {
+          "config_id": 202,
+          "algorithm": "scream mul_increase=0.05"
+        },
+        {
+          "config_id": 203,
+          "algorithm": "scream mul_increase=0.1"
+        },
+        {
+          "config_id": 204,
+          "algorithm": "scream mul_increase=0.2"
+        },
+        {
+          "config_id": 205,
+          "algorithm": "scream mul_increase=0.3"
+        },
+        {
+          "config_id": 206,
+          "algorithm": "scream mul_increase=0.5"
+        }
+      ],
+      "reps": 3,
+      "spec_path": "specs/experiments/h8-mulinc-sweep-static.yaml",
+      "record_path": "runs/experiments/h8-mulinc-sweep-static.json",
+      "command": "python3 tools/run_qdt_sweeps.py  # or experiment.py h8-mulinc-sweep-static --resume",
+      "record_status": {
+        "completed_runs": 18,
+        "total_runs": 18
+      }
+    },
+    {
+      "name": "h8-mulinc-sweep-fluct",
+      "description": "mul_increase (ramp) sweep on the fluct network, loose 4000 kbps ceiling.",
+      "arms": [
+        {
+          "config_id": 207,
+          "algorithm": "scream mul_increase=0.02"
+        },
+        {
+          "config_id": 208,
+          "algorithm": "scream mul_increase=0.05"
+        },
+        {
+          "config_id": 209,
+          "algorithm": "scream mul_increase=0.1"
+        },
+        {
+          "config_id": 210,
+          "algorithm": "scream mul_increase=0.2"
+        },
+        {
+          "config_id": 211,
+          "algorithm": "scream mul_increase=0.3"
+        },
+        {
+          "config_id": 212,
+          "algorithm": "scream mul_increase=0.5"
+        }
+      ],
+      "reps": 3,
+      "spec_path": "specs/experiments/h8-mulinc-sweep-fluct.yaml",
+      "record_path": "runs/experiments/h8-mulinc-sweep-fluct.json",
+      "command": "python3 tools/run_qdt_sweeps.py  # or experiment.py h8-mulinc-sweep-fluct --resume",
+      "record_status": {
+        "completed_runs": 18,
+        "total_runs": 18
+      }
+    },
+    {
+      "name": "h8-mulinc-sweep-5g",
+      "description": "mul_increase (ramp) sweep on the 5g network, loose 4000 kbps ceiling.",
+      "arms": [
+        {
+          "config_id": 213,
+          "algorithm": "scream mul_increase=0.02"
+        },
+        {
+          "config_id": 214,
+          "algorithm": "scream mul_increase=0.05"
+        },
+        {
+          "config_id": 215,
+          "algorithm": "scream mul_increase=0.1"
+        },
+        {
+          "config_id": 216,
+          "algorithm": "scream mul_increase=0.2"
+        },
+        {
+          "config_id": 217,
+          "algorithm": "scream mul_increase=0.3"
+        },
+        {
+          "config_id": 218,
+          "algorithm": "scream mul_increase=0.5"
+        }
+      ],
+      "reps": 3,
+      "spec_path": "specs/experiments/h8-mulinc-sweep-5g.yaml",
+      "record_path": "runs/experiments/h8-mulinc-sweep-5g.json",
+      "command": "python3 tools/run_qdt_sweeps.py  # or experiment.py h8-mulinc-sweep-5g --resume",
+      "record_status": {
+        "completed_runs": 18,
+        "total_runs": 18
+      }
+    }
+  ]
 }

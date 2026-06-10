@@ -2,7 +2,7 @@ id: H8
 slug: h8
 title: Ramp speed and capacity-step recovery
 claim: H6 and H7 found the queue-delay-target is a latency knob, not a quality knob, and on the capacity-step link a looser target slightly hurt quality because data buffered through the 300 kbps trough arrives stale. SCReAM's multiplicative-increase coefficient (mul_increase) sets how fast the controller ramps its rate back up after capacity returns. A more aggressive ramp should recover picture quality faster after the step, so on the capacity-step network decoded PSNR should rise with mul_increase and swing more than on the fixed-link control, while p95 latency stays bounded.
-status: untested
+status: refuted
 source: Goal 2.2 (knob sensitivity), follow-up to H6/H7
 page: analysis/hypotheses/h8.html
 verifier: analysis/hypotheses/h8_mulinc_sweep.py
@@ -53,9 +53,11 @@ results:
     - runs/experiments/h8-mulinc-sweep-5g.json
   report: analysis/hypotheses/results/h8_report.json
 conclusions:
-  established: []
+  established:
+    - A faster ramp does not recover quality on the capacity-step link. Decoded PSNR is highest at the slowest ramp (mul_increase 0.02 gives 38.8 dB) and declines as the ramp gets more aggressive, bottoming at 0.2 (36.6 dB) and recovering only partially to 37.5 dB at 0.5. It never rises above the slow-ramp baseline, so the prediction that PSNR rises with the ramp is refuted.
+    - The fixed-link control behaved as predicted. With no capacity change, ramp speed barely moves PSNR (39.3 to 39.7 dB, swing 0.46 dB). That the effect appears only on the capacity-step link (swing 2.20 dB) confirms it is a real network-dependent response, not a workload artifact. The 5G trace is also non-rising (32.2 down to 30.2 dB, swing 2.03 dB).
+    - Two SCReAM knobs now fail to be quality levers for this workload: the queue-delay-target (H6, H7) and the multiplicative-increase ramp (H8). If anything a more aggressive ramp slightly hurts on the capacity-step link, consistent with overshoot causing queue buildup and loss so frames arrive stale through the 300 kbps trough. The conservative slow ramp wins.
   limits:
-    - Pre-registered: predictions and the verdict rule are fixed before the run. Results are pending the sweep on the aum/veda testbed.
     - Mean PSNR is whole-run, not windowed to the post-step recovery phase. A real recovery effect should still register as a higher whole-run mean, but a windowed metric would be sharper.
     - Workload-specific (realmotion-avi, 1280x1024 MJPEG, 10 fps, 60 s) and ceiling-specific (loose 4000 kbps). mul_increase sweeps {0.02, 0.05, 0.1, 0.2, 0.3, 0.5}; the default is 0.05.
     - 3 reps per cell; effects smaller than the run-to-run spread are not resolved.

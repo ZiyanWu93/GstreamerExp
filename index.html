@@ -2230,7 +2230,7 @@ latency_budget_ms: 0</code></pre>
   <h3>Knob sensitivity <span class="small">→ <a href="#roadmap-goal2-knobs">§7.4</a></span></h3>
   <ul>
     <li class="done">Queue-delay-target swept across three networks at two bitrate ceilings (<a href="#hypo-h6">H6</a>, <a href="#hypo-h7">H7</a>)</li>
-    <li class="todo">Ramp aggressiveness (mul_increase) — <strong>staged as <a href="#hypo-h8">H8</a></strong>: 18 cells × 3 reps, ready to run</li>
+    <li class="done">Ramp aggressiveness (mul_increase) swept across three networks — not a quality lever either (<a href="#hypo-h8">H8</a>, refuted)</li>
     <li class="todo">Loss-backoff multiplier — not isolated · <strong>runnable now</strong></li>
     <li class="todo">Bitrate bounds (init / min / max) sensitivity surface — not mapped · <strong>runnable now</strong></li>
     <li class="todo">ECN / L4S — never run · may need GStreamer ≥ 1.20</li>
@@ -2325,8 +2325,8 @@ latency_budget_ms: 0</code></pre>
   </a><a class="hypo-card linked" id="hypo-h8" href="analysis/hypotheses/h8.html">
     <div class="id">H8</div>
     <div class="title">Ramp speed and capacity-step recovery</div>
-    <div class="claim">Does a faster SCReAM ramp (mul_increase) recover picture quality after the capacity step? Pre-registered; the 18-cell × 3-rep sweep is staged, not yet run.</div>
-    <div class="hypo-footer"><span class="badge untested">staged · not yet run</span><span class="target">→ h8.html</span></div>
+    <div class="claim">A faster SCReAM ramp (mul_increase) does not recover quality after the capacity step — PSNR is best at the slowest ramp and declines as it gets aggressive. Like the queue-delay-target, the ramp is not a quality lever.</div>
+    <div class="hypo-footer"><span class="badge refuted">tested · ramp is not a quality lever</span><span class="target">→ h8.html</span></div>
   </a></div><h3 id="roadmap-goal2-regimes">7.5 Network conditions</h3>
 
 <p>
