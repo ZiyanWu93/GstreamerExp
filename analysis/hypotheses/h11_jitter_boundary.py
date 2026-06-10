@@ -105,11 +105,15 @@ def evaluate() -> dict:
     collapses = (deliv_high is not None and deliv_high < COLLAPSE_DELIVERY) or \
                 (all_deliv and min(all_deliv) < COLLAPSE_DELIVERY)
     threshold_ms = next((j for j in sorted_j if cells[j]["mean_delivery"] < USABLE_DELIVERY), None)
+    # Reliability: how many jitter cells (j>0) have fewer than 2 good reps.
+    # netem delay-jitter reorders packets; with recovery off the jitter cells
+    # often deliver ~0 frames and FAIL, leaving the curve too sparse to trust.
+    sparse_cells = sum(1 for j in sorted_j if j > 0 and cells[j]["n_reps"] < 2)
 
-    if not any_data:
+    if not any_data or not usable_at_zero:
         verdict = "untested"
-    elif not usable_at_zero:
-        verdict = "untested"
+    elif sparse_cells >= 2:
+        verdict = "inconclusive"   # too many failed reps to pin a boundary
     elif collapses:
         verdict = "supported"
     else:
@@ -120,6 +124,7 @@ def evaluate() -> dict:
         "delivery_collapses_across_the_jitter_range": bool(collapses),
         "usable_threshold_found_below_max_jitter": threshold_ms is not None,
         "delivery_robust_across_whole_range": usable_at_zero and not collapses,
+        "data_too_sparse_to_conclude": sparse_cells >= 2,
         "any_cell_failed": False,
         "required_metric_missing": not any_data,
     }

@@ -2066,7 +2066,7 @@ stop_session(session_id)           → ack</pre>
       <tr>
         <td>Where does SCReAM break down?</td>
         <td><span class="badge regime">first answer</span></td>
-        <td>Two boundaries mapped: it stays usable up to ~200 ms one-way delay (<a href="#hypo-h9">H9</a>), but with recovery off it cannot tolerate even 0.1% packet loss (<a href="#hypo-h10">H10</a>). Jitter boundary next.</td>
+        <td>Two boundaries mapped: usable up to ~200 ms one-way delay (<a href="#hypo-h9">H9</a>), but with recovery off it cannot tolerate even 0.1% packet loss (<a href="#hypo-h10">H10</a>). Jitter came back inconclusive (<a href="#hypo-h11">H11</a>) — a netem reordering artifact.</td>
       </tr>
       <tr>
         <td>Does all this hold on other videos?</td>
@@ -2313,7 +2313,7 @@ latency_budget_ms: 0</code></pre>
   <ul>
     <li class="done">Delay (RTT) degeneration mapped — usable to ~200 ms one-way, cliff by 400 ms (<a href="#hypo-h9">H9</a>)</li>
     <li class="done">Loss-rate degeneration mapped — with recovery off, delivery collapses below 0.1% loss (<a href="#hypo-h10">H10</a>)</li>
-    <li class="todo">Jitter degeneration threshold — none run · <strong>runnable now</strong></li>
+    <li class="todo">Jitter degeneration — ran, but inconclusive: netem reordering collapses delivery at any jitter, recovery off (<a href="#hypo-h11">H11</a>) · needs a reorder-controlled model</li>
   </ul>
 </div>
 
@@ -2512,6 +2512,11 @@ latency_budget_ms: 0</code></pre>
     <div class="title">Where packet loss breaks delivery</div>
     <div class="claim">With recovery off, the system cannot tolerate even 0.1% packet loss: frame delivery collapses from 96% to 36% at 0.1% and to ~17% by 2%. A cliff at zero — a direct argument for the loss-recovery capability (Goal 1).</div>
     <div class="hypo-footer"><span class="badge supported">tested · cliff at &lt;0.1% loss</span><span class="target">→ h10.html</span></div>
+  </a><a class="hypo-card linked" id="hypo-h11" href="analysis/hypotheses/h11.html">
+    <div class="id">H11</div>
+    <div class="title">Where jitter breaks delivery</div>
+    <div class="claim">Inconclusive. netem delay-jitter reorders packets aggressively, so with recovery off delivery collapses at even 5 ms jitter and half the runs return no frames. The mechanism is reordering, not corruption; a clean boundary needs a reorder-controlled model or recovery on.</div>
+    <div class="hypo-footer"><span class="badge inconclusive">inconclusive · reorder artifact</span><span class="target">→ h11.html</span></div>
   </a></div>
 
 <h3 id="goal2-plan">7.9 What's next — the plan</h3>
@@ -2537,7 +2542,8 @@ latency_budget_ms: 0</code></pre>
   <ul>
     <li class="done">Delay (RTT) boundary mapped: usable to ~200 ms one-way delay, cliff by 400 ms (<a href="#hypo-h9">H9</a>).</li>
     <li class="done">Loss boundary mapped: with recovery off, delivery collapses below 0.1% loss (<a href="#hypo-h10">H10</a>) — a direct case for loss recovery.</li>
-    <li class="todo">Jitter boundary — the third and final axis, same machinery (<a href="#roadmap-goal2-boundary">§7.8</a>).</li>
+    <li class="done">Jitter boundary ran but came back inconclusive — netem reordering collapses delivery at any jitter with recovery off (<a href="#hypo-h11">H11</a>).</li>
+    <li class="todo">Re-run jitter with a reorder-controlled model or recovery on; and the recovery-on loss re-run (the natural H10 follow-up).</li>
   </ul>
 </div>
 

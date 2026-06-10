@@ -1,19 +1,144 @@
 {
-  "verdict": "untested",
+  "verdict": "inconclusive",
   "predicates": {
-    "usable_delivery_at_zero_jitter": false,
-    "delivery_collapses_across_the_jitter_range": false,
-    "usable_threshold_found_below_max_jitter": false,
+    "usable_delivery_at_zero_jitter": true,
+    "delivery_collapses_across_the_jitter_range": true,
+    "usable_threshold_found_below_max_jitter": true,
     "delivery_robust_across_whole_range": false,
+    "data_too_sparse_to_conclude": true,
     "any_cell_failed": false,
-    "required_metric_missing": true
+    "required_metric_missing": false
   },
-  "delivery_at_zero_jitter": null,
-  "delivery_at_max_jitter": null,
-  "usable_threshold_ms": null,
+  "delivery_at_zero_jitter": 0.9661,
+  "delivery_at_max_jitter": 0.0133,
+  "usable_threshold_ms": 5,
   "per_regime": {
     "jitter": {
-      "cells": []
+      "cells": [
+        {
+          "jitter_ms": 0,
+          "mean_delivery": 0.9661,
+          "mean_psnr_db": 39.702,
+          "mean_p95_latency_ms": -24.88,
+          "n_reps": 3
+        },
+        {
+          "jitter_ms": 5,
+          "mean_delivery": 0.055,
+          "mean_psnr_db": 15.184,
+          "mean_p95_latency_ms": -30.48,
+          "n_reps": 1
+        },
+        {
+          "jitter_ms": 10,
+          "mean_delivery": 0.0333,
+          "mean_psnr_db": 27.159,
+          "mean_p95_latency_ms": -30.45,
+          "n_reps": 1
+        },
+        {
+          "jitter_ms": 20,
+          "mean_delivery": 0.0183,
+          "mean_psnr_db": null,
+          "mean_p95_latency_ms": -30.47,
+          "n_reps": 1
+        },
+        {
+          "jitter_ms": 50,
+          "mean_delivery": 0.1017,
+          "mean_psnr_db": 14.37,
+          "mean_p95_latency_ms": -22.73,
+          "n_reps": 1
+        },
+        {
+          "jitter_ms": 100,
+          "mean_delivery": 0.0133,
+          "mean_psnr_db": null,
+          "mean_p95_latency_ms": 25.76,
+          "n_reps": 2
+        }
+      ]
     }
-  }
+  },
+  "figures": [
+    {
+      "path": "analysis/hypotheses/results/h11_delivery_by_jitter.svg",
+      "caption": "Frame delivery vs netem jitter (recovery off). The boundary is where late and reordered packets fall outside the jitter buffer and delivery drops."
+    },
+    {
+      "path": "analysis/hypotheses/results/h11_psnr_by_jitter.svg",
+      "caption": "PSNR of the frames that do arrive, vs jitter."
+    }
+  ],
+  "tables": {
+    "Delivery, PSNR and latency by jitter": [
+      {
+        "metric": "frame delivery",
+        "0 ms": 0.966,
+        "5 ms": 0.055,
+        "10 ms": 0.033,
+        "20 ms": 0.018,
+        "50 ms": 0.102,
+        "100 ms": 0.013
+      },
+      {
+        "metric": "PSNR of delivered (dB)",
+        "0 ms": 39.702,
+        "5 ms": 15.184,
+        "10 ms": 27.159,
+        "20 ms": null,
+        "50 ms": 14.37,
+        "100 ms": null
+      },
+      {
+        "metric": "p95 latency (ms)",
+        "0 ms": -24.88,
+        "5 ms": -30.48,
+        "10 ms": -30.45,
+        "20 ms": -30.47,
+        "50 ms": -22.73,
+        "100 ms": 25.76
+      }
+    ]
+  },
+  "experiments": [
+    {
+      "name": "h11-jitter-boundary",
+      "description": "SCReAM jitter-boundary sweep on a fixed 5 Mbps / 20 ms link, recovery off.",
+      "arms": [
+        {
+          "config_id": 313,
+          "algorithm": "scream jitter=0ms"
+        },
+        {
+          "config_id": 314,
+          "algorithm": "scream jitter=5ms"
+        },
+        {
+          "config_id": 315,
+          "algorithm": "scream jitter=10ms"
+        },
+        {
+          "config_id": 316,
+          "algorithm": "scream jitter=20ms"
+        },
+        {
+          "config_id": 317,
+          "algorithm": "scream jitter=50ms"
+        },
+        {
+          "config_id": 318,
+          "algorithm": "scream jitter=100ms"
+        }
+      ],
+      "reps": 3,
+      "spec_path": "specs/experiments/h11-jitter-boundary.yaml",
+      "record_path": "runs/experiments/h11-jitter-boundary.json",
+      "command": "python3 tools/run_qdt_sweeps.py  # or experiment.py h11-jitter-boundary --resume",
+      "record_status": {
+        "completed_runs": 9,
+        "total_runs": 18
+      }
+    }
+  ]
 }

@@ -73,7 +73,7 @@
 <p class="nav"><a href="../../index.html">← GstreamerExp hub</a> · <a href="../../README.md">README</a> · <a href="../../docs/HYPOTHESES.md">Hypothesis catalog</a></p>
 
 <h1>H11 — Where jitter breaks delivery</h1>
-<p><span class="tag untested">untested</span><span class="meta">Goal 2 boundary behaviour (§7.8)</span></p>
+<p><span class="tag inconclusive">inconclusive</span><span class="meta">Goal 2 boundary behaviour (§7.8)</span></p>
 
 <h2>Claim</h2>
 <p>Jitter reorders and delays packets, so beyond the receiver jitter buffer they arrive too late and are dropped. On a fixed 5 Mbps / 20 ms link with no loss and recovery off, as netem jitter rises from 0 to 100 ms, frame delivery should stay high while the buffer absorbs the jitter and then collapse once jitter exceeds what the buffer can reorder, marking a degeneration boundary. PSNR of delivered frames and p95 latency are reported alongside. If delivery holds across the range, the jitter buffer absorbs up to 100 ms here.</p>
@@ -107,6 +107,10 @@
 
 
 
+<tr><td><strong>Inconclusive when any</strong></td><td>
+<code>data_too_sparse_to_conclude</code>
+</td></tr>
+
 
 
 <tr><td><strong>Untested when any</strong></td><td>
@@ -127,10 +131,16 @@
 
 <h2>Findings and Limitations</h2>
 
+<p class="meta"><strong>Findings</strong></p>
+<ul>
+<li>{'Inconclusive': 'netem jitter collapses delivery immediately with recovery off, but the data is too sparse to pin a boundary. At 0 ms jitter the viewer gets 97% of frames; at 5 ms it gets about 5%, and the higher-jitter cells deliver near zero and intermittently fail (9 of 18 runs returned no frames, leaving most jitter levels with a single successful rep).'}</li>
+<li>{'The mechanism is reordering, not corruption. At 5 ms jitter the delivered frames show no decoder errors (33 of 600 frames, zero depay/decoder warnings)': "packets are not damaged, they arrive too out-of-order for the receiver jitter buffer and are dropped. netem's `delay 20ms 5ms` gives each packet an independent random delay, which reorders aggressively; real network jitter usually preserves order better."}</li>
+<li>{'Consistent with the loss finding (H10)': 'without recovery, the RTP path is fragile to anything that disturbs packet arrival. But the netem reorder model likely overstates real jitter, and with half the runs failing the curve is not trustworthy. A clean jitter boundary needs a reorder-controlled jitter model (rate-paced or correlated delay) or recovery on; both are good follow-ups.'}</li>
+</ul>
+
 
 <p class="meta"><strong>Limitations</strong></p>
 <ul>
-<li>{'Pre-registered': 'predictions and the verdict rule are fixed before the run. Results are pending the sweep on the aum/veda testbed.'}</li>
 <li>Recovery is off (nack/pli/fec false), matching H6-H10. With NACK/RTX on, late-but-recoverable packets could be retransmitted and the boundary would move.</li>
 <li>netem jitter uses a uniform distribution around a 20 ms base delay; a normal or pareto distribution would reorder differently at the same nominal jitter.</li>
 <li>The receiver jitter buffer size (rtpjitterbuffer latency) sets where absorption ends; this measures the system as configured, not a tuned buffer.</li>
@@ -140,10 +150,38 @@
 
 
 
+<h2>Figures</h2>
+<figure>
+  <img src="results/h11_delivery_by_jitter.svg" alt="Frame delivery vs netem jitter (recovery off). The boundary is where late and reordered packets fall outside the jitter buffer and delivery drops.">
+  <figcaption>Frame delivery vs netem jitter (recovery off). The boundary is where late and reordered packets fall outside the jitter buffer and delivery drops.</figcaption>
+</figure>
+<figure>
+  <img src="results/h11_psnr_by_jitter.svg" alt="PSNR of the frames that do arrive, vs jitter.">
+  <figcaption>PSNR of the frames that do arrive, vs jitter.</figcaption>
+</figure>
 
+
+
+<h2>Tables</h2>
+<h3 style="font-size:14px;margin:14px 0 4px 0;">Delivery, PSNR and latency by jitter</h3>
+<table>
+<thead><tr><th>metric</th><th>0 ms</th><th>5 ms</th><th>10 ms</th><th>20 ms</th><th>50 ms</th><th>100 ms</th></tr></thead>
+<tbody>
+<tr><td>frame delivery</td><td class="num">0.966</td><td class="num">0.055</td><td class="num">0.033</td><td class="num">0.018</td><td class="num">0.102</td><td class="num">0.013</td></tr>
+<tr><td>PSNR of delivered (dB)</td><td class="num">39.70</td><td class="num">15.18</td><td class="num">27.16</td><td></td><td class="num">14.37</td><td></td></tr>
+<tr><td>p95 latency (ms)</td><td class="num">-24.88</td><td class="num">-30.48</td><td class="num">-30.45</td><td class="num">-30.47</td><td class="num">-22.73</td><td class="num">25.76</td></tr>
+</tbody>
+</table>
 
 
 <h2>Experimental setup</h2>
+<div class="panel">
+<strong class="label">h11-jitter-boundary</strong>
+<p>SCReAM jitter-boundary sweep on a fixed 5 Mbps / 20 ms link, recovery off.</p>
+<p class="meta">Configurations: <code>313</code> (scream jitter=0ms), <code>314</code> (scream jitter=5ms), <code>315</code> (scream jitter=10ms), <code>316</code> (scream jitter=20ms), <code>317</code> (scream jitter=50ms), <code>318</code> (scream jitter=100ms) · reps: 3</p>
+<p class="meta">Spec: <code>specs/experiments/h11-jitter-boundary.yaml</code> · Record: <code>runs/experiments/h11-jitter-boundary.json</code> · Run: <code>python3 tools/run_qdt_sweeps.py  # or experiment.py h11-jitter-boundary --resume</code></p>
+<p class="meta">Status: 9 of 18 runs completed.</p>
+</div>
 
 
 <h2>Required metrics</h2>

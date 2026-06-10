@@ -2,7 +2,7 @@ id: H11
 slug: h11
 title: Where jitter breaks delivery
 claim: Jitter reorders and delays packets, so beyond the receiver jitter buffer they arrive too late and are dropped. On a fixed 5 Mbps / 20 ms link with no loss and recovery off, as netem jitter rises from 0 to 100 ms, frame delivery should stay high while the buffer absorbs the jitter and then collapse once jitter exceeds what the buffer can reorder, marking a degeneration boundary. PSNR of delivered frames and p95 latency are reported alongside. If delivery holds across the range, the jitter buffer absorbs up to 100 ms here.
-status: untested
+status: inconclusive
 source: Goal 2 boundary behaviour (§7.8)
 page: analysis/hypotheses/h11.html
 verifier: analysis/hypotheses/h11_jitter_boundary.py
@@ -16,6 +16,8 @@ verdict:
     - delivery_collapses_across_the_jitter_range
   refuted_when_any:
     - delivery_robust_across_whole_range
+  inconclusive_when_any:
+    - data_too_sparse_to_conclude
   untested_when_any:
     - any_cell_failed
     - required_metric_missing
@@ -43,9 +45,11 @@ results:
     - runs/experiments/h11-jitter-boundary.json
   report: analysis/hypotheses/results/h11_report.json
 conclusions:
-  established: []
+  established:
+    - Inconclusive: netem jitter collapses delivery immediately with recovery off, but the data is too sparse to pin a boundary. At 0 ms jitter the viewer gets 97% of frames; at 5 ms it gets about 5%, and the higher-jitter cells deliver near zero and intermittently fail (9 of 18 runs returned no frames, leaving most jitter levels with a single successful rep).
+    - The mechanism is reordering, not corruption. At 5 ms jitter the delivered frames show no decoder errors (33 of 600 frames, zero depay/decoder warnings): packets are not damaged, they arrive too out-of-order for the receiver jitter buffer and are dropped. netem's `delay 20ms 5ms` gives each packet an independent random delay, which reorders aggressively; real network jitter usually preserves order better.
+    - Consistent with the loss finding (H10): without recovery, the RTP path is fragile to anything that disturbs packet arrival. But the netem reorder model likely overstates real jitter, and with half the runs failing the curve is not trustworthy. A clean jitter boundary needs a reorder-controlled jitter model (rate-paced or correlated delay) or recovery on; both are good follow-ups.
   limits:
-    - Pre-registered: predictions and the verdict rule are fixed before the run. Results are pending the sweep on the aum/veda testbed.
     - Recovery is off (nack/pli/fec false), matching H6-H10. With NACK/RTX on, late-but-recoverable packets could be retransmitted and the boundary would move.
     - netem jitter uses a uniform distribution around a 20 ms base delay; a normal or pareto distribution would reorder differently at the same nominal jitter.
     - The receiver jitter buffer size (rtpjitterbuffer latency) sets where absorption ends; this measures the system as configured, not a tuned buffer.
