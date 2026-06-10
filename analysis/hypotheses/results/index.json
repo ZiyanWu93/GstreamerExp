@@ -1961,8 +1961,8 @@
       "slug": "h9",
       "title": "Where rising delay breaks SCReAM's control",
       "claim": "SCReAM is a delay-based congestion controller, so growing base path delay should be the stressor that breaks it first. On a fixed 5 Mbps link with no loss, as the one-way delay rises from 20 ms toward 800 ms, SCReAM's decoded picture quality should stay usable at low delay and then fall off past some delay, marking a degeneration boundary. If quality instead holds flat across the whole range, SCReAM tolerates delays up to 800 ms here and no boundary exists in this range.",
-      "declared_status": "untested",
-      "execution_status": "untested",
+      "declared_status": "supported",
+      "execution_status": "analyzable",
       "source": "Goal 2 boundary behaviour (\u00a77.8)",
       "page": "analysis/hypotheses/h9.html",
       "verifier": "analysis/hypotheses/h9_rtt_boundary.py",
@@ -2032,56 +2032,88 @@
             "spec_path": "specs/experiments/h9-rtt-boundary.yaml",
             "record_path": "runs/experiments/h9-rtt-boundary.json",
             "spec_exists": true,
-            "record_exists": false,
+            "record_exists": true,
             "expected_reps": 3,
             "configurations": {
               "301": {
-                "completed_runs": 0,
+                "completed_runs": 3,
                 "failed_runs": 0,
                 "missing_summaries": 0,
-                "run_ids": []
+                "run_ids": [
+                  "2026-06-10T16-50-19",
+                  "2026-06-10T16-57-13",
+                  "2026-06-10T17-04-06"
+                ]
               },
               "302": {
-                "completed_runs": 0,
+                "completed_runs": 3,
                 "failed_runs": 0,
                 "missing_summaries": 0,
-                "run_ids": []
+                "run_ids": [
+                  "2026-06-10T16-51-27",
+                  "2026-06-10T16-58-21",
+                  "2026-06-10T17-05-14"
+                ]
               },
               "303": {
-                "completed_runs": 0,
+                "completed_runs": 3,
                 "failed_runs": 0,
                 "missing_summaries": 0,
-                "run_ids": []
+                "run_ids": [
+                  "2026-06-10T16-52-36",
+                  "2026-06-10T16-59-30",
+                  "2026-06-10T17-06-26"
+                ]
               },
               "304": {
-                "completed_runs": 0,
+                "completed_runs": 3,
                 "failed_runs": 0,
                 "missing_summaries": 0,
-                "run_ids": []
+                "run_ids": [
+                  "2026-06-10T16-53-44",
+                  "2026-06-10T17-00-41",
+                  "2026-06-10T17-07-34"
+                ]
               },
               "305": {
-                "completed_runs": 0,
+                "completed_runs": 3,
                 "failed_runs": 0,
                 "missing_summaries": 0,
-                "run_ids": []
+                "run_ids": [
+                  "2026-06-10T16-54-56",
+                  "2026-06-10T17-01-49",
+                  "2026-06-10T17-08-43"
+                ]
               },
               "306": {
-                "completed_runs": 0,
+                "completed_runs": 3,
                 "failed_runs": 0,
                 "missing_summaries": 0,
-                "run_ids": []
+                "run_ids": [
+                  "2026-06-10T16-56-05",
+                  "2026-06-10T17-02-58",
+                  "2026-06-10T17-09-52"
+                ]
               }
             },
-            "execution_status": "untested"
+            "completed_runs": 18,
+            "failed_runs": 0,
+            "expected_runs": 18,
+            "execution_status": "analyzable"
           }
         ]
       },
       "conclusions": {
-        "established": [],
-        "limits": [
+        "established": [
+          "SCReAM's delay-based control degenerates as base delay grows. On a fixed 5 Mbps link with no loss, decoded PSNR falls from 39.9 dB at 20 ms one-way delay to 34.9 dB (50 ms), 34.1 dB (100 ms), 29.5 dB (200 ms), and 24.3 dB at 400 ms, crossing the 25 dB usable floor between 200 and 400 ms. A degeneration boundary clearly exists inside the tested range.",
           {
-            "Pre-registered": "predictions and the verdict rule are fixed before the run. Results are pending the sweep on the aum/veda testbed."
+            "Quality and delivery fall together at high delay. p95 frame latency climbs from tens of ms to 720 ms at 800 ms one-way delay (partly the added netem delay itself, partly queue buildup as the feedback loop slows), and frame delivery collapses": "the viewer received only 229 of 600 frames at 800 ms versus about 587 at 20 ms. The 800 ms PSNR (25.5 dB) reads slightly above 400 ms only because so few frames survive to be scored."
           },
+          {
+            "The practical operating limit for this workload is roughly 200 ms one-way delay (about 400 ms RTT)": "below it SCReAM keeps video usable, beyond it quality and delivery drop off. This is the first of the three boundary axes; loss and jitter are next."
+          }
+        ],
+        "limits": [
           "Single arm. The testbed exposes only scream and gcc, no bare/no-CC sender, so the boundary is read off SCReAM's own quality-vs-delay curve rather than against a no-control baseline. A bare reference would sharpen it.",
           "Recovery is off (nack/pli/fec false), matching H6-H8, so this isolates the controller and codec without retransmission. With recovery on the boundary could move.",
           "One-way netem delay is swept {20, 50, 100, 200, 400, 800} ms; RTT is roughly twice that plus the wired base. The usable floor is set at 25 dB and a clear drop at 5 dB.",

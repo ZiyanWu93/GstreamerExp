@@ -2065,8 +2065,8 @@ stop_session(session_id)           → ack</pre>
       </tr>
       <tr>
         <td>Where does SCReAM break down?</td>
-        <td><span class="badge untested">not started</span></td>
-        <td>Open. Pushing the network until SCReAM stops helping (the plan, §7.9).</td>
+        <td><span class="badge regime">first answer</span></td>
+        <td>On rising delay, SCReAM keeps video usable to ~200 ms one-way delay; beyond that quality and delivery fall off (<a href="#hypo-h9">H9</a>). Loss and jitter boundaries next.</td>
       </tr>
       <tr>
         <td>Does all this hold on other videos?</td>
@@ -2311,7 +2311,7 @@ latency_budget_ms: 0</code></pre>
 <div class="feature-block" id="status-boundary">
   <h3>Boundary behaviour <span class="small">→ <a href="#roadmap-goal2-boundary">§7.8</a></span></h3>
   <ul>
-    <li class="todo">RTT degeneration threshold — none run · <strong>runnable now</strong></li>
+    <li class="done">Delay (RTT) degeneration mapped — usable to ~200 ms one-way, cliff by 400 ms (<a href="#hypo-h9">H9</a>)</li>
     <li class="todo">Loss-rate degeneration threshold — none run · <strong>runnable now</strong></li>
     <li class="todo">Jitter degeneration threshold — none run · <strong>runnable now</strong></li>
   </ul>
@@ -2501,7 +2501,13 @@ latency_budget_ms: 0</code></pre>
   falsifiable verifier, run the sweep, write the result.
 </p>
 
-<p class="small">No hypothesis tested yet on this axis.</p>
+<h4 style="margin-top:18px;">Evidence</h4>
+<div class="hypo-grid"><a class="hypo-card linked" id="hypo-h9" href="analysis/hypotheses/h9.html">
+    <div class="id">H9</div>
+    <div class="title">Where rising delay breaks SCReAM's control</div>
+    <div class="claim">On a fixed 5 Mbps link, SCReAM keeps video usable up to ~200 ms one-way delay, then quality and delivery fall off (39.9 dB at 20 ms down to 24 dB by 400 ms; frame delivery collapses by 800 ms). The first of three boundary axes.</div>
+    <div class="hypo-footer"><span class="badge supported">tested · usable to ~200 ms delay</span><span class="target">→ h9.html</span></div>
+  </a></div>
 
 <h3 id="goal2-plan">7.9 What's next — the plan</h3>
 <p>
@@ -2522,9 +2528,10 @@ latency_budget_ms: 0</code></pre>
 </div>
 
 <div class="feature-block">
-  <h3>Phase 2 · Find where SCReAM breaks <span class="small">(runnable now)</span></h3>
+  <h3>Phase 2 · Find where SCReAM breaks <span class="small">(in progress)</span></h3>
   <ul>
-    <li class="todo">Push base delay, loss, and jitter one at a time until SCReAM stops beating plain transport. Three breaking-point thresholds — the empty boundary axis (<a href="#roadmap-goal2-boundary">§7.8</a>).</li>
+    <li class="done">Delay (RTT) boundary mapped: usable to ~200 ms one-way delay, cliff by 400 ms (<a href="#hypo-h9">H9</a>).</li>
+    <li class="todo">Loss-rate and jitter boundaries — same machinery, next up (<a href="#roadmap-goal2-boundary">§7.8</a>).</li>
   </ul>
 </div>
 

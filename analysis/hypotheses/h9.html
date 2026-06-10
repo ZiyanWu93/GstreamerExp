@@ -73,7 +73,7 @@
 <p class="nav"><a href="../../index.html">← GstreamerExp hub</a> · <a href="../../README.md">README</a> · <a href="../../docs/HYPOTHESES.md">Hypothesis catalog</a></p>
 
 <h1>H9 — Where rising delay breaks SCReAM's control</h1>
-<p><span class="tag untested">untested</span><span class="meta">Goal 2 boundary behaviour (§7.8)</span></p>
+<p><span class="tag supported">supported</span><span class="meta">Goal 2 boundary behaviour (§7.8)</span></p>
 
 <h2>Claim</h2>
 <p>SCReAM is a delay-based congestion controller, so growing base path delay should be the stressor that breaks it first. On a fixed 5 Mbps link with no loss, as the one-way delay rises from 20 ms toward 800 ms, SCReAM's decoded picture quality should stay usable at low delay and then fall off past some delay, marking a degeneration boundary. If quality instead holds flat across the whole range, SCReAM tolerates delays up to 800 ms here and no boundary exists in this range.</p>
@@ -127,10 +127,16 @@
 
 <h2>Findings and Limitations</h2>
 
+<p class="meta"><strong>Findings</strong></p>
+<ul>
+<li>SCReAM's delay-based control degenerates as base delay grows. On a fixed 5 Mbps link with no loss, decoded PSNR falls from 39.9 dB at 20 ms one-way delay to 34.9 dB (50 ms), 34.1 dB (100 ms), 29.5 dB (200 ms), and 24.3 dB at 400 ms, crossing the 25 dB usable floor between 200 and 400 ms. A degeneration boundary clearly exists inside the tested range.</li>
+<li>{'Quality and delivery fall together at high delay. p95 frame latency climbs from tens of ms to 720 ms at 800 ms one-way delay (partly the added netem delay itself, partly queue buildup as the feedback loop slows), and frame delivery collapses': 'the viewer received only 229 of 600 frames at 800 ms versus about 587 at 20 ms. The 800 ms PSNR (25.5 dB) reads slightly above 400 ms only because so few frames survive to be scored.'}</li>
+<li>{'The practical operating limit for this workload is roughly 200 ms one-way delay (about 400 ms RTT)': 'below it SCReAM keeps video usable, beyond it quality and delivery drop off. This is the first of the three boundary axes; loss and jitter are next.'}</li>
+</ul>
+
 
 <p class="meta"><strong>Limitations</strong></p>
 <ul>
-<li>{'Pre-registered': 'predictions and the verdict rule are fixed before the run. Results are pending the sweep on the aum/veda testbed.'}</li>
 <li>Single arm. The testbed exposes only scream and gcc, no bare/no-CC sender, so the boundary is read off SCReAM's own quality-vs-delay curve rather than against a no-control baseline. A bare reference would sharpen it.</li>
 <li>Recovery is off (nack/pli/fec false), matching H6-H8, so this isolates the controller and codec without retransmission. With recovery on the boundary could move.</li>
 <li>One-way netem delay is swept {20, 50, 100, 200, 400, 800} ms; RTT is roughly twice that plus the wired base. The usable floor is set at 25 dB and a clear drop at 5 dB.</li>
@@ -141,10 +147,43 @@
 
 
 
+<h2>Figures</h2>
+<figure>
+  <img src="results/h9_psnr_by_knob.svg" alt="Decoded PSNR vs base one-way delay (the RTT boundary). The degeneration point, if any, is the delay at which quality cliffs.">
+  <figcaption>Decoded PSNR vs base one-way delay (the RTT boundary). The degeneration point, if any, is the delay at which quality cliffs.</figcaption>
+</figure>
+<figure>
+  <img src="results/h9_latency_by_knob.svg" alt="p95 frame latency vs base delay. Latency rises partly because the added netem delay is itself in the path; the absolute offset also carries the aum/veda clock-skew artifact.">
+  <figcaption>p95 frame latency vs base delay. Latency rises partly because the added netem delay is itself in the path; the absolute offset also carries the aum/veda clock-skew artifact.</figcaption>
+</figure>
 
+
+
+<h2>Tables</h2>
+<h3 style="font-size:14px;margin:14px 0 4px 0;">Decoded PSNR (dB) by base delay</h3>
+<table>
+<thead><tr><th>network</th><th>20 ms</th><th>50 ms</th><th>100 ms</th><th>200 ms</th><th>400 ms</th><th>800 ms</th></tr></thead>
+<tbody>
+<tr><td>SCReAM, fixed 5 Mbps</td><td class="num">39.90</td><td class="num">34.91</td><td class="num">34.06</td><td class="num">29.52</td><td class="num">24.27</td><td class="num">25.48</td></tr>
+</tbody>
+</table>
+<h3 style="font-size:14px;margin:14px 0 4px 0;">p95 frame latency (ms) by base delay</h3>
+<table>
+<thead><tr><th>network</th><th>20 ms</th><th>50 ms</th><th>100 ms</th><th>200 ms</th><th>400 ms</th><th>800 ms</th></tr></thead>
+<tbody>
+<tr><td>SCReAM, fixed 5 Mbps</td><td class="num">-24.75</td><td class="num">11.99</td><td class="num">44.99</td><td class="num">133.2</td><td class="num">324.1</td><td class="num">720.3</td></tr>
+</tbody>
+</table>
 
 
 <h2>Experimental setup</h2>
+<div class="panel">
+<strong class="label">h9-rtt-boundary</strong>
+<p>SCReAM RTT-boundary sweep on a fixed 5 Mbps link.</p>
+<p class="meta">Configurations: <code>301</code> (scream delay=20ms), <code>302</code> (scream delay=50ms), <code>303</code> (scream delay=100ms), <code>304</code> (scream delay=200ms), <code>305</code> (scream delay=400ms), <code>306</code> (scream delay=800ms) · reps: 3</p>
+<p class="meta">Spec: <code>specs/experiments/h9-rtt-boundary.yaml</code> · Record: <code>runs/experiments/h9-rtt-boundary.json</code> · Run: <code>python3 tools/run_qdt_sweeps.py  # or experiment.py h9-rtt-boundary --resume</code></p>
+<p class="meta">Status: 18 of 18 runs completed.</p>
+</div>
 
 
 <h2>Required metrics</h2>

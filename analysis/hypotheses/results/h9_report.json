@@ -1,19 +1,130 @@
 {
-  "verdict": "untested",
+  "verdict": "supported",
   "predicates": {
-    "usable_quality_at_low_delay": false,
-    "quality_degrades_across_the_delay_range": false,
-    "degeneration_threshold_found_below_max_delay": false,
+    "usable_quality_at_low_delay": true,
+    "quality_degrades_across_the_delay_range": true,
+    "degeneration_threshold_found_below_max_delay": true,
     "quality_robust_across_whole_range": false,
     "any_cell_failed": false,
-    "required_metric_missing": true
+    "required_metric_missing": false
   },
-  "psnr_at_low_delay_db": null,
-  "psnr_at_max_delay_db": null,
-  "degeneration_threshold_ms": null,
+  "psnr_at_low_delay_db": 39.901,
+  "psnr_at_max_delay_db": 25.479,
+  "degeneration_threshold_ms": 400,
   "per_regime": {
     "rtt": {
-      "cells": []
+      "cells": [
+        {
+          "rtt_ms": 20,
+          "mean_psnr_db": 39.901,
+          "mean_p95_latency_ms": -24.753,
+          "n_reps": 3
+        },
+        {
+          "rtt_ms": 50,
+          "mean_psnr_db": 34.914,
+          "mean_p95_latency_ms": 11.993,
+          "n_reps": 3
+        },
+        {
+          "rtt_ms": 100,
+          "mean_psnr_db": 34.06,
+          "mean_p95_latency_ms": 44.99,
+          "n_reps": 3
+        },
+        {
+          "rtt_ms": 200,
+          "mean_psnr_db": 29.517,
+          "mean_p95_latency_ms": 133.15,
+          "n_reps": 3
+        },
+        {
+          "rtt_ms": 400,
+          "mean_psnr_db": 24.271,
+          "mean_p95_latency_ms": 324.09,
+          "n_reps": 3
+        },
+        {
+          "rtt_ms": 800,
+          "mean_psnr_db": 25.479,
+          "mean_p95_latency_ms": 720.307,
+          "n_reps": 3
+        }
+      ]
     }
-  }
+  },
+  "tables": {
+    "Decoded PSNR (dB) by base delay": [
+      {
+        "network": "SCReAM, fixed 5 Mbps",
+        "20 ms": 39.901,
+        "50 ms": 34.914,
+        "100 ms": 34.06,
+        "200 ms": 29.517,
+        "400 ms": 24.271,
+        "800 ms": 25.479
+      }
+    ],
+    "p95 frame latency (ms) by base delay": [
+      {
+        "network": "SCReAM, fixed 5 Mbps",
+        "20 ms": -24.753,
+        "50 ms": 11.993,
+        "100 ms": 44.99,
+        "200 ms": 133.15,
+        "400 ms": 324.09,
+        "800 ms": 720.307
+      }
+    ]
+  },
+  "figures": [
+    {
+      "path": "analysis/hypotheses/results/h9_psnr_by_knob.svg",
+      "caption": "Decoded PSNR vs base one-way delay (the RTT boundary). The degeneration point, if any, is the delay at which quality cliffs."
+    },
+    {
+      "path": "analysis/hypotheses/results/h9_latency_by_knob.svg",
+      "caption": "p95 frame latency vs base delay. Latency rises partly because the added netem delay is itself in the path; the absolute offset also carries the aum/veda clock-skew artifact."
+    }
+  ],
+  "experiments": [
+    {
+      "name": "h9-rtt-boundary",
+      "description": "SCReAM RTT-boundary sweep on a fixed 5 Mbps link.",
+      "arms": [
+        {
+          "config_id": 301,
+          "algorithm": "scream delay=20ms"
+        },
+        {
+          "config_id": 302,
+          "algorithm": "scream delay=50ms"
+        },
+        {
+          "config_id": 303,
+          "algorithm": "scream delay=100ms"
+        },
+        {
+          "config_id": 304,
+          "algorithm": "scream delay=200ms"
+        },
+        {
+          "config_id": 305,
+          "algorithm": "scream delay=400ms"
+        },
+        {
+          "config_id": 306,
+          "algorithm": "scream delay=800ms"
+        }
+      ],
+      "reps": 3,
+      "spec_path": "specs/experiments/h9-rtt-boundary.yaml",
+      "record_path": "runs/experiments/h9-rtt-boundary.json",
+      "command": "python3 tools/run_qdt_sweeps.py  # or experiment.py h9-rtt-boundary --resume",
+      "record_status": {
+        "completed_runs": 18,
+        "total_runs": 18
+      }
+    }
+  ]
 }
