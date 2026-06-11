@@ -2281,10 +2281,10 @@ latency_budget_ms: 0</code></pre>
   <h3>Network conditions <span class="small">→ <a href="#roadmap-goal2-regimes">§7.5</a></span></h3>
   <ul>
     <li class="done">Link capacity sampled via 5G slices (<a href="#hypo-h1">H1</a>, <a href="#hypo-h4">H4</a>); workload-validity guardrail (<a href="#hypo-h3">H3</a>)</li>
-    <li class="todo">RTT — not yet a clean independent axis · <strong>runnable now</strong></li>
-    <li class="todo">Loss pattern — no matched-mean comparison (iid vs Gilbert-Elliott) · <strong>runnable now</strong></li>
-    <li class="todo">Jitter — not isolated · <strong>runnable now</strong></li>
-    <li class="todo">Workload — flagged by H3, not yet a swept axis · <strong>runnable now</strong></li>
+    <li class="done">RTT / base delay swept as a clean axis in the delay boundary (<a href="#hypo-h9">H9</a>, §7.8)</li>
+    <li class="done">Loss pattern — iid systematically swept (<a href="#hypo-h10">H10</a>, <a href="#hypo-h12">H12</a>); only the bursty Gilbert-Elliott matched-mean comparison is still open · <strong>runnable now</strong></li>
+    <li class="todo">Jitter — swept (<a href="#hypo-h11">H11</a>) but inconclusive (netem reordering) · needs a reorder-controlled model</li>
+    <li class="todo">Workload — single real clip only (realmotion-avi); no second clip available, so this axis is parked, not runnable</li>
   </ul>
 </div>
 
@@ -2302,7 +2302,7 @@ latency_budget_ms: 0</code></pre>
   <h3>Interactions <span class="small">→ <a href="#roadmap-goal2-interactions">§7.7</a></span></h3>
   <ul>
     <li class="done">Recovery does not change the SCReAM-vs-GCC winner on a fluctuating link (<a href="#hypo-h2">H2</a>)</li>
-    <li class="todo">SCReAM × recovery cross-product (NACK/RTX × PLI × FEC) · <strong>runnable now</strong></li>
+    <li class="todo">SCReAM × recovery cross-product (NACK/RTX × PLI × FEC) — H12 measured NACK+PLI under loss (no help); the full 2×2×2 bias study still open · <strong>runnable now</strong></li>
     <li class="todo">SCReAM × codec (VP8 vs H.264) — <strong>blocked on</strong> the <a href="#contract-encoder">§6.1 Encoder</a> contract</li>
     <li class="todo">SCReAM × multi-stream — <strong>blocked on</strong> the multi-stream refactor</li>
   </ul>
@@ -2370,8 +2370,10 @@ latency_budget_ms: 0</code></pre>
 
 <p>
   Each environment dimension swept as an independent axis at fixed
-  SCReAM baseline. Produces the response curves that say where SCReAM
-  works well, less well, and not at all.
+  SCReAM baseline, producing the response curves that say where SCReAM
+  works well, less well, and not at all. The boundary sweeps (§7.8) are
+  exactly these curves — RTT, loss, and jitter are now covered there
+  (H9, H10, H11), so this axis and §7.8 share the same runs.
 </p>
 
 <div class="feature-block">
@@ -2381,18 +2383,23 @@ latency_budget_ms: 0</code></pre>
       (Mahimahi 5G slices); not a clean axis.
     </li>
     <li>
-      <strong>RTT.</strong> Not varied as an independent dimension.
+      <strong>RTT.</strong> Swept 20–800 ms in the delay boundary
+      (<a href="#hypo-h9">H9</a>); the response curve exists.
     </li>
     <li>
-      <strong>Loss pattern.</strong> iid covered, Gilbert-Elliott
-      touched, but no systematic comparison at matched mean loss.
+      <strong>Loss pattern.</strong> iid systematically swept
+      (<a href="#hypo-h10">H10</a>, <a href="#hypo-h12">H12</a>); the
+      matched-mean iid-vs-Gilbert-Elliott comparison is still open.
     </li>
     <li>
-      <strong>Jitter.</strong> Not isolated as a dimension.
+      <strong>Jitter.</strong> Swept (<a href="#hypo-h11">H11</a>) but
+      inconclusive — netem reordering collapses delivery; needs a
+      reorder-controlled model.
     </li>
     <li>
-      <strong>Application workload.</strong> H3 found the workload
-      does not keep the recordings busy. That is the symptom of this gap.
+      <strong>Application workload.</strong> H3 found the workload does
+      not keep the recordings busy, but realmotion-avi is the only real
+      recorded clip, so a second-workload comparison is parked.
     </li>
   </ul>
 </div>
@@ -2556,8 +2563,8 @@ latency_budget_ms: 0</code></pre>
 <div class="feature-block">
   <h3>Phase 3 · Breadth <span class="small">(runnable now)</span></h3>
   <ul>
-    <li class="todo">Clean delay / jitter / matched-loss network axes (<a href="#roadmap-goal2-regimes">§7.5</a>).</li>
-    <li class="todo">The loss-recovery cross-product (NACK/RTX × PLI × FEC) and how it biases SCReAM (<a href="#roadmap-goal2-interactions">§7.7</a>).</li>
+    <li class="done">Network axes largely covered by the boundary sweeps: delay (<a href="#hypo-h9">H9</a>) and jitter (<a href="#hypo-h11">H11</a>, inconclusive) done; only the bursty Gilbert-Elliott matched-mean loss comparison remains (<a href="#roadmap-goal2-regimes">§7.5</a>).</li>
+    <li class="todo">The loss-recovery cross-product (NACK/RTX × PLI × FEC) and how it biases SCReAM — H12 did NACK+PLI under loss; the full 2×2×2 still open (<a href="#roadmap-goal2-interactions">§7.7</a>).</li>
   </ul>
 </div>
 
