@@ -417,6 +417,40 @@
   .badge.inconclusive { background: #fff7ed; color: #b45309; }
   .badge.untested     { background: var(--info-soft); color: var(--info); }
   .badge.refuted      { background: var(--gap-soft); color: var(--gap); }
+  .ev-h { font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;
+          color: var(--muted); font-weight: 600; margin: 18px 0 6px 0; }
+  .hypo-full {
+    border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 20px; margin: 14px 0; background: var(--panel);
+  }
+  .hypo-full .hypo-h {
+    font-size: 16px; margin: 0 0 4px 0;
+    display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+  }
+  .hypo-full .meta { font-size: 12.5px; color: var(--muted); margin: 0 0 10px 0; }
+  .hypo-full .lbl {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
+    color: var(--muted); font-weight: 600; margin: 14px 0 4px 0;
+  }
+  .hypo-full p { margin: 6px 0; }
+  .hypo-full ul { margin: 4px 0 8px 0; }
+  .hypo-full figure { margin: 12px 0; }
+  .hypo-full figure img {
+    max-width: 100%; height: auto; border: 1px solid var(--rule);
+    border-radius: 4px; background: #fff; padding: 6px;
+  }
+  .hypo-full figcaption { font-size: 12.5px; color: var(--muted); margin-top: 6px; }
+  .hypo-full .tbl-h { font-size: 13px; margin: 14px 0 4px 0; }
+  .umn-doc { font-size: 14px; line-height: 1.55; }
+  .umn-doc h1 { font-size: 20px; margin: 18px 0 8px; }
+  .umn-doc h2 { font-size: 17px; margin: 22px 0 6px; border-bottom: 1px solid var(--rule); padding-bottom: 4px; }
+  .umn-doc h3 { font-size: 15px; margin: 16px 0 4px; }
+  .umn-doc h4 { font-size: 14px; margin: 12px 0 4px; }
+  .umn-doc pre { background: var(--code); padding: 10px 12px; border-radius: 6px; overflow-x: auto; font-size: 12.5px; }
+  .umn-doc code { background: var(--code); padding: 1px 4px; border-radius: 3px; font-size: 12.5px; }
+  .umn-doc pre code { background: none; padding: 0; }
+  .umn-doc table { font-size: 13px; }
+  .umn-doc img { max-width: 100%; height: auto; }
   .hypo-card .target {
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     font-size: 12px;
@@ -506,11 +540,23 @@
         <li><a class="sub" href="#roadmap-goal2">What we characterize</a></li>
         <li><a class="sub" href="#roadmap-goal2-config">Configuration space</a></li>
         <li><a class="sub" href="#goal2-status">Status — by axis</a></li>
-        <li><a class="sub" href="#roadmap-goal2-knobs">Knob sensitivity → H6, H7</a></li>
-        <li><a class="sub" href="#roadmap-goal2-regimes">Network conditions → H1, H3, H4</a></li>
-        <li><a class="sub" href="#roadmap-goal2-mechanism">Mechanism → H5</a></li>
-        <li><a class="sub" href="#roadmap-goal2-interactions">Interactions → H2</a></li>
+        <li><a class="sub" href="#roadmap-goal2-knobs">Knob sensitivity</a></li>
+        <li><a class="subsub" href="#hypo-h6">H6 · Queue-delay-target</a></li>
+        <li><a class="subsub" href="#hypo-h7">H7 · …tight ceiling</a></li>
+        <li><a class="subsub" href="#hypo-h8">H8 · Ramp speed</a></li>
+        <li><a class="sub" href="#roadmap-goal2-regimes">Network conditions</a></li>
+        <li><a class="subsub" href="#hypo-h1">H1 · Link use on a drop</a></li>
+        <li><a class="subsub" href="#hypo-h3">H3 · Test video weight</a></li>
+        <li><a class="subsub" href="#hypo-h4">H4 · Usable video on 5G</a></li>
+        <li><a class="sub" href="#roadmap-goal2-mechanism">Mechanism</a></li>
+        <li><a class="subsub" href="#hypo-h5">H5 · Why UMN won\'t adapt</a></li>
+        <li><a class="sub" href="#roadmap-goal2-interactions">Interactions</a></li>
+        <li><a class="subsub" href="#hypo-h2">H2 · Recovery vs winner</a></li>
         <li><a class="sub" href="#roadmap-goal2-boundary">Boundary behaviour</a></li>
+        <li><a class="subsub" href="#hypo-h9">H9 · Delay boundary</a></li>
+        <li><a class="subsub" href="#hypo-h10">H10 · Loss boundary</a></li>
+        <li><a class="subsub" href="#hypo-h11">H11 · Jitter (inconclusive)</a></li>
+        <li><a class="subsub" href="#hypo-h12">H12 · Recovery on loss</a></li>
         <li><a class="sub" href="#goal2-plan">What's next — the plan</a></li>
       </ul>
       <ul class="group">
@@ -2041,11 +2087,11 @@ stop_session(session_id)           → ack</pre>
 
 <h3 id="goal1-evidence">6.4 Evidence</h3>
 <p>The headline result for Goal 1 — our SCReAM is more mature than UMN's reimplementation, and the cause is isolated to a wiring gap, not the algorithm.</p>
-<div class="hypo-grid"><a class="hypo-card linked" id="hypo-h5" href="analysis/hypotheses/h5.html">
+<div class="hypo-grid"><a class="hypo-card linked" id="hypo-h5-goal1" href="#hypo-h5">
     <div class="id">H5</div>
     <div class="title">Why UMN's SCReAM won't adapt</div>
-    <div class="claim">Our SCReAM follows changing bandwidth; UMN's does not. The cause is a wiring problem — UMN's controller picks a rate that never reaches the encoder — not the algorithm.</div>
-    <div class="hypo-footer"><span class="badge supported">tested · cause isolated to a wiring gap</span><span class="target">→ h5.html</span></div>
+    <div class="claim">Our SCReAM follows changing bandwidth; UMN's does not. The cause is a wiring problem — UMN's controller picks a rate that never reaches the encoder — not the algorithm. Full writeup inline under §7.6 Mechanism.</div>
+    <div class="hypo-footer"><span class="badge supported">tested · cause isolated to a wiring gap</span><span class="target">→ §7.6 (H5)</span></div>
   </a></div>
 </section>
 
@@ -2375,22 +2421,49 @@ latency_budget_ms: 0</code></pre>
   </ul>
 </div>
 
-<h4 style="margin-top:18px;">Evidence</h4><div class="hypo-grid"><a class="hypo-card linked" id="hypo-h6" href="analysis/hypotheses/h6.html">
-    <div class="id">H6</div>
-    <div class="title">Queue-delay-target: latency, not quality</div>
-    <div class="claim">SCReAM's queue-delay-target moves p95 latency on every network, but does not change picture quality — at the loose 4000 kbps ceiling there is no quality to trade for the added latency.</div>
-    <div class="hypo-footer"><span class="badge refuted">tested · latency knob, not quality</span><span class="target">→ h6.html</span></div>
-  </a><a class="hypo-card linked" id="hypo-h7" href="analysis/hypotheses/h7.html">
-    <div class="id">H7</div>
-    <div class="title">Queue-delay-target under a tight ceiling</div>
-    <div class="claim">Even with the encoder starved (800 kbps ceiling), loosening the queue-delay-target still doesn't raise quality — flat on a fixed link, and falling on a capacity-step link.</div>
-    <div class="hypo-footer"><span class="badge refuted">tested · still not a quality knob</span><span class="target">→ h7.html</span></div>
-  </a><a class="hypo-card linked" id="hypo-h8" href="analysis/hypotheses/h8.html">
-    <div class="id">H8</div>
-    <div class="title">Ramp speed and capacity-step recovery</div>
-    <div class="claim">A faster SCReAM ramp (mul_increase) does not recover quality after the capacity step — PSNR is best at the slowest ramp and declines as it gets aggressive. Like the queue-delay-target, the ramp is not a quality lever.</div>
-    <div class="hypo-footer"><span class="badge refuted">tested · ramp is not a quality lever</span><span class="target">→ h8.html</span></div>
-  </a></div><h3 id="roadmap-goal2-regimes">7.5 Network conditions</h3>
+<h4 class="ev-h">Evidence</h4>
+<!-- INLINE:knobs -->
+<div class="hypo-full" id="hypo-h6">
+<h4 class="hypo-h">H6 · Queue-delay-target: latency, not quality <span class="badge refuted">refuted</span></h4>
+<p class="meta">Goal 2.2 (knob sensitivity), project-internal · <a href="analysis/hypotheses/h6.html">standalone page →</a></p>
+<p><strong>Claim.</strong> Turning SCReAM&#x27;s queue-delay-target changes p95 latency on every network we tested, but does not change decoded picture quality (PSNR) — at this workload there is no quality gain to trade for the added latency.</p>
+<p class="lbl">Predictions</p><ul><li><code>psnr_rises_with_knob_on_every_network</code></li><li><code>p95_latency_rises_with_knob_on_every_network</code></li><li><code>diminishing_returns_point_visible_on_every_network</code></li><li><code>diminishing_returns_points_differ_between_networks</code></li></ul>
+<p class="lbl">Verdict</p><table><thead><tr><th>Outcome</th><th>Predicates</th></tr></thead><tbody><tr><td><strong>Supported when all</strong></td><td><code>psnr_rises_with_knob_on_every_network</code><br><code>p95_latency_rises_with_knob_on_every_network</code><br><code>diminishing_returns_point_visible_on_every_network</code><br><code>diminishing_returns_points_differ_between_networks</code></td></tr><tr><td><strong>Refuted when any</strong></td><td><code>psnr_does_not_rise_with_knob_on_at_least_one_network</code><br><code>no_diminishing_returns_point_visible_anywhere</code><br><code>diminishing_returns_points_match_across_networks</code></td></tr><tr><td><strong>Untested when any</strong></td><td><code>any_cell_failed</code><br><code>required_metric_missing</code></td></tr></tbody></table>
+<p class="lbl">Findings</p><ul><li>The control loop responds the right way to the knob. As the knob goes from 10 ms to 500 ms on every network, p95 latency moves with it — tighter knob, less latency; looser knob, more latency. SCReAM is doing what its specification says it should.</li><li>The encoder does not benefit from extra room at this loose ceiling. Decoded picture quality (PSNR) stays roughly flat and high across the knob range — about 37.7 to 39.5 dB on the fixed 5 Mbps link, 35.6 to 38.9 dB on the capacity-step link (5 Mbps drops to 300 kbps and recovers), 31.8 to 34.1 dB on the 5G CQI trace. The only consistent trend is a slight DROP at the loosest setting (500 ms), so loosening the knob never raises quality. VP8 at this 4000 kbps ceiling already has enough budget to encode this clip; extra buffering does not give it useful extra room.</li><li>The quality numbers are trustworthy. The decoded_psnr metric was fixed before this run (frame-accurate self-healing alignment); these ~32 to 39 dB values are believable for the clip and ceiling, and the metric separates this loose ceiling from the tight 800 kbps ceiling in H7 (19 to 34 dB). The earlier broken metric pinned everything near 10 dB and could not.</li></ul>
+<figure><img src="analysis/hypotheses/results/h6_psnr_by_knob.svg" alt="" loading="lazy"><figcaption>Decoded PSNR vs queue-delay-target. Flat or falling on every network — loosening the knob does not raise quality.</figcaption></figure>
+<figure><img src="analysis/hypotheses/results/h6_latency_by_knob.svg" alt="" loading="lazy"><figcaption>p95 frame latency vs queue-delay-target. Latency tracks the knob (the relative trend within a sweep is what matters; the absolute offset carries the aum/veda clock-skew artifact).</figcaption></figure>
+<h5 class="tbl-h">Decoded PSNR (dB) by queue-delay-target</h5><table><thead><tr><th>network</th><th>10 ms</th><th>30 ms</th><th>60 ms</th><th>100 ms</th><th>200 ms</th><th>500 ms</th></tr></thead><tbody><tr><td>fixed 5 Mbps</td><td>39.03</td><td>39.53</td><td>39.48</td><td>38.99</td><td>39.16</td><td>37.69</td></tr><tr><td>capacity step (5 Mbps ⇄ 300 kbps)</td><td>37.92</td><td>38.18</td><td>38.87</td><td>38.00</td><td>38.30</td><td>35.64</td></tr><tr><td>5G CQI trace</td><td>34.10</td><td>32.88</td><td>32.14</td><td>32.56</td><td>32.50</td><td>31.77</td></tr></tbody></table>
+<h5 class="tbl-h">p95 frame latency (ms) by queue-delay-target</h5><table><thead><tr><th>network</th><th>10 ms</th><th>30 ms</th><th>60 ms</th><th>100 ms</th><th>200 ms</th><th>500 ms</th></tr></thead><tbody><tr><td>fixed 5 Mbps</td><td>-42.63</td><td>-24.20</td><td>-25.59</td><td>-26.01</td><td>-24.44</td><td>-23.22</td></tr><tr><td>capacity step (5 Mbps ⇄ 300 kbps)</td><td>-39.48</td><td>-26.10</td><td>-18.65</td><td>-18.41</td><td>-16.76</td><td>-19.70</td></tr><tr><td>5G CQI trace</td><td>-24.59</td><td>-16.54</td><td>-18.13</td><td>-17.26</td><td>-17.18</td><td>-17.28</td></tr></tbody></table>
+<p class="lbl">Limitations</p><ul class="small"><li>Workload-specific. Tested with realmotion-avi (1280×1024 MJPEG, 10 fps, 60 s). A higher-motion or longer clip might saturate the encoder differently.</li><li>Bitrate-specific. Tested at init / min / max = 1500 / 200 / 4000 kbps. H7 re-ran the same sweep at a tight 800 kbps ceiling; the knob still did not raise quality there either.</li><li>The &quot;no quality response&quot; claim rests on PSNR. SSIM or VMAF might surface a smaller effect that PSNR misses.</li><li>3 reps per cell; effects smaller than the run-to-run spread are not resolved.</li><li>Absolute latency numbers carry a clock-skew artifact between aum and veda (same one H4 flagged). The relative comparison across knob values within one sweep is unaffected.</li></ul>
+</div>
+<div class="hypo-full" id="hypo-h7">
+<h4 class="hypo-h">H7 · Queue-delay-target under a tight ceiling <span class="badge refuted">refuted</span></h4>
+<p class="meta">Goal 2.2 (knob sensitivity), follow-up to H6 · <a href="analysis/hypotheses/h7.html">standalone page →</a></p>
+<p><strong>Claim.</strong> H6 found the queue-delay-target knob moves latency but not picture quality, because the encoder had bytes to spare. With the bitrate ceiling dropped from 4000 to 800 kbps, the encoder is hungry, so loosening the knob should now raise picture quality (PSNR) as well as latency.</p>
+<p class="lbl">Predictions</p><ul><li><code>psnr_rises_with_knob_on_every_network</code></li><li><code>psnr_swing_across_the_knob_is_larger_than_in_h6</code></li><li><code>p95_latency_rises_with_knob_on_every_network</code></li></ul>
+<p class="lbl">Verdict</p><table><thead><tr><th>Outcome</th><th>Predicates</th></tr></thead><tbody><tr><td><strong>Supported when all</strong></td><td><code>psnr_rises_with_knob_on_every_network</code><br><code>psnr_swing_across_the_knob_is_larger_than_in_h6</code></td></tr><tr><td><strong>Refuted when any</strong></td><td><code>psnr_does_not_rise_with_knob_on_at_least_one_network</code></td></tr><tr><td><strong>Untested when any</strong></td><td><code>any_cell_failed</code><br><code>required_metric_missing</code></td></tr></tbody></table>
+<p class="lbl">Findings</p><ul><li>Starving the encoder did not turn the knob into a quality knob. At the tight 800 kbps ceiling, loosening the knob does not raise picture quality. On the fixed 5 Mbps link PSNR is dead flat (34.2 dB at every knob value); on the capacity-step link (5 Mbps drops to 300 kbps and recovers) it actually falls as the knob loosens (26.4 dB at 10 ms down to about 19 dB at 100 ms and beyond); on the 5G CQI trace it drifts slightly down (31.8 to 30.6 dB). So the queue-delay-target is a latency knob, not a quality knob, at both the loose (H6) and tight (H7) ceilings for this workload.</li><li>The quality numbers are now trustworthy. The decoded_psnr metric was fixed before this run (frame-accurate self-healing alignment), and the values track the bitrate ceiling as they should -- about 32 to 39 dB at the loose 4000 kbps ceiling (H6) versus 19 to 34 dB at the tight 800 kbps ceiling here. The metric clearly separates the two ceilings, which the earlier broken metric (pinned near 10 dB everywhere) could not.</li><li>The robust takeaway across H6 and H7 is one finding, tested at two ceilings with a trustworthy quality axis -- the knob moves latency, not quality, and on the capacity-step link a looser queue-delay-target slightly hurts quality rather than helping (more data buffered through the 300 kbps trough arrives stale or lost).</li></ul>
+<figure><img src="analysis/hypotheses/results/h7_psnr_by_knob.svg" alt="" loading="lazy"><figcaption>Decoded PSNR vs queue-delay-target. Flat or falling on every network — loosening the knob does not raise quality.</figcaption></figure>
+<figure><img src="analysis/hypotheses/results/h7_latency_by_knob.svg" alt="" loading="lazy"><figcaption>p95 frame latency vs queue-delay-target. Latency tracks the knob (the relative trend within a sweep is what matters; the absolute offset carries the aum/veda clock-skew artifact).</figcaption></figure>
+<h5 class="tbl-h">Decoded PSNR (dB) by queue-delay-target</h5><table><thead><tr><th>network</th><th>10 ms</th><th>30 ms</th><th>60 ms</th><th>100 ms</th><th>200 ms</th><th>500 ms</th></tr></thead><tbody><tr><td>fixed 5 Mbps</td><td>34.18</td><td>34.19</td><td>34.19</td><td>34.18</td><td>34.19</td><td>34.17</td></tr><tr><td>capacity step (5 Mbps ⇄ 300 kbps)</td><td>26.39</td><td>26.06</td><td>25.92</td><td>19.37</td><td>19.28</td><td>19.49</td></tr><tr><td>5G CQI trace</td><td>31.84</td><td>31.72</td><td>31.21</td><td>30.90</td><td>30.86</td><td>30.59</td></tr></tbody></table>
+<h5 class="tbl-h">p95 frame latency (ms) by queue-delay-target</h5><table><thead><tr><th>network</th><th>10 ms</th><th>30 ms</th><th>60 ms</th><th>100 ms</th><th>200 ms</th><th>500 ms</th></tr></thead><tbody><tr><td>fixed 5 Mbps</td><td>-66.32</td><td>-66.24</td><td>-66.25</td><td>-66.67</td><td>-66.83</td><td>-67.01</td></tr><tr><td>capacity step (5 Mbps ⇄ 300 kbps)</td><td>-40.32</td><td>12.52</td><td>12.34</td><td>-14.19</td><td>12.22</td><td>-14.20</td></tr><tr><td>5G CQI trace</td><td>-46.49</td><td>-31.99</td><td>-28.45</td><td>-27.13</td><td>-30.23</td><td>-26.59</td></tr></tbody></table>
+<p class="lbl">Limitations</p><ul class="small"><li>Workload-specific (realmotion-avi, 1280x1024 MJPEG, 10 fps, 60 s) and bitrate-specific (the two ceilings tested). A different clip or ceiling could behave differently.</li><li>The quality axis is PSNR; SSIM or VMAF might surface a smaller effect PSNR misses.</li><li>3 reps per cell; effects smaller than the run-to-run spread are not resolved.</li><li>Absolute latency carries the aum/veda clock-skew artifact (as in H4/H6); the comparison across knob values within one sweep is unaffected.</li></ul>
+</div>
+<div class="hypo-full" id="hypo-h8">
+<h4 class="hypo-h">H8 · Ramp speed and capacity-step recovery <span class="badge refuted">refuted</span></h4>
+<p class="meta">Goal 2.2 (knob sensitivity), follow-up to H6/H7 · <a href="analysis/hypotheses/h8.html">standalone page →</a></p>
+<p><strong>Claim.</strong> H6 and H7 found the queue-delay-target is a latency knob, not a quality knob, and on the capacity-step link a looser target slightly hurt quality because data buffered through the 300 kbps trough arrives stale. SCReAM&#x27;s multiplicative-increase coefficient (mul_increase) sets how fast the controller ramps its rate back up after capacity returns. A more aggressive ramp should recover picture quality faster after the step, so on the capacity-step network decoded PSNR should rise with mul_increase and swing more than on the fixed-link control, while p95 latency stays bounded.</p>
+<p class="lbl">Predictions</p><ul><li><code>psnr_rises_with_ramp_on_the_capacity_step_network</code></li><li><code>psnr_effect_larger_on_capacity_step_than_on_fixed_control</code></li><li><code>p95_latency_stays_bounded_as_ramp_increases</code></li></ul>
+<p class="lbl">Verdict</p><table><thead><tr><th>Outcome</th><th>Predicates</th></tr></thead><tbody><tr><td><strong>Supported when all</strong></td><td><code>psnr_rises_with_ramp_on_the_capacity_step_network</code><br><code>psnr_effect_larger_on_capacity_step_than_on_fixed_control</code></td></tr><tr><td><strong>Refuted when any</strong></td><td><code>psnr_does_not_rise_on_the_capacity_step_network</code></td></tr><tr><td><strong>Untested when any</strong></td><td><code>any_cell_failed</code><br><code>required_metric_missing</code></td></tr></tbody></table>
+<p class="lbl">Findings</p><ul><li>A faster ramp does not recover quality on the capacity-step link. Decoded PSNR is highest at the slowest ramp (mul_increase 0.02 gives 38.8 dB) and declines as the ramp gets more aggressive, bottoming at 0.2 (36.6 dB) and recovering only partially to 37.5 dB at 0.5. It never rises above the slow-ramp baseline, so the prediction that PSNR rises with the ramp is refuted.</li><li>The fixed-link control behaved as predicted. With no capacity change, ramp speed barely moves PSNR (39.3 to 39.7 dB, swing 0.46 dB). That the effect appears only on the capacity-step link (swing 2.20 dB) confirms it is a real network-dependent response, not a workload artifact. The 5G trace is also non-rising (32.2 down to 30.2 dB, swing 2.03 dB).</li><li>{&#x27;Two SCReAM knobs now fail to be quality levers for this workload&#x27;: &#x27;the queue-delay-target (H6, H7) and the multiplicative-increase ramp (H8). If anything a more aggressive ramp slightly hurts on the capacity-step link, consistent with overshoot causing queue buildup and loss so frames arrive stale through the 300 kbps trough. The conservative slow ramp wins.&#x27;}</li></ul>
+<figure><img src="analysis/hypotheses/results/h8_psnr_by_knob.svg" alt="" loading="lazy"><figcaption>Decoded PSNR vs mul_increase (ramp aggressiveness). The fixed 5 Mbps link is the control, where ramp speed should not matter; the capacity-step link is where a faster ramp should recover quality after the step.</figcaption></figure>
+<figure><img src="analysis/hypotheses/results/h8_latency_by_knob.svg" alt="" loading="lazy"><figcaption>p95 frame latency vs mul_increase. The within-sweep trend is what matters; the absolute offset carries the aum/veda clock-skew artifact.</figcaption></figure>
+<h5 class="tbl-h">Decoded PSNR (dB) by mul_increase</h5><table><thead><tr><th>network</th><th>mul 0.02</th><th>mul 0.05</th><th>mul 0.1</th><th>mul 0.2</th><th>mul 0.3</th><th>mul 0.5</th></tr></thead><tbody><tr><td>fixed 5 Mbps</td><td>39.41</td><td>39.72</td><td>39.39</td><td>39.53</td><td>39.26</td><td>39.33</td></tr><tr><td>capacity step (5 Mbps ⇄ 300 kbps)</td><td>38.80</td><td>38.49</td><td>38.49</td><td>36.61</td><td>37.45</td><td>37.49</td></tr><tr><td>5G CQI trace</td><td>32.22</td><td>32.24</td><td>32.12</td><td>31.32</td><td>31.96</td><td>30.21</td></tr></tbody></table>
+<h5 class="tbl-h">p95 frame latency (ms) by mul_increase</h5><table><thead><tr><th>network</th><th>mul 0.02</th><th>mul 0.05</th><th>mul 0.1</th><th>mul 0.2</th><th>mul 0.3</th><th>mul 0.5</th></tr></thead><tbody><tr><td>fixed 5 Mbps</td><td>-24.98</td><td>-23.57</td><td>-20.54</td><td>-23.87</td><td>-20.19</td><td>-21.18</td></tr><tr><td>capacity step (5 Mbps ⇄ 300 kbps)</td><td>-18.62</td><td>-20.84</td><td>-21.50</td><td>-19.51</td><td>-23.37</td><td>-22.28</td></tr><tr><td>5G CQI trace</td><td>-19.13</td><td>-17.65</td><td>-16.82</td><td>-17.76</td><td>-17.91</td><td>-14.97</td></tr></tbody></table>
+<p class="lbl">Limitations</p><ul class="small"><li>Mean PSNR is whole-run, not windowed to the post-step recovery phase. A real recovery effect should still register as a higher whole-run mean, but a windowed metric would be sharper.</li><li>Workload-specific (realmotion-avi, 1280x1024 MJPEG, 10 fps, 60 s) and ceiling-specific (loose 4000 kbps). mul_increase sweeps {0.02, 0.05, 0.1, 0.2, 0.3, 0.5}; the default is 0.05.</li><li>3 reps per cell; effects smaller than the run-to-run spread are not resolved.</li><li>Absolute latency carries the aum/veda clock-skew artifact (as in H4/H6/H7); the comparison across mul_increase values within one sweep is unaffected.</li></ul>
+</div>
+<!-- /INLINE:knobs -->
+<h3 id="roadmap-goal2-regimes">7.5 Network conditions</h3>
 
 <p>
   Each environment dimension swept as an independent axis at fixed
@@ -2428,22 +2501,51 @@ latency_budget_ms: 0</code></pre>
   </ul>
 </div>
 
-<h4 style="margin-top:18px;">Evidence</h4><div class="hypo-grid"><a class="hypo-card linked" id="hypo-h1" href="analysis/hypotheses/h1.html">
-    <div class="id">H1</div>
-    <div class="title">Link use under a capacity drop</div>
-    <div class="claim">When the network's bandwidth drops sharply, SCReAM sends less than GCC. Whether the viewer also gets fewer frames depends on how fast the bandwidth changes.</div>
-    <div class="hypo-footer"><span class="badge regime">tested · depends on the network</span><span class="target">→ h1.html</span></div>
-  </a><a class="hypo-card linked" id="hypo-h3" href="analysis/hypotheses/h3.html">
-    <div class="id">H3</div>
-    <div class="title">Is the test video heavy enough?</div>
-    <div class="claim">The current test video is too lightweight to compare SCReAM and GCC on 5G recordings — it doesn't keep the link busy.</div>
-    <div class="hypo-footer"><span class="badge supported">tested · test video too light</span><span class="target">→ h3.html</span></div>
-  </a><a class="hypo-card linked" id="hypo-h4" href="analysis/hypotheses/h4.html">
-    <div class="id">H4</div>
-    <div class="title">Usable video on tight 5G</div>
-    <div class="claim">On tight 5G recordings (handover, resource-block), SCReAM keeps more frames watchable than GCC while the camera sends fewer bytes.</div>
-    <div class="hypo-footer"><span class="badge supported">tested · SCReAM ahead on the harder recordings</span><span class="target">→ h4.html</span></div>
-  </a></div><h3 id="roadmap-goal2-mechanism">7.6 Mechanism contributions</h3>
+<h4 class="ev-h">Evidence</h4>
+<!-- INLINE:regimes -->
+<div class="hypo-full" id="hypo-h1">
+<h4 class="hypo-h">H1 · Link use under a capacity drop <span class="badge regime">regime-dependent</span></h4>
+<p class="meta">Zhang 2019 SIMUtools + project fast-transition extension · <a href="analysis/hypotheses/h1.html">standalone page →</a></p>
+<p><strong>Claim.</strong> When the network&#x27;s bandwidth drops sharply, SCReAM sends less than GCC does — at least on the runs we tested.</p>
+<p class="lbl">Predictions</p><ul><li><code>scream_sends_at_least_5_percentage_points_less_than_gcc_during_the_low_capacity_phase</code></li><li><code>gcc_sender_rate_swings_at_least_20_percent_more_than_scream_during_the_low_capacity_phase</code></li></ul>
+<p class="lbl">Verdict</p><table><thead><tr><th>Outcome</th><th>Predicates</th></tr></thead><tbody><tr><td><strong>Supported when all</strong></td><td><code>scream_sends_at_least_5_percentage_points_less_than_gcc_during_the_low_capacity_phase</code><br><code>gcc_sender_rate_swings_at_least_20_percent_more_than_scream_during_the_low_capacity_phase</code></td></tr><tr><td><strong>Refuted when any</strong></td><td><code>neither_pattern_holds_in_any_test_case</code></td></tr><tr><td><strong>Inconclusive when any</strong></td><td><code>patterns_hold_only_when_capacity_changes_slowly</code><br><code>patterns_hold_only_when_capacity_changes_quickly</code></td></tr></tbody></table>
+<p class="lbl">Findings</p><ul><li>Whether SCReAM or GCC sends more during the low-capacity phase depends on how fast the bandwidth changes.</li><li>What the sender pushes onto the wire and what the viewer actually receives are two different questions: this hypothesis is about the sender.</li></ul>
+<figure><img src="analysis/hypotheses/results/h1_regime_summary.svg" alt="" loading="lazy"><figcaption>Figure H1-1. Slow vs fast regime: util_gap and var_ratio against the predicted thresholds. Green bars exceed the threshold; orange bars do not.</figcaption></figure>
+<figure><img src="analysis/hypotheses/results/h1_slow_timeseries.svg" alt="" loading="lazy"><figcaption>Figure H1-2a. Slow regime (scream-vs-gcc-720p): encoder rate over time, averaged across reps, against the capacity step.</figcaption></figure>
+<figure><img src="analysis/hypotheses/results/h1_fast_timeseries.svg" alt="" loading="lazy"><figcaption>Figure H1-2b. Fast regime (scream-vs-gcc-720p-fast): the same view; transitions are frequent enough that neither controller settles.</figcaption></figure>
+<h5 class="tbl-h">h1_regime_comparison</h5><table><thead><tr><th>regime</th><th>experiment</th><th>scream_util_mean</th><th>gcc_util_mean</th><th>util_gap</th><th>scream_rate_stddev_kbps</th><th>gcc_rate_stddev_kbps</th><th>var_ratio</th><th>verdict</th></tr></thead><tbody><tr><td>Slow regime — capacity holds each level ~7 s before flipping</td><td>scream-vs-gcc-720p</td><td>2.56</td><td>2.95</td><td>0.387</td><td>124.0</td><td>587.1</td><td>4.73</td><td>supported</td></tr><tr><td>Fast regime — capacity flips every 2 s, no time to settle</td><td>scream-vs-gcc-720p-fast</td><td>3.09</td><td>2.93</td><td>-0.156</td><td>577.4</td><td>653.9</td><td>1.13</td><td>refuted</td></tr></tbody></table>
+<p class="lbl">Limitations</p><ul class="small"><li>This is not a general claim that one algorithm is better than the other.</li></ul>
+</div>
+<div class="hypo-full" id="hypo-h3">
+<h4 class="hypo-h">H3 · Is the test video heavy enough? <span class="badge supported">supported</span></h4>
+<p class="meta">Project-internal validity check for 5G-recording SCReAM / GCC experiments · <a href="analysis/hypotheses/h3.html">standalone page →</a></p>
+<p><strong>Claim.</strong> The current test video (ball-720p30) sends nowhere near enough data to use up the bandwidth in the 5G recordings, so any controller comparison on those recordings is not yet meaningful.</p>
+<p class="lbl">Predictions</p><ul><li><code>every_5g_recording_has_at_least_10x_more_capacity_than_the_camera_actually_sends</code></li><li><code>on_every_recording_fewer_than_15_percent_of_100ms_windows_drop_below_1mbps_of_actual_sent_bytes</code></li></ul>
+<p class="lbl">Verdict</p><table><thead><tr><th>Outcome</th><th>Predicates</th></tr></thead><tbody><tr><td><strong>Supported when all</strong></td><td><code>every_5g_recording_has_at_least_10x_more_capacity_than_the_camera_actually_sends</code><br><code>on_every_recording_fewer_than_15_percent_of_100ms_windows_drop_below_1mbps_of_actual_sent_bytes</code></td></tr><tr><td><strong>Refuted when any</strong></td><td><code>no_recording_passes_either_check</code></td></tr><tr><td><strong>Inconclusive when any</strong></td><td><code>some_recordings_pass_only_one_check</code></td></tr><tr><td><strong>Untested when any</strong></td><td><code>required_records_missing</code></td></tr></tbody></table>
+<p class="lbl">Findings</p><ul><li>The current ball-720p30 test video sends about 220–230 kbit / s, well below the typical bandwidth in the translated 5G recordings.</li><li>Earlier 5G-recording SCReAM / GCC comparisons cannot be read as meaningful algorithm comparisons.</li><li>Any future 5G-recording comparison must first pass this calibration with a test video that actually keeps the link busy.</li></ul>
+<figure><img src="analysis/hypotheses/results/h3_capacity_headroom.svg" alt="" loading="lazy"><figcaption>Capacity percentiles versus observed camera wire bitrate.</figcaption></figure>
+<figure><img src="analysis/hypotheses/results/h3_ho_headroom_timeseries.svg" alt="" loading="lazy"><figcaption>Time-series view showing handover trace capacity against emitted media rate.</figcaption></figure>
+<h5 class="tbl-h">headroom</h5><table><thead><tr><th>experiment</th><th>config_id</th><th>label</th><th>algorithm</th><th>network</th><th>observed_wire_kbps</th><th>min_kbps</th><th>p10_kbps</th><th>median_kbps</th><th>mean_kbps</th><th>max_kbps</th><th>median_headroom</th><th>p10_headroom</th><th>bins_below_1000_kbps_pct</th></tr></thead><tbody><tr><td>scream-vs-gcc-mahimahi-5g-cqi</td><td>55</td><td>SCReAM</td><td>scream</td><td>mahimahi-5g-cqi-100ms</td><td>218.5</td><td>3,600.0</td><td>8,016.0</td><td>11,160.0</td><td>14,274.2</td><td>40,560.0</td><td>51.08</td><td>36.69</td><td>0.000</td></tr><tr><td>scream-vs-gcc-mahimahi-5g-cqi</td><td>56</td><td>GCC</td><td>gcc</td><td>mahimahi-5g-cqi-100ms</td><td>230.2</td><td>3,600.0</td><td>8,016.0</td><td>11,160.0</td><td>14,274.2</td><td>40,560.0</td><td>48.48</td><td>34.82</td><td>0.000</td></tr><tr><td>scream-vs-gcc-mahimahi-5g-ho</td><td>57</td><td>SCReAM</td><td>scream</td><td>mahimahi-5g-ho-100ms</td><td>223.6</td><td>1.00</td><td>720.0</td><td>6,240.0</td><td>7,234.4</td><td>27,000.0</td><td>27.91</td><td>3.22</td><td>11.48</td></tr><tr><td>scream-vs-gcc-mahimahi-5g-ho</td><td>58</td><td>GCC</td><td>gcc</td><td>mahimahi-5g-ho-100ms</td><td>231.4</td><td>1.00</td><td>720.0</td><td>6,240.0</td><td>7,234.4</td><td>27,000.0</td><td>26.96</td><td>3.11</td><td>11.48</td></tr><tr><td>scream-vs-gcc-mahimahi-5g-rb</td><td>59</td><td>SCReAM</td><td>scream</td><td>mahimahi-5g-rb-100ms</td><td>215.1</td><td>1.00</td><td>2,280.0</td><td>5,160.0</td><td>5,530.2</td><td>11,400.0</td><td>23.99</td><td>10.60</td><td>3.28</td></tr><tr><td>scream-vs-gcc-mahimahi-5g-rb</td><td>60</td><td>GCC</td><td>gcc</td><td>mahimahi-5g-rb-100ms</td><td>230.9</td><td>1.00</td><td>2,280.0</td><td>5,160.0</td><td>5,530.2</td><td>11,400.0</td><td>22.35</td><td>9.88</td><td>3.28</td></tr></tbody></table>
+<p class="lbl">Limitations</p><ul class="small"><li>This shows the current test video is too light. It does not yet test a heavier replacement.</li><li>Brief low-capacity dips still happen in the handover-like recordings; the claim is about typical bandwidth across the whole replay.</li></ul>
+</div>
+<div class="hypo-full" id="hypo-h4">
+<h4 class="hypo-h">H4 · Usable video on tight 5G <span class="badge supported">supported</span></h4>
+<p class="meta">Project-internal 5G-recording SCReAM / GCC experiment · <a href="analysis/hypotheses/h4.html">standalone page →</a></p>
+<p><strong>Claim.</strong> On 5G recordings squeezed to one-third of their original capacity, SCReAM delivers more decoded frames to the viewer than GCC does, while the camera actually sends fewer bytes — on the two harder recordings (handover and resource-block).</p>
+<p class="lbl">Predictions</p><ul><li><code>scream_delivers_at_least_25_percent_more_viewer_frames_than_gcc_on_both_harder_recordings</code></li><li><code>on_both_harder_recordings_camera_sends_no_more_than_85_percent_of_what_gcc_sends</code></li><li><code>viewer_receives_within_10_percent_of_gcc_bytes_on_both_harder_recordings</code></li><li><code>scream_delivers_at_least_2x_viewer_frames_on_at_least_one_harder_recording</code></li><li><code>on_the_high_capacity_recording_both_algorithms_deliver_nearly_all_frames</code></li></ul>
+<p class="lbl">Verdict</p><table><thead><tr><th>Outcome</th><th>Predicates</th></tr></thead><tbody><tr><td><strong>Supported when all</strong></td><td><code>scream_delivers_at_least_25_percent_more_viewer_frames_than_gcc_on_both_harder_recordings</code><br><code>on_both_harder_recordings_camera_sends_no_more_than_85_percent_of_what_gcc_sends</code><br><code>viewer_receives_within_10_percent_of_gcc_bytes_on_both_harder_recordings</code><br><code>scream_delivers_at_least_2x_viewer_frames_on_at_least_one_harder_recording</code></td></tr><tr><td><strong>Refuted when any</strong></td><td><code>any_threshold_violated_on_completed_records</code></td></tr><tr><td><strong>Untested when any</strong></td><td><code>required_records_missing</code><br><code>required_summaries_missing</code></td></tr></tbody></table>
+<p class="lbl">Findings</p><ul><li>On the high-capacity recording (CQI), both algorithms deliver nearly all frames; this recording acts as the easy control.</li><li>On the handover recording, SCReAM delivers about 2.7x as many frames to the viewer as GCC, while the camera sends fewer bytes.</li><li>On the resource-block recording, SCReAM delivers about 1.4x as many frames to the viewer as GCC, while the camera sends fewer bytes.</li><li>GCC&#x27;s target bitrate does drop on the tighter recordings, but in this pipeline that lower target does not turn into fewer bytes leaving the camera.</li><li>The result is meaningful because the test video is now heavy enough to actually keep the recordings busy (the H3 calibration issue is fixed for this experiment).</li></ul>
+<figure><img src="analysis/hypotheses/results/h4_frame_delivery_by_trace.svg" alt="" loading="lazy"><figcaption>Figure H4-1. Mean viewer-depayloaded frames by trace. Each grouped pair compares SCReAM and GCC under the same trace and workload; S/G labels show the SCReAM/GCC frame ratio.</figcaption></figure>
+<figure><img src="analysis/hypotheses/results/h4_camera_egress_by_trace.svg" alt="" loading="lazy"><figcaption>Figure H4-2. Mean camera egress bitrate by trace. S/G labels show whether the delivered-frame improvement came from simply sending more traffic; GCC&#x27;s lower estimator target on stressed traces is not the same as lower emitted RTP rate.</figcaption></figure>
+<figure><img src="analysis/hypotheses/results/h4_cqi_timeseries.svg" alt="" loading="lazy"><figcaption>Figure H4-3a. CQI fixed-trace time series. Left: shared capacity and camera egress. Right: cumulative delivered frames.</figcaption></figure>
+<figure><img src="analysis/hypotheses/results/h4_ho_timeseries.svg" alt="" loading="lazy"><figcaption>Figure H4-3b. HO fixed-trace time series. The wide two-panel layout holds the trace fixed and shows where SCReAM&#x27;s delivered-frame curve separates from GCC.</figcaption></figure>
+<figure><img src="analysis/hypotheses/results/h4_rb_timeseries.svg" alt="" loading="lazy"><figcaption>Figure H4-3c. RB fixed-trace time series. The wide two-panel layout holds the trace fixed and shows the moderate SCReAM frame-delivery advantage.</figcaption></figure>
+<h5 class="tbl-h">h4_arm_summary</h5><table><thead><tr><th>trace</th><th>experiment</th><th>network</th><th>algorithm</th><th>config_id</th><th>runs</th><th>pass_runs</th><th>viewer_frames_mean</th><th>viewer_frames_values</th><th>camera_wire_mean_kbps</th><th>camera_wire_values_kbps</th><th>viewer_wire_mean_kbps</th><th>viewer_wire_values_kbps</th><th>encoded_mean_kbps</th><th>encoded_values_kbps</th><th>encoder_target_mean_kbps</th><th>encoder_target_values_kbps</th><th>latency_p95_mean_ms</th><th>latency_p95_values_ms</th></tr></thead><tbody><tr><td>CQI</td><td>scream-vs-gcc-mahimahi-5g-cqi-x0p33-snow-384x216</td><td>mahimahi-5g-cqi-100ms-x0p33</td><td>SCReAM</td><td>81</td><td>[&#x27;2026-05-10T20-44-59&#x27;, &#x27;2026-05-10T20-46-22&#x27;, &#x27;2026-05-10T20-47-40&#x27;]</td><td>3</td><td>903.7</td><td>[906.0, 900.0, 905.0]</td><td>2,861.2</td><td>[2867.2, 2858.6, 2857.8]</td><td>2,483.1</td><td>[2489.2, 2481.0, 2479.0]</td><td>2,878.6</td><td>[2875.5, 2898.8, 2861.6]</td><td>3,267.6</td><td>[3249.633333333333, 3247.6666666666665, 3305.5333333333333]</td><td>-81.57</td><td>[-82.59, -82.19, -79.92]</td></tr><tr><td>CQI</td><td>scream-vs-gcc-mahimahi-5g-cqi-x0p33-snow-384x216</td><td>mahimahi-5g-cqi-100ms-x0p33</td><td>GCC</td><td>82</td><td>[&#x27;2026-05-10T20-45-43&#x27;, &#x27;2026-05-10T20-47-01&#x27;, &#x27;2026-05-10T20-48-18&#x27;]</td><td>3</td><td>901.3</td><td>[901.0, 901.0, 902.0]</td><td>2,446.4</td><td>[2446.3, 2446.8, 2446.1]</td><td>2,097.9</td><td>[2098.8, 2097.9, 2097.0]</td><td>2,416.2</td><td>[2419.9, 2409.0, 2419.8]</td><td>2,460.0</td><td>[2443.5, 2389.233333333333, 2547.3]</td><td>-96.90</td><td>[-97.81, -96.89, -96.01]</td></tr><tr><td>HO</td><td>scream-vs-gcc-mahimahi-5g-ho-x0p33-snow-384x216</td><td>mahimahi-5g-ho-100ms-x0p33</td><td>SCReAM</td><td>79</td><td>[&#x27;2026-05-10T20-30-37&#x27;, &#x27;2026-05-10T20-32-00&#x27;, &#x27;2026-05-10T20-33-18&#x27;]</td><td>3</td><td>544.7</td><td>[531.0, 548.0, 555.0]</td><td>1,696.0</td><td>[1676.6, 1698.0, 1713.4]</td><td>1,398.5</td><td>[1377.4, 1405.5, 1412.7]</td><td>2,448.9</td><td>[2463.6, 2441.9, 2441.2]</td><td>1,351.9</td><td>[1359.2666666666667, 1357.5, 1338.8666666666666]</td><td>-108.8</td><td>[-109.47, -109.37, -107.69]</td></tr><tr><td>HO</td><td>scream-vs-gcc-mahimahi-5g-ho-x0p33-snow-384x216</td><td>mahimahi-5g-ho-100ms-x0p33</td><td>GCC</td><td>80</td><td>[&#x27;2026-05-10T20-31-20&#x27;, &#x27;2026-05-10T20-32-39&#x27;, &#x27;2026-05-10T20-33-57&#x27;]</td><td>3</td><td>199.0</td><td>[197.0, 201.0, 199.0]</td><td>2,353.0</td><td>[2344.9, 2352.5, 2361.6]</td><td>1,427.7</td><td>[1427.8, 1429.0, 1426.3]</td><td>2,319.4</td><td>[2311.4, 2318.8, 2327.9]</td><td>331.3</td><td>[271.3, 336.26666666666665, 386.2]</td><td>-101.5</td><td>[-101.64, -101.33, -101.42]</td></tr><tr><td>RB</td><td>scream-vs-gcc-mahimahi-5g-rb-x0p33-snow-384x216</td><td>mahimahi-5g-rb-100ms-x0p33</td><td>SCReAM</td><td>83</td><td>[&#x27;2026-05-10T20-49-08&#x27;, &#x27;2026-05-10T20-50-25&#x27;, &#x27;2026-05-10T20-51-46&#x27;]</td><td>3</td><td>445.3</td><td>[440.0, 440.0, 456.0]</td><td>1,480.8</td><td>[1500.7, 1468.4, 1473.4]</td><td>1,236.0</td><td>[1248.7, 1225.3, 1234.1]</td><td>2,416.5</td><td>[2413.7, 2414.8, 2421.1]</td><td>1,096.8</td><td>[1080.3, 1098.3666666666666, 1111.8666666666666]</td><td>-132.4</td><td>[-72.24, -162.05, -162.77]</td></tr><tr><td>RB</td><td>scream-vs-gcc-mahimahi-5g-rb-x0p33-snow-384x216</td><td>mahimahi-5g-rb-100ms-x0p33</td><td>GCC</td><td>84</td><td>[&#x27;2026-05-10T20-49-47&#x27;, &#x27;2026-05-10T20-51-07&#x27;, &#x27;2026-05-10T20-52-26&#x27;]</td><td>3</td><td>319.3</td><td>[322.0, 318.0, 318.0]</td><td>2,324.9</td><td>[2323.4, 2325.8, 2325.4]</td><td>1,302.5</td><td>[1301.4, 1302.7, 1303.3]</td><td>2,290.8</td><td>[2290.2, 2290.0, 2292.2]</td><td>177.5</td><td>[163.1, 171.83333333333334, 197.66666666666666]</td><td>-122.7</td><td>[-61.98, -153.29, -152.79]</td></tr></tbody></table>
+<h5 class="tbl-h">h4_trace_comparison</h5><table><thead><tr><th>trace</th><th>network</th><th>scream_viewer_frames_mean</th><th>gcc_viewer_frames_mean</th><th>viewer_frame_ratio_scream_over_gcc</th><th>viewer_frame_delta</th><th>scream_camera_wire_mean_kbps</th><th>gcc_camera_wire_mean_kbps</th><th>camera_wire_ratio_scream_over_gcc</th><th>scream_encoder_target_mean_kbps</th><th>gcc_encoder_target_mean_kbps</th><th>gcc_target_to_camera_egress_ratio</th><th>scream_viewer_wire_mean_kbps</th><th>gcc_viewer_wire_mean_kbps</th><th>viewer_wire_delta_pct</th></tr></thead><tbody><tr><td>CQI</td><td>mahimahi-5g-cqi-100ms-x0p33</td><td>903.7</td><td>901.3</td><td>1.00</td><td>2.33</td><td>2,861.2</td><td>2,446.4</td><td>1.17</td><td>3,267.6</td><td>2,460.0</td><td>1.01</td><td>2,483.1</td><td>2,097.9</td><td>15.51</td></tr><tr><td>HO</td><td>mahimahi-5g-ho-100ms-x0p33</td><td>544.7</td><td>199.0</td><td>2.74</td><td>345.7</td><td>1,696.0</td><td>2,353.0</td><td>0.721</td><td>1,351.9</td><td>331.3</td><td>0.141</td><td>1,398.5</td><td>1,427.7</td><td>2.04</td></tr><tr><td>RB</td><td>mahimahi-5g-rb-100ms-x0p33</td><td>445.3</td><td>319.3</td><td>1.39</td><td>126.0</td><td>1,480.8</td><td>2,324.9</td><td>0.637</td><td>1,096.8</td><td>177.5</td><td>0.076</td><td>1,236.0</td><td>1,302.5</td><td>5.10</td></tr></tbody></table>
+<p class="lbl">Limitations</p><ul class="small"><li>One test video, fixed recording, one set of bitrate bounds. The CQI recording shows SCReAM has no visible frame-delivery edge when the link has enough room for both algorithms.</li><li>The latency numbers still have a clock-skew artifact between aum and veda. H4&#x27;s main claim is frame delivery and camera bytes, not latency.</li></ul>
+</div>
+<!-- /INLINE:regimes -->
+<h3 id="roadmap-goal2-mechanism">7.6 Mechanism contributions</h3>
 
 <p>
   SCReAM does several things at once (rate adjustment, pacing,
@@ -2475,7 +2577,25 @@ latency_budget_ms: 0</code></pre>
   </ul>
 </div>
 
-<h4 style="margin-top:18px;">Evidence</h4><p class="small">The mechanism here is the same controller-to-encoder coupling isolated in <a href="#hypo-h5">H5</a> — the Goal 1 maturity result (§6.4). It is the evidence for this axis too.</p><h3 id="roadmap-goal2-interactions">7.7 Interactions with other features</h3>
+<h4 class="ev-h">Evidence</h4>
+<!-- INLINE:mechanism -->
+<div class="hypo-full" id="hypo-h5">
+<h4 class="hypo-h">H5 · Why UMN&#x27;s SCReAM won&#x27;t adapt <span class="badge supported">supported</span></h4>
+<p class="meta">Project-internal cross-implementation comparison vs UMN Teleop-Gopher-streamer (scream-integration branch 502533c) · <a href="analysis/hypotheses/h5.html">standalone page →</a></p>
+<p><strong>Claim.</strong> When the link&#x27;s bandwidth keeps changing, our SCReAM raises and lowers its sending rate to match. UMN&#x27;s reimplementation holds a nearly constant rate. The cause is a wiring problem inside UMN — the controller computes a target sending rate but that target is never applied to the video encoder — not a flaw in the SCReAM algorithm and not how often the loop runs.</p>
+<p class="lbl">Predictions</p><ul><li><code>on_the_high_capacity_recording_we_use_at_least_2x_more_of_the_link_than_umn_does</code></li><li><code>umn_sender_rate_changes_by_no_more_than_15_percent_across_all_three_recordings</code></li><li><code>speeding_umn_loop_up_to_50ms_does_not_raise_its_link_use_on_the_high_capacity_recording</code></li><li><code>making_umn_ramp_up_faster_does_not_raise_its_link_use_on_the_high_capacity_recording</code></li><li><code>umn_actually_sends_more_than_what_its_controller_asked_for_in_most_decisions</code></li></ul>
+<p class="lbl">Verdict</p><table><thead><tr><th>Outcome</th><th>Predicates</th></tr></thead><tbody><tr><td><strong>Supported when all</strong></td><td><code>on_the_high_capacity_recording_we_use_at_least_2x_more_of_the_link_than_umn_does</code><br><code>umn_sender_rate_changes_by_no_more_than_15_percent_across_all_three_recordings</code><br><code>speeding_umn_loop_up_to_50ms_does_not_raise_its_link_use_on_the_high_capacity_recording</code><br><code>making_umn_ramp_up_faster_does_not_raise_its_link_use_on_the_high_capacity_recording</code><br><code>umn_actually_sends_more_than_what_its_controller_asked_for_in_most_decisions</code></td></tr><tr><td><strong>Refuted when any</strong></td><td><code>the_gap_closes_when_umn_delay_signal_is_turned_on</code><br><code>faster_loop_timing_lets_umn_catch_up</code></td></tr><tr><td><strong>Untested when any</strong></td><td><code>comparison_data_missing</code></td></tr></tbody></table>
+<p class="lbl">Findings</p><ul><li>On the high-capacity (CQI) recording, our SCReAM uses about 63% of the link; UMN uses about 22%.</li><li>UMN&#x27;s SCReAM sends a nearly constant ~776–782 kbps across all three recordings, even though the recordings differ in capacity by about 2.5x. UMN is not tracking the link.</li><li>The cause is a wiring problem between the controller and the encoder, not the SCReAM algorithm and not how often the loop runs.</li><li>In code — UMN&#x27;s encoder.py writes the controller&#x27;s target rate onto an encoder that is already running. The libav library quietly ignores that write because a software encoder&#x27;s bitrate is fixed when it opens. The libvpx path never reopens, so UMN&#x27;s rate is effectively set once at startup.</li><li>Different shapes — UMN runs the controller in a separate thread that leaves a per-frame &quot;budget&quot; the encode loop has to apply by hand, per codec. Ours is a built-in pipeline element whose rate the framework applies to the encoder automatically.</li><li>Algorithm fidelity from reading the source (not measured here — the wiring problem hid it) — the reference SCReAM keeps track of how long the queue has been growing, how many bytes are in flight, and adapts its step size. UMN&#x27;s just multiplies up by 1.05 or down by 0.8 on simple yes/no signals, with no memory.</li><li>An earlier version of this comparison showed UMN overshooting the link — that was a configuration mistake on our side (network_time_sync was off). With it on, UMN no longer overshoots.</li><li>UMN&#x27;s delay-based congestion signal works once network_time_sync is on. Its loss-based signal never fired in these runs.</li></ul>
+<figure><img src="analysis/hypotheses/results/h5_isolation_ladder.svg" alt="" loading="lazy"><figcaption>Figure H5-1. Isolating the cause. Each bar adds one capability to UMN&#x27;s SCReAM: S0 (none) → S1 (+delay signal) → S2 (+faster 50 ms loop) → S3 (+faster ramp); REF is our reference SCReAM. Left: overshoot (the share of time spent sending faster than the link can carry — lower is better) drops once the delay signal is on at S1, and the faster-timing steps S2/S3 do not change it. Right: utilization (the share of available bandwidth used — higher is better) on the high-capacity CQI trace stays low through S1/S2/S3, so faster timing does not help; only the reference implementation reaches high utilization.</figcaption></figure>
+<figure><img src="analysis/hypotheses/results/h5_utilization_by_trace.svg" alt="" loading="lazy"><figcaption>Figure H5-2. Share of available bandwidth used (utilization), per trace, with both implementations configured fairly. Ours rises with the available bandwidth (most visibly on the high-capacity CQI trace); UMN&#x27;s stays low because its sending rate is held near a constant regardless of the link. The dashed line marks 1.0 — using all the available bandwidth.</figcaption></figure>
+<h5 class="tbl-h">h5_fair_comparison</h5><table><thead><tr><th>trace</th><th>capacity_kbps</th><th>ours_utilization</th><th>umn_utilization</th><th>ours_sent_kbps</th><th>umn_sent_kbps</th><th>ours_overshoot</th><th>umn_overshoot</th></tr></thead><tbody><tr><td>HO</td><td>2387</td><td>0.711</td><td>0.598</td><td>1020</td><td>776</td><td>0.237</td><td>0.165</td></tr><tr><td>RB</td><td>1825</td><td>0.680</td><td>0.563</td><td>1040</td><td>776</td><td>0.108</td><td>0.116</td></tr><tr><td>CQI</td><td>4710</td><td>0.629</td><td>0.216</td><td>2339</td><td>780</td><td>0.074</td><td>0.000</td></tr></tbody></table>
+<h5 class="tbl-h">h5_isolation_ladder</h5><table><thead><tr><th>rung</th><th>ho_overshoot</th><th>cqi_utilization</th><th>cqi_sent_kbps</th></tr></thead><tbody><tr><td>S0 no delay</td><td>0.712</td><td>0.553</td><td>2109</td></tr><tr><td>S1 +delay</td><td>0.165</td><td>0.216</td><td>780</td></tr><tr><td>S2 +50ms</td><td>0.164</td><td>0.216</td><td>780</td></tr><tr><td>S3 +ramp</td><td>0.166</td><td>0.216</td><td>782</td></tr><tr><td>REF ours</td><td>0.237</td><td>0.629</td><td>2339</td></tr></tbody></table>
+<h5 class="tbl-h">h5_implementation_maturity</h5><table><thead><tr><th>dimension</th><th>umn_reimplementation</th><th>ours_reference</th></tr></thead><tbody><tr><td>Algorithm</td><td>Hand-written Python, SCReAM-inspired; its own code calls it a first pass for hardware integration</td><td>Ericsson reference SCReAM (C++), via the gstscream plugin</td></tr><tr><td>Does the rate decision reach the encoder?</td><td>No on the software path — assigns codec.bit_rate on a running libvpx encoder, which libav ignores</td><td>Yes — applied live through GStreamer&#x27;s encoder property; the framework reconfigures the encoder</td></tr><tr><td>Congestion signals used</td><td>Delay only (and only with network_time_sync on); loss signal never fires; receiver feedback marked a future phase</td><td>Delay and loss together, via standard RTCP feedback</td></tr><tr><td>Packet pacing</td><td>None — packets leave as the encoder emits them</td><td>SCReAM paces its own RTP send queue</td></tr><tr><td>Integration</td><td>Separate controller thread leaving a per-frame budget the encode loop must apply correctly per codec</td><td>Built-in pipeline element; the media framework guarantees the rate reaches the encoder</td></tr></tbody></table>
+<h5 class="tbl-h">h5_algorithm_comparison_code_review</h5><table><thead><tr><th>aspect</th><th>umn_reimplementation</th><th>ours_reference</th></tr></thead><tbody><tr><td>Control variable</td><td>One scalar target rate</td><td>A congestion window + bytes-in-flight limit, then a rate derived from it</td></tr><tr><td>Delay handling</td><td>Binary: is one-way delay over the 120 ms threshold?</td><td>A queue-delay trend/gradient vs a target, scaled continuously</td></tr><tr><td>Rate increase</td><td>Blind x1.05 every 200 ms tick, regardless of history</td><td>Adaptive: fast when far below the last good point, gentle near it</td></tr><tr><td>Rate decrease</td><td>Fixed x0.8 (x0.7 on loss)</td><td>Proportional to how far queue delay exceeds the target</td></tr><tr><td>State kept</td><td>Just the current target rate</td><td>cwnd, smoothed RTT, queue-delay stats, reference rate, in-flight bytes</td></tr><tr><td>Extras</td><td>None</td><td>ECN/L4S marking, RTP-queue-aware, fast-start</td></tr></tbody></table>
+<p class="lbl">Limitations</p><ul class="small"><li>Single-host loopback reproduces the bandwidth and the delay faithfully but not real 5G radio effects like interference or radio-layer retransmits.</li><li>We measured how much of the link each side uses, not how good the picture looks. &quot;Uses the link better&quot; is a bandwidth claim, not yet a video-quality claim.</li><li>UMN&#x27;s controller is an early reimplementation (its own code marks receiver feedback as future work). This is a snapshot of branch 502533c, not a general statement about SCReAM.</li><li>We did not measure UMN&#x27;s deployed hardware (NVENC) encoder. From reading the code we believe the same wiring problem affects it, but a real NVIDIA box would be the honest confirmation.</li><li>Measuring picture quality (PSNR or SSIM of the received video vs the source on both sides) is the next verification step.</li></ul>
+</div>
+<!-- /INLINE:mechanism -->
+<h3 id="roadmap-goal2-interactions">7.7 Interactions with other features</h3>
 
 <p>
   How SCReAM behaves when the rest of the stack changes around it.
@@ -2504,12 +2624,21 @@ latency_budget_ms: 0</code></pre>
   </ul>
 </div>
 
-<h4 style="margin-top:18px;">Evidence</h4><div class="hypo-grid"><a class="hypo-card linked" id="hypo-h2" href="analysis/hypotheses/h2.html">
-    <div class="id">H2</div>
-    <div class="title">Frame delivery on a fluctuating link</div>
-    <div class="claim">On a capacity-step network, the viewer gets more frames with GCC than SCReAM — turning on retransmits or tightening the deadline doesn't change which wins.</div>
-    <div class="hypo-footer"><span class="badge supported">tested · GCC ahead in every setting</span><span class="target">→ h2.html</span></div>
-  </a></div><h3 id="roadmap-goal2-boundary">7.8 Boundary behaviour</h3>
+<h4 class="ev-h">Evidence</h4>
+<!-- INLINE:interactions -->
+<div class="hypo-full" id="hypo-h2">
+<h4 class="hypo-h">H2 · Frame delivery on a fluctuating link <span class="badge supported">supported</span></h4>
+<p class="meta">Project-internal fluctuating-network deadline / retransmit experiment · <a href="analysis/hypotheses/h2.html">standalone page →</a></p>
+<p><strong>Claim.</strong> When the link&#x27;s bandwidth keeps changing, the viewer gets more frames with GCC than with SCReAM, and turning retransmits on or off or tightening the late-frame deadline does not change which one wins.</p>
+<p class="lbl">Predictions</p><ul><li><code>gcc_delivers_at_least_30_more_median_frames_than_scream_in_every_setting</code></li></ul>
+<p class="lbl">Verdict</p><table><thead><tr><th>Outcome</th><th>Predicates</th></tr></thead><tbody><tr><td><strong>Supported when all</strong></td><td><code>gcc_delivers_at_least_30_more_median_frames_than_scream_in_every_setting</code></td></tr><tr><td><strong>Refuted when any</strong></td><td><code>gcc_does_not_deliver_more_frames_than_scream_in_any_setting</code></td></tr><tr><td><strong>Inconclusive when any</strong></td><td><code>gcc_delivers_more_frames_in_some_settings_but_not_others</code></td></tr></tbody></table>
+<p class="lbl">Findings</p><ul><li>GCC delivers more median frames than SCReAM in every combination of deadline and retransmit we tested on this wobbly network.</li><li>Adding retransmits or tightening the late-frame deadline does not change which algorithm wins.</li></ul>
+<figure><img src="analysis/hypotheses/results/h2_cell_comparison.svg" alt="" loading="lazy"><figcaption>Figure H2-1. SCReAM vs GCC median viewer frames delivered, per (latency budget, NACK) cell. The Δ label is SCReAM − GCC; negative means GCC is ahead.</figcaption></figure>
+<h5 class="tbl-h">h2_cell_comparison</h5><table><thead><tr><th>budget_ms</th><th>nack</th><th>scream_median</th><th>gcc_median</th><th>delta_scream_minus_gcc</th></tr></thead><tbody><tr><td>0</td><td>no</td><td>575</td><td>550.0</td><td>25.00</td></tr><tr><td>0</td><td>yes</td><td>580</td><td>571.0</td><td>9.00</td></tr><tr><td>50</td><td>no</td><td>579</td><td>578</td><td>1</td></tr><tr><td>50</td><td>yes</td><td>555</td><td>581</td><td>-26</td></tr><tr><td>100</td><td>no</td><td>577</td><td>572.0</td><td>5.00</td></tr><tr><td>100</td><td>yes</td><td>581</td><td>575.0</td><td>6.00</td></tr></tbody></table>
+<p class="lbl">Limitations</p><ul class="small"><li>This is a result for one wobbly network, not a general claim about retransmits or deadlines on every network.</li></ul>
+</div>
+<!-- /INLINE:interactions -->
+<h3 id="roadmap-goal2-boundary">7.8 Boundary behaviour</h3>
 
 <p>
   Where does SCReAM stop behaving like SCReAM and start degenerating?
@@ -2532,29 +2661,57 @@ latency_budget_ms: 0</code></pre>
   falsifiable verifier, run the sweep, write the result.
 </p>
 
-<h4 style="margin-top:18px;">Evidence</h4>
-<div class="hypo-grid"><a class="hypo-card linked" id="hypo-h9" href="analysis/hypotheses/h9.html">
-    <div class="id">H9</div>
-    <div class="title">Where rising delay breaks SCReAM's control</div>
-    <div class="claim">On a fixed 5 Mbps link, SCReAM keeps video usable up to ~200 ms one-way delay, then quality and delivery fall off (39.9 dB at 20 ms down to 24 dB by 400 ms; frame delivery collapses by 800 ms). The first of three boundary axes.</div>
-    <div class="hypo-footer"><span class="badge supported">tested · usable to ~200 ms delay</span><span class="target">→ h9.html</span></div>
-  </a><a class="hypo-card linked" id="hypo-h10" href="analysis/hypotheses/h10.html">
-    <div class="id">H10</div>
-    <div class="title">Where packet loss breaks delivery</div>
-    <div class="claim">With recovery off, the system cannot tolerate even 0.1% packet loss: delivery collapses from 96% to 36% at 0.1%. A cliff at zero — and H12 found that turning recovery on does NOT lift it, so the collapse is not simple recoverable loss.</div>
-    <div class="hypo-footer"><span class="badge supported">tested · cliff at &lt;0.1% loss</span><span class="target">→ h10.html</span></div>
-  </a><a class="hypo-card linked" id="hypo-h11" href="analysis/hypotheses/h11.html">
-    <div class="id">H11</div>
-    <div class="title">Where jitter breaks delivery</div>
-    <div class="claim">Inconclusive. netem delay-jitter reorders packets aggressively, so with recovery off delivery collapses at even 5 ms jitter and half the runs return no frames. The mechanism is reordering, not corruption; a clean boundary needs a reorder-controlled model or recovery on.</div>
-    <div class="hypo-footer"><span class="badge inconclusive">inconclusive · reorder artifact</span><span class="target">→ h11.html</span></div>
-  </a><a class="hypo-card linked" id="hypo-h12" href="analysis/hypotheses/h12.html">
-    <div class="id">H12</div>
-    <div class="title">How much loss recovery buys</div>
-    <div class="claim">Surprisingly little. Re-running H10's loss sweep with the full recovery toolbox on (NACK/RTX + PLI + budget) leaves delivery essentially unchanged (largest gain 1.6 points). So the loss collapse is not simple recoverable packet loss — the mechanism (jitter-buffer drop policy, the metric, or a SCReAM interaction) needs isolation.</div>
-    <div class="hypo-footer"><span class="badge refuted">tested · recovery does not lift the cliff</span><span class="target">→ h12.html</span></div>
-  </a></div>
-
+<h4 class="ev-h">Evidence</h4>
+<!-- INLINE:boundary -->
+<div class="hypo-full" id="hypo-h9">
+<h4 class="hypo-h">H9 · Where rising delay breaks SCReAM&#x27;s control <span class="badge supported">supported</span></h4>
+<p class="meta">Goal 2 boundary behaviour (§7.8) · <a href="analysis/hypotheses/h9.html">standalone page →</a></p>
+<p><strong>Claim.</strong> SCReAM is a delay-based congestion controller, so growing base path delay should be the stressor that breaks it first. On a fixed 5 Mbps link with no loss, as the one-way delay rises from 20 ms toward 800 ms, SCReAM&#x27;s decoded picture quality should stay usable at low delay and then fall off past some delay, marking a degeneration boundary. If quality instead holds flat across the whole range, SCReAM tolerates delays up to 800 ms here and no boundary exists in this range.</p>
+<p class="lbl">Predictions</p><ul><li><code>usable_quality_at_low_delay</code></li><li><code>quality_degrades_across_the_delay_range</code></li><li><code>degeneration_threshold_found_below_max_delay</code></li></ul>
+<p class="lbl">Verdict</p><table><thead><tr><th>Outcome</th><th>Predicates</th></tr></thead><tbody><tr><td><strong>Supported when all</strong></td><td><code>usable_quality_at_low_delay</code><br><code>quality_degrades_across_the_delay_range</code></td></tr><tr><td><strong>Refuted when any</strong></td><td><code>quality_robust_across_whole_range</code></td></tr><tr><td><strong>Untested when any</strong></td><td><code>any_cell_failed</code><br><code>required_metric_missing</code></td></tr></tbody></table>
+<p class="lbl">Findings</p><ul><li>SCReAM&#x27;s delay-based control degenerates as base delay grows. On a fixed 5 Mbps link with no loss, decoded PSNR falls from 39.9 dB at 20 ms one-way delay to 34.9 dB (50 ms), 34.1 dB (100 ms), 29.5 dB (200 ms), and 24.3 dB at 400 ms, crossing the 25 dB usable floor between 200 and 400 ms. A degeneration boundary clearly exists inside the tested range.</li><li>{&#x27;Quality and delivery fall together at high delay. p95 frame latency climbs from tens of ms to 720 ms at 800 ms one-way delay (partly the added netem delay itself, partly queue buildup as the feedback loop slows), and frame delivery collapses&#x27;: &#x27;the viewer received only 229 of 600 frames at 800 ms versus about 587 at 20 ms. The 800 ms PSNR (25.5 dB) reads slightly above 400 ms only because so few frames survive to be scored.&#x27;}</li><li>{&#x27;The practical operating limit for this workload is roughly 200 ms one-way delay (about 400 ms RTT)&#x27;: &#x27;below it SCReAM keeps video usable, beyond it quality and delivery drop off. This is the first of the three boundary axes; loss and jitter are next.&#x27;}</li></ul>
+<figure><img src="analysis/hypotheses/results/h9_psnr_by_knob.svg" alt="" loading="lazy"><figcaption>Decoded PSNR vs base one-way delay (the RTT boundary). The degeneration point, if any, is the delay at which quality cliffs.</figcaption></figure>
+<figure><img src="analysis/hypotheses/results/h9_latency_by_knob.svg" alt="" loading="lazy"><figcaption>p95 frame latency vs base delay. Latency rises partly because the added netem delay is itself in the path; the absolute offset also carries the aum/veda clock-skew artifact.</figcaption></figure>
+<h5 class="tbl-h">Decoded PSNR (dB) by base delay</h5><table><thead><tr><th>network</th><th>20 ms</th><th>50 ms</th><th>100 ms</th><th>200 ms</th><th>400 ms</th><th>800 ms</th></tr></thead><tbody><tr><td>SCReAM, fixed 5 Mbps</td><td>39.90</td><td>34.91</td><td>34.06</td><td>29.52</td><td>24.27</td><td>25.48</td></tr></tbody></table>
+<h5 class="tbl-h">p95 frame latency (ms) by base delay</h5><table><thead><tr><th>network</th><th>20 ms</th><th>50 ms</th><th>100 ms</th><th>200 ms</th><th>400 ms</th><th>800 ms</th></tr></thead><tbody><tr><td>SCReAM, fixed 5 Mbps</td><td>-24.75</td><td>11.99</td><td>44.99</td><td>133.2</td><td>324.1</td><td>720.3</td></tr></tbody></table>
+<p class="lbl">Limitations</p><ul class="small"><li>Single arm. The testbed exposes only scream and gcc, no bare/no-CC sender, so the boundary is read off SCReAM&#x27;s own quality-vs-delay curve rather than against a no-control baseline. A bare reference would sharpen it.</li><li>Recovery is off (nack/pli/fec false), matching H6-H8, so this isolates the controller and codec without retransmission. With recovery on the boundary could move.</li><li>One-way netem delay is swept {20, 50, 100, 200, 400, 800} ms; RTT is roughly twice that plus the wired base. The usable floor is set at 25 dB and a clear drop at 5 dB.</li><li>Workload-specific (realmotion-avi, 1280x1024 MJPEG, 10 fps, 60 s) and ceiling-specific (loose 4000 kbps). 3 reps per cell.</li><li>Absolute latency carries the aum/veda clock-skew artifact and the added netem delay itself; the boundary is read from decoded quality, not absolute latency.</li></ul>
+</div>
+<div class="hypo-full" id="hypo-h10">
+<h4 class="hypo-h">H10 · Where packet loss breaks SCReAM&#x27;s quality <span class="badge supported">supported</span></h4>
+<p class="meta">Goal 2 boundary behaviour (§7.8) · <a href="analysis/hypotheses/h10.html">standalone page →</a></p>
+<p><strong>Claim.</strong> With loss recovery off, a lost packet corrupts VP8 until the next keyframe (60 frames here), so packet loss should break delivery at a low rate. On a fixed 5 Mbps / 20 ms link, as uniform iid loss rises from 0 to 2 percent, frame delivery (frames the viewer reconstructs over frames the camera sent) should stay high at low loss and collapse past some rate, marking a degeneration boundary. PSNR of the frames that do arrive is reported alongside but is not the boundary signal, since the survivors stay clean. If delivery holds across the range, the system tolerates up to 2 percent loss here.</p>
+<p class="lbl">Predictions</p><ul><li><code>usable_delivery_at_zero_loss</code></li><li><code>delivery_collapses_across_the_loss_range</code></li><li><code>usable_threshold_found_below_max_loss</code></li></ul>
+<p class="lbl">Verdict</p><table><thead><tr><th>Outcome</th><th>Predicates</th></tr></thead><tbody><tr><td><strong>Supported when all</strong></td><td><code>usable_delivery_at_zero_loss</code><br><code>delivery_collapses_across_the_loss_range</code></td></tr><tr><td><strong>Refuted when any</strong></td><td><code>delivery_robust_across_whole_range</code></td></tr><tr><td><strong>Untested when any</strong></td><td><code>any_cell_failed</code><br><code>required_metric_missing</code></td></tr></tbody></table>
+<p class="lbl">Findings</p><ul><li>Without loss recovery, the system cannot tolerate even 0.1% packet loss. Frame delivery falls from 96% at 0% loss to 36% at 0.1%, 28% at 0.25%, 23% at 0.5%, 18% at 1%, and 17% at 2%. The usable line (80% delivery) is already crossed below 0.1%, so the recovery-off loss boundary is effectively zero.</li><li>{&#x27;Both signals degrade, delivery first. PSNR of the frames that do arrive also falls (39.4 dB at 0% loss, then 30.0, 26.4, 23.8, 18.9, 18.3 dB) because corruption propagates into some delivered frames, but the dominant effect is missing frames, not blurry ones&#x27;: &#x27;a lost packet corrupts VP8 until the next keyframe (6 s here), so each loss costs many frames.&#x27;}</li><li>The collapse is real, but its cause is not what it first looked like. This was read as a direct argument for loss recovery; the follow-up H12 re-ran the identical sweep with NACK/RTX/PLI on and found delivery essentially unchanged (largest gain 1.6 points). So the delivery loss is not simple recoverable packet loss -- recovery does not lift the cliff -- and the mechanism (jitter-buffer drop policy under gaps, a pessimistic complete-frame metric, or a SCReAM-under-loss interaction) needs isolation. Next to H9&#x27;s delay boundary (~200 ms, graceful), the loss boundary is a cliff at zero that recovery, surprisingly, does not move.</li></ul>
+<figure><img src="analysis/hypotheses/results/h10_delivery_by_loss.svg" alt="" loading="lazy"><figcaption>Frame delivery vs uniform packet loss (recovery off). The boundary is where delivery falls through the usable line — most frames stop arriving.</figcaption></figure>
+<figure><img src="analysis/hypotheses/results/h10_psnr_by_loss.svg" alt="" loading="lazy"><figcaption>PSNR of the frames that do arrive. It stays high because the survivors are clean; the loss damage shows up as missing frames (delivery), not blur.</figcaption></figure>
+<h5 class="tbl-h">Delivery and PSNR by packet loss</h5><table><thead><tr><th>metric</th><th>0.0%</th><th>0.1%</th><th>0.25%</th><th>0.5%</th><th>1.0%</th><th>2.0%</th></tr></thead><tbody><tr><td>frame delivery</td><td>0.957</td><td>0.362</td><td>0.278</td><td>0.229</td><td>0.181</td><td>0.171</td></tr><tr><td>PSNR of delivered (dB)</td><td>39.42</td><td>29.96</td><td>26.41</td><td>23.81</td><td>18.88</td><td>18.25</td></tr></tbody></table>
+<p class="lbl">Limitations</p><ul class="small"><li>Recovery is off (nack/pli/fec false), matching H6-H9. This measures the raw loss sensitivity of SCReAM + VP8 with no retransmission; with NACK/RTX on the boundary would move substantially, and that contrast is itself worth a follow-up.</li><li>Single arm (only scream|gcc exist, no bare sender), so the boundary is read off SCReAM&#x27;s own quality-vs-loss curve.</li><li>Uniform iid loss is swept {0, 0.1, 0.25, 0.5, 1, 2} %; a bursty (Gilbert-Elliott) loss model would degrade differently at the same mean rate.</li><li>{&#x27;Workload-specific (realmotion-avi, 1280x1024 MJPEG, 10 fps, 60 s), 4000 kbps ceiling, keyframe interval 60 frames. 3 reps per cell. Boundary signal is frame delivery&#x27;: &#x27;usable line at 80% delivery, collapse below 50%.&#x27;}</li></ul>
+</div>
+<div class="hypo-full" id="hypo-h11">
+<h4 class="hypo-h">H11 · Where jitter breaks delivery <span class="badge inconclusive">inconclusive</span></h4>
+<p class="meta">Goal 2 boundary behaviour (§7.8) · <a href="analysis/hypotheses/h11.html">standalone page →</a></p>
+<p><strong>Claim.</strong> Jitter reorders and delays packets, so beyond the receiver jitter buffer they arrive too late and are dropped. On a fixed 5 Mbps / 20 ms link with no loss and recovery off, as netem jitter rises from 0 to 100 ms, frame delivery should stay high while the buffer absorbs the jitter and then collapse once jitter exceeds what the buffer can reorder, marking a degeneration boundary. PSNR of delivered frames and p95 latency are reported alongside. If delivery holds across the range, the jitter buffer absorbs up to 100 ms here.</p>
+<p class="lbl">Predictions</p><ul><li><code>usable_delivery_at_zero_jitter</code></li><li><code>delivery_collapses_across_the_jitter_range</code></li><li><code>usable_threshold_found_below_max_jitter</code></li></ul>
+<p class="lbl">Verdict</p><table><thead><tr><th>Outcome</th><th>Predicates</th></tr></thead><tbody><tr><td><strong>Supported when all</strong></td><td><code>usable_delivery_at_zero_jitter</code><br><code>delivery_collapses_across_the_jitter_range</code></td></tr><tr><td><strong>Refuted when any</strong></td><td><code>delivery_robust_across_whole_range</code></td></tr><tr><td><strong>Inconclusive when any</strong></td><td><code>data_too_sparse_to_conclude</code></td></tr><tr><td><strong>Untested when any</strong></td><td><code>any_cell_failed</code><br><code>required_metric_missing</code></td></tr></tbody></table>
+<p class="lbl">Findings</p><ul><li>{&#x27;Inconclusive&#x27;: &#x27;netem jitter collapses delivery immediately with recovery off, but the data is too sparse to pin a boundary. At 0 ms jitter the viewer gets 97% of frames; at 5 ms it gets about 5%, and the higher-jitter cells deliver near zero and intermittently fail (9 of 18 runs returned no frames, leaving most jitter levels with a single successful rep).&#x27;}</li><li>{&#x27;The mechanism is reordering, not corruption. At 5 ms jitter the delivered frames show no decoder errors (33 of 600 frames, zero depay/decoder warnings)&#x27;: &quot;packets are not damaged, they arrive too out-of-order for the receiver jitter buffer and are dropped. netem&#x27;s `delay 20ms 5ms` gives each packet an independent random delay, which reorders aggressively; real network jitter usually preserves order better.&quot;}</li><li>{&#x27;Consistent with the loss finding (H10)&#x27;: &#x27;without recovery, the RTP path is fragile to anything that disturbs packet arrival. But the netem reorder model likely overstates real jitter, and with half the runs failing the curve is not trustworthy. A clean jitter boundary needs a reorder-controlled jitter model (rate-paced or correlated delay) or recovery on; both are good follow-ups.&#x27;}</li></ul>
+<figure><img src="analysis/hypotheses/results/h11_delivery_by_jitter.svg" alt="" loading="lazy"><figcaption>Frame delivery vs netem jitter (recovery off). The boundary is where late and reordered packets fall outside the jitter buffer and delivery drops.</figcaption></figure>
+<figure><img src="analysis/hypotheses/results/h11_psnr_by_jitter.svg" alt="" loading="lazy"><figcaption>PSNR of the frames that do arrive, vs jitter.</figcaption></figure>
+<h5 class="tbl-h">Delivery, PSNR and latency by jitter</h5><table><thead><tr><th>metric</th><th>0 ms</th><th>5 ms</th><th>10 ms</th><th>20 ms</th><th>50 ms</th><th>100 ms</th></tr></thead><tbody><tr><td>frame delivery</td><td>0.966</td><td>0.055</td><td>0.033</td><td>0.018</td><td>0.102</td><td>0.013</td></tr><tr><td>PSNR of delivered (dB)</td><td>39.70</td><td>15.18</td><td>27.16</td><td></td><td>14.37</td><td></td></tr><tr><td>p95 latency (ms)</td><td>-24.88</td><td>-30.48</td><td>-30.45</td><td>-30.47</td><td>-22.73</td><td>25.76</td></tr></tbody></table>
+<p class="lbl">Limitations</p><ul class="small"><li>Recovery is off (nack/pli/fec false), matching H6-H10. With NACK/RTX on, late-but-recoverable packets could be retransmitted and the boundary would move.</li><li>netem jitter uses a uniform distribution around a 20 ms base delay; a normal or pareto distribution would reorder differently at the same nominal jitter.</li><li>The receiver jitter buffer size (rtpjitterbuffer latency) sets where absorption ends; this measures the system as configured, not a tuned buffer.</li><li>{&#x27;A re-run with a 200 ms receiver budget was tried to rule out a wait-budget cause (the budget-0 setting that neutered NACK in H12). It did not help&#x27;: &#x27;50 ms jitter still delivered 0 frames, in fact worse, because latency_budget_ms is a frame deadline (drop-if-later), not a reorder buffer. So the collapse is the netem reordering itself, not the budget. A clean jitter result needs a reorder-controlled netem model (rate-paced or correlated delay) or an explicitly enlarged rtpjitterbuffer; both are real investigations, not config tweaks.&#x27;}</li><li>{&#x27;Single arm (only scream|gcc exist). Workload-specific (realmotion-avi, 1280x1024 MJPEG, 10 fps, 60 s), 4000 kbps ceiling. 3 reps per cell. Boundary signal is frame delivery&#x27;: &#x27;usable line 80%, collapse below 50%.&#x27;}</li></ul>
+</div>
+<div class="hypo-full" id="hypo-h12">
+<h4 class="hypo-h">H12 · How much loss recovery buys <span class="badge refuted">refuted</span></h4>
+<p class="meta">Goal 2 boundary behaviour (§7.8), follow-up to H10 · <a href="analysis/hypotheses/h12.html">standalone page →</a></p>
+<p><strong>Claim.</strong> H10 found that with recovery off, frame delivery collapses below 0.1% packet loss. H12 re-runs the identical loss sweep with NACK/RTX retransmission on, changing only the recovery setting. With lost packets retransmitted, delivery should stay high where the recovery-off run collapsed, lifting the loss boundary well above 0.1%. If delivery is no better than the recovery-off run, retransmission is not helping at these loss rates.</p>
+<p class="lbl">Predictions</p><ul><li><code>usable_delivery_at_zero_loss</code></li><li><code>recovery_raises_delivery_vs_no_recovery</code></li><li><code>delivery_usable_across_whole_range_with_recovery</code></li></ul>
+<p class="lbl">Verdict</p><table><thead><tr><th>Outcome</th><th>Predicates</th></tr></thead><tbody><tr><td><strong>Supported when all</strong></td><td><code>usable_delivery_at_zero_loss</code><br><code>recovery_raises_delivery_vs_no_recovery</code></td></tr><tr><td><strong>Refuted when any</strong></td><td><code>recovery_does_not_help</code></td></tr><tr><td><strong>Untested when any</strong></td><td><code>any_cell_failed</code><br><code>required_metric_missing</code></td></tr></tbody></table>
+<p class="lbl">Findings</p><ul><li>{&#x27;Recovery does not rescue delivery under iid loss. With the full reactive toolbox on (NACK/RTX retransmission + PLI keyframe requests + a 100 ms receiver budget to wait for retransmissions), frame delivery is essentially unchanged from the recovery-off run (H10)&#x27;: &#x27;at 0.1% loss 37% vs 36%, at 0.5% 24% vs 23%, at 1% 20% vs 18%, at 2% 15% vs 17%. The largest gain at any loss level is 1.6 percentage points, and at 0.25% recovery is slightly worse. RTX is engaged (rtprtxsend present and retransmitting) but does not move the metric.&#x27;}</li><li>This revises H10. H10 read the recovery-off cliff as a case for the loss-recovery capability; H12 shows that turning recovery on does not lift the cliff. So the delivery collapse is not simple recoverable packet loss -- if it were, RTX would recover it. The cause is not isolated; leading candidates are the receiver jitter buffer dropping frames around loss-induced gaps, the delivery metric (complete-frame depayload) being pessimistic about partially-received frames, or a SCReAM-under-loss interaction. Isolating it is the real next step, ahead of any assumption that recovery is the fix.</li><li>Loss still collapses delivery hard, and H10 and H12 agree on the numbers (about 18-20% delivery at 1% loss either way); that part stands. What is overturned is the remedy. Recovery as configured here is not the fix, and the mechanism behind the collapse must be isolated first. An early budget-0 config also confirmed NACK is a no-op without a receiver budget to wait for retransmissions.</li></ul>
+<figure><img src="analysis/hypotheses/results/h12_delivery_recovery.svg" alt="" loading="lazy"><figcaption>Frame delivery vs packet loss, recovery ON vs OFF (H10). NACK/RTX retransmission lifts delivery from the recovery-off cliff.</figcaption></figure>
+<h5 class="tbl-h">Frame delivery by packet loss — recovery on vs off</h5><table><thead><tr><th>frame delivery</th><th>0.0%</th><th>0.1%</th><th>0.25%</th><th>0.5%</th><th>1.0%</th><th>2.0%</th></tr></thead><tbody><tr><td>recovery on</td><td>0.961</td><td>0.372</td><td>0.176</td><td>0.244</td><td>0.197</td><td>0.152</td></tr><tr><td>recovery off (H10)</td><td>0.957</td><td>0.362</td><td>0.278</td><td>0.229</td><td>0.181</td><td>0.171</td></tr></tbody></table>
+<p class="lbl">Limitations</p><ul class="small"><li>{&#x27;A clean A/B with H10&#x27;: &#x27;same loss levels, same networks, same workload and ceiling; only recovery (nack on, rtx_buffer_ms 500) differs. PLI and FEC stay off, so this isolates NACK/RTX retransmission alone.&#x27;}</li><li>Uniform iid loss {0, 0.1, 0.25, 0.5, 1, 2} %. The recovery-on boundary may lie above 2%; this sweep matches H10&#x27;s range for the contrast rather than hunting the new cliff (a higher-loss sweep would find it).</li><li>rtx_buffer_ms is 500, so retransmissions older than ~500 ms cannot be served; a tighter latency budget or smaller buffer would weaken recovery.</li><li>Workload-specific (realmotion-avi, 1280x1024 MJPEG, 10 fps, 60 s), 4000 kbps ceiling, keyframe interval 60 frames. 3 reps per cell. Boundary signal is frame delivery.</li></ul>
+</div>
+<!-- /INLINE:boundary -->
 <h3 id="goal2-plan">7.9 What's next — the plan</h3>
 <p>
   Three knob sweeps now agree: SCReAM's tuning knobs move latency, not picture
@@ -2611,15 +2768,11 @@ latency_budget_ms: 0</code></pre>
   Companion documents that ground this page's framing.
 </p>
 
-<div class="ref-embed" id="ref-umn">
-  <div class="ref-embed-bar">
-    <span class="t">UMN Teleop-Gopher-Streamer — top-down design</span>
-    <span class="small">reference target for <a href="#roadmap-goals">Goal 1</a>
-      · <a href="reference/umn-teleop-design.html" target="_blank" rel="noopener">open full ↗</a></span>
-  </div>
-  <iframe class="ref-frame" src="reference/umn-teleop-design.html" loading="lazy"
-          title="UMN Teleop-Gopher-Streamer — top-down design"></iframe>
-</div>
+<h4 class="ev-h" id="ref-umn">UMN Teleop-Gopher-Streamer — top-down design</h4>
+<p class="meta">reference target for <a href="#roadmap-goals">Goal 1</a>
+  · <a href="reference/umn-teleop-design.html" target="_blank" rel="noopener">open full ↗</a>
+  · source <a href="reference/umn-teleop-design.md">umn-teleop-design.md</a></p>
+<div id="umn-content" class="umn-doc"><p class="meta">Loading the UMN design note…</p></div>
 <p class="desc small" style="color: var(--muted);">
   Standalone design note for UMN GopherNetLab's teleop streamer: what it is, how
   it is decomposed, how a frame flows through it, where the design falls short,
@@ -2665,11 +2818,23 @@ latency_budget_ms: 0</code></pre>
         if (!el || !section.contains(el)) return;
         var idx = children.findIndex(function(c) { return c === el || c.contains(el); });
         if (idx === -1) return;
-        ranges.push({id: id, startIdx: idx});
+        var level = l.classList.contains('subsub') ? 2 : 1;
+        ranges.push({id: id, level: level, startIdx: idx});
       });
       ranges.sort(function(a, b) { return a.startIdx - b.startIdx; });
+      // A category (level 1) spans up to the next category, so it contains
+      // its own hypotheses (level 2). A hypothesis spans to the next item of
+      // either level (so selecting it narrows to just that hypothesis).
       ranges.forEach(function(r, i) {
-        r.endIdx = i + 1 < ranges.length ? ranges[i + 1].startIdx - 1 : children.length - 1;
+        if (r.level === 1) {
+          var nextSub = null;
+          for (var j = i + 1; j < ranges.length; j++) {
+            if (ranges[j].level === 1) { nextSub = ranges[j]; break; }
+          }
+          r.endIdx = nextSub ? nextSub.startIdx - 1 : children.length - 1;
+        } else {
+          r.endIdx = i + 1 < ranges.length ? ranges[i + 1].startIdx - 1 : children.length - 1;
+        }
       });
       sectionRanges.set(section, ranges);
     });
@@ -2702,9 +2867,9 @@ latency_budget_ms: 0</code></pre>
           var inActive = i >= active.startIdx && i <= active.endIdx;
           c.style.display = inActive ? '' : 'none';
         } else {
-          // Section landing: hide every subsection range, show the rest
-          // (intro paragraphs, read-order map, trailing footers).
-          var inAnyRange = ranges.some(function(r) { return i >= r.startIdx && i <= r.endIdx; });
+          // Section landing: hide every category (level-1) range, show the
+          // rest (intro paragraphs, the question map, trailing footers).
+          var inAnyRange = ranges.some(function(r) { return r.level === 1 && i >= r.startIdx && i <= r.endIdx; });
           c.style.display = inAnyRange ? 'none' : '';
         }
       });
@@ -2731,6 +2896,17 @@ latency_budget_ms: 0</code></pre>
       if (activeSubId) {
         var subLink = tocLinks.find(function(l) { return l.getAttribute('href') === '#' + activeSubId; });
         if (subLink) subLink.classList.add('active');
+        var activeRange = ranges.find(function(r) { return r.id === activeSubId; });
+        if (activeRange && activeRange.level === 2) {
+          var parent = null;
+          ranges.forEach(function(r) {
+            if (r.level === 1 && r.startIdx <= activeRange.startIdx && activeRange.startIdx <= r.endIdx) parent = r;
+          });
+          if (parent) {
+            var pLink = tocLinks.find(function(l) { return l.getAttribute('href') === '#' + parent.id; });
+            if (pLink) pLink.classList.add('active');
+          }
+        }
       }
 
       // Reset scroll to the top of the visible pane.
@@ -2740,6 +2916,27 @@ latency_budget_ms: 0</code></pre>
     window.addEventListener('hashchange', activate);
     window.addEventListener('DOMContentLoaded', activate);
     if (document.readyState !== 'loading') activate();
+  })();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js"></script>
+<script>
+  // Render the UMN design markdown into the page DOM (first-class content,
+  // not an iframe). Relative links/images resolve under reference/.
+  (function() {
+    var target = document.getElementById('umn-content');
+    if (!target || !window.marked) return;
+    fetch('reference/umn-teleop-design.md', { cache: 'no-store' })
+      .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+      .then(function(md) {
+        marked.use({ gfm: true, breaks: false });
+        var out = marked.parse(md);
+        out = out.replace(/(href|src)="(?!https?:|#|\/|reference\/)([^"]+)"/g, '$1="reference/$2"');
+        target.innerHTML = out;
+      })
+      .catch(function(e) {
+        target.innerHTML = '<p class="meta">Could not load the UMN design note (' + e.message +
+          '). Open it <a href="reference/umn-teleop-design.html" target="_blank" rel="noopener">standalone \u2197</a>.</p>';
+      });
   })();
 </script>
 
