@@ -131,7 +131,7 @@
 <ul>
 <li>Without loss recovery, the system cannot tolerate even 0.1% packet loss. Frame delivery falls from 96% at 0% loss to 36% at 0.1%, 28% at 0.25%, 23% at 0.5%, 18% at 1%, and 17% at 2%. The usable line (80% delivery) is already crossed below 0.1%, so the recovery-off loss boundary is effectively zero.</li>
 <li>{'Both signals degrade, delivery first. PSNR of the frames that do arrive also falls (39.4 dB at 0% loss, then 30.0, 26.4, 23.8, 18.9, 18.3 dB) because corruption propagates into some delivered frames, but the dominant effect is missing frames, not blurry ones': 'a lost packet corrupts VP8 until the next keyframe (6 s here), so each loss costs many frames.'}</li>
-<li>This is a direct, quantified argument for loss recovery (a Goal 1 capability). NACK/RTX or FEC should move this boundary by orders of magnitude; re-running with recovery on is the natural follow-up and would isolate SCReAM's controller-level loss tolerance from VP8's raw fragility. Next to H9's delay boundary (~200 ms, graceful), the loss boundary is a cliff at zero.</li>
+<li>The collapse is real, but its cause is not what it first looked like. This was read as a direct argument for loss recovery; the follow-up H12 re-ran the identical sweep with NACK/RTX/PLI on and found delivery essentially unchanged (largest gain 1.6 points). So the delivery loss is not simple recoverable packet loss -- recovery does not lift the cliff -- and the mechanism (jitter-buffer drop policy under gaps, a pessimistic complete-frame metric, or a SCReAM-under-loss interaction) needs isolation. Next to H9's delay boundary (~200 ms, graceful), the loss boundary is a cliff at zero that recovery, surprisingly, does not move.</li>
 </ul>
 
 

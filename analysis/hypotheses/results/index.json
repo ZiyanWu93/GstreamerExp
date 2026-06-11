@@ -321,7 +321,7 @@
           {
             "Both signals degrade, delivery first. PSNR of the frames that do arrive also falls (39.4 dB at 0% loss, then 30.0, 26.4, 23.8, 18.9, 18.3 dB) because corruption propagates into some delivered frames, but the dominant effect is missing frames, not blurry ones": "a lost packet corrupts VP8 until the next keyframe (6 s here), so each loss costs many frames."
           },
-          "This is a direct, quantified argument for loss recovery (a Goal 1 capability). NACK/RTX or FEC should move this boundary by orders of magnitude; re-running with recovery on is the natural follow-up and would isolate SCReAM's controller-level loss tolerance from VP8's raw fragility. Next to H9's delay boundary (~200 ms, graceful), the loss boundary is a cliff at zero."
+          "The collapse is real, but its cause is not what it first looked like. This was read as a direct argument for loss recovery; the follow-up H12 re-ran the identical sweep with NACK/RTX/PLI on and found delivery essentially unchanged (largest gain 1.6 points). So the delivery loss is not simple recoverable packet loss -- recovery does not lift the cliff -- and the mechanism (jitter-buffer drop policy under gaps, a pessimistic complete-frame metric, or a SCReAM-under-loss interaction) needs isolation. Next to H9's delay boundary (~200 ms, graceful), the loss boundary is a cliff at zero that recovery, surprisingly, does not move."
         ],
         "limits": [
           "Recovery is off (nack/pli/fec false), matching H6-H9. This measures the raw loss sensitivity of SCReAM + VP8 with no retransmission; with NACK/RTX on the boundary would move substantially, and that contrast is itself worth a follow-up.",
@@ -503,8 +503,8 @@
       "slug": "h12",
       "title": "How much loss recovery buys",
       "claim": "H10 found that with recovery off, frame delivery collapses below 0.1% packet loss. H12 re-runs the identical loss sweep with NACK/RTX retransmission on, changing only the recovery setting. With lost packets retransmitted, delivery should stay high where the recovery-off run collapsed, lifting the loss boundary well above 0.1%. If delivery is no better than the recovery-off run, retransmission is not helping at these loss rates.",
-      "declared_status": "untested",
-      "execution_status": "untested",
+      "declared_status": "refuted",
+      "execution_status": "analyzable",
       "source": "Goal 2 boundary behaviour (\u00a77.8), follow-up to H10",
       "page": "analysis/hypotheses/h12.html",
       "verifier": "analysis/hypotheses/h12_loss_recovery.py",
@@ -574,56 +574,86 @@
             "spec_path": "specs/experiments/h12-loss-recovery-on.yaml",
             "record_path": "runs/experiments/h12-loss-recovery-on.json",
             "spec_exists": true,
-            "record_exists": false,
+            "record_exists": true,
             "expected_reps": 3,
             "configurations": {
               "319": {
-                "completed_runs": 0,
+                "completed_runs": 3,
                 "failed_runs": 0,
                 "missing_summaries": 0,
-                "run_ids": []
+                "run_ids": [
+                  "2026-06-10T20-17-01",
+                  "2026-06-10T20-23-58",
+                  "2026-06-10T20-30-53"
+                ]
               },
               "320": {
-                "completed_runs": 0,
+                "completed_runs": 3,
                 "failed_runs": 0,
                 "missing_summaries": 0,
-                "run_ids": []
+                "run_ids": [
+                  "2026-06-10T20-18-12",
+                  "2026-06-10T20-25-07",
+                  "2026-06-10T20-32-01"
+                ]
               },
               "321": {
-                "completed_runs": 0,
+                "completed_runs": 3,
                 "failed_runs": 0,
                 "missing_summaries": 0,
-                "run_ids": []
+                "run_ids": [
+                  "2026-06-10T20-19-21",
+                  "2026-06-10T20-26-15",
+                  "2026-06-10T20-33-09"
+                ]
               },
               "322": {
-                "completed_runs": 0,
+                "completed_runs": 3,
                 "failed_runs": 0,
                 "missing_summaries": 0,
-                "run_ids": []
+                "run_ids": [
+                  "2026-06-10T20-20-29",
+                  "2026-06-10T20-27-23",
+                  "2026-06-10T20-34-18"
+                ]
               },
               "323": {
-                "completed_runs": 0,
+                "completed_runs": 3,
                 "failed_runs": 0,
                 "missing_summaries": 0,
-                "run_ids": []
+                "run_ids": [
+                  "2026-06-10T20-21-38",
+                  "2026-06-10T20-28-32",
+                  "2026-06-10T20-35-29"
+                ]
               },
               "324": {
-                "completed_runs": 0,
+                "completed_runs": 3,
                 "failed_runs": 0,
                 "missing_summaries": 0,
-                "run_ids": []
+                "run_ids": [
+                  "2026-06-10T20-22-47",
+                  "2026-06-10T20-29-44",
+                  "2026-06-10T20-36-37"
+                ]
               }
             },
-            "execution_status": "untested"
+            "completed_runs": 18,
+            "failed_runs": 0,
+            "expected_runs": 18,
+            "execution_status": "analyzable"
           }
         ]
       },
       "conclusions": {
-        "established": [],
-        "limits": [
+        "established": [
           {
-            "Pre-registered": "predictions and the verdict rule are fixed before the run. Results are pending the sweep on the aum/veda testbed."
+            "Recovery does not rescue delivery under iid loss. With the full reactive toolbox on (NACK/RTX retransmission + PLI keyframe requests + a 100 ms receiver budget to wait for retransmissions), frame delivery is essentially unchanged from the recovery-off run (H10)": "at 0.1% loss 37% vs 36%, at 0.5% 24% vs 23%, at 1% 20% vs 18%, at 2% 15% vs 17%. The largest gain at any loss level is 1.6 percentage points, and at 0.25% recovery is slightly worse. RTX is engaged (rtprtxsend present and retransmitting) but does not move the metric."
           },
+          "This revises H10. H10 read the recovery-off cliff as a case for the loss-recovery capability; H12 shows that turning recovery on does not lift the cliff. So the delivery collapse is not simple recoverable packet loss -- if it were, RTX would recover it. The cause is not isolated; leading candidates are the receiver jitter buffer dropping frames around loss-induced gaps, the delivery metric (complete-frame depayload) being pessimistic about partially-received frames, or a SCReAM-under-loss interaction. Isolating it is the real next step, ahead of any assumption that recovery is the fix.",
+          "Loss still collapses delivery hard, and H10 and H12 agree on the numbers (about 18-20% delivery at 1% loss either way); that part stands. What is overturned is the remedy. Recovery as configured here is not the fix, and the mechanism behind the collapse must be isolated first. An early budget-0 config also confirmed NACK is a no-op without a receiver budget to wait for retransmissions."
+        ],
+        "limits": [
           {
             "A clean A/B with H10": "same loss levels, same networks, same workload and ceiling; only recovery (nack on, rtx_buffer_ms 500) differs. PLI and FEC stay off, so this isolates NACK/RTX retransmission alone."
           },

@@ -2066,7 +2066,7 @@ stop_session(session_id)           → ack</pre>
       <tr>
         <td>Where does SCReAM break down?</td>
         <td><span class="badge regime">first answer</span></td>
-        <td>Two boundaries mapped: usable up to ~200 ms one-way delay (<a href="#hypo-h9">H9</a>), but with recovery off it cannot tolerate even 0.1% packet loss (<a href="#hypo-h10">H10</a>). Jitter came back inconclusive (<a href="#hypo-h11">H11</a>) — a netem reordering artifact.</td>
+        <td>Usable up to ~200 ms one-way delay (<a href="#hypo-h9">H9</a>), but it cannot tolerate even 0.1% packet loss (<a href="#hypo-h10">H10</a>) — and surprisingly, turning recovery on does not fix that (<a href="#hypo-h12">H12</a>), so the loss collapse is not simple recoverable loss. Jitter inconclusive (<a href="#hypo-h11">H11</a>).</td>
       </tr>
       <tr>
         <td>Does all this hold on other videos?</td>
@@ -2510,13 +2510,18 @@ latency_budget_ms: 0</code></pre>
   </a><a class="hypo-card linked" id="hypo-h10" href="analysis/hypotheses/h10.html">
     <div class="id">H10</div>
     <div class="title">Where packet loss breaks delivery</div>
-    <div class="claim">With recovery off, the system cannot tolerate even 0.1% packet loss: frame delivery collapses from 96% to 36% at 0.1% and to ~17% by 2%. A cliff at zero — a direct argument for the loss-recovery capability (Goal 1).</div>
+    <div class="claim">With recovery off, the system cannot tolerate even 0.1% packet loss: delivery collapses from 96% to 36% at 0.1%. A cliff at zero — and H12 found that turning recovery on does NOT lift it, so the collapse is not simple recoverable loss.</div>
     <div class="hypo-footer"><span class="badge supported">tested · cliff at &lt;0.1% loss</span><span class="target">→ h10.html</span></div>
   </a><a class="hypo-card linked" id="hypo-h11" href="analysis/hypotheses/h11.html">
     <div class="id">H11</div>
     <div class="title">Where jitter breaks delivery</div>
     <div class="claim">Inconclusive. netem delay-jitter reorders packets aggressively, so with recovery off delivery collapses at even 5 ms jitter and half the runs return no frames. The mechanism is reordering, not corruption; a clean boundary needs a reorder-controlled model or recovery on.</div>
     <div class="hypo-footer"><span class="badge inconclusive">inconclusive · reorder artifact</span><span class="target">→ h11.html</span></div>
+  </a><a class="hypo-card linked" id="hypo-h12" href="analysis/hypotheses/h12.html">
+    <div class="id">H12</div>
+    <div class="title">How much loss recovery buys</div>
+    <div class="claim">Surprisingly little. Re-running H10's loss sweep with the full recovery toolbox on (NACK/RTX + PLI + budget) leaves delivery essentially unchanged (largest gain 1.6 points). So the loss collapse is not simple recoverable packet loss — the mechanism (jitter-buffer drop policy, the metric, or a SCReAM interaction) needs isolation.</div>
+    <div class="hypo-footer"><span class="badge refuted">tested · recovery does not lift the cliff</span><span class="target">→ h12.html</span></div>
   </a></div>
 
 <h3 id="goal2-plan">7.9 What's next — the plan</h3>
@@ -2543,7 +2548,8 @@ latency_budget_ms: 0</code></pre>
     <li class="done">Delay (RTT) boundary mapped: usable to ~200 ms one-way delay, cliff by 400 ms (<a href="#hypo-h9">H9</a>).</li>
     <li class="done">Loss boundary mapped: with recovery off, delivery collapses below 0.1% loss (<a href="#hypo-h10">H10</a>) — a direct case for loss recovery.</li>
     <li class="done">Jitter boundary ran but came back inconclusive — netem reordering collapses delivery at any jitter with recovery off (<a href="#hypo-h11">H11</a>).</li>
-    <li class="todo">Re-run jitter with a reorder-controlled model or recovery on; and the recovery-on loss re-run (the natural H10 follow-up).</li>
+    <li class="done">Recovery-on loss re-run done (<a href="#hypo-h12">H12</a>): recovery does not lift the loss cliff — an important negative that redirects the work.</li>
+    <li class="todo">Isolate why loss collapses delivery (jitter-buffer drop policy vs the complete-frame metric vs a SCReAM-under-loss interaction) — now the real open question. Plus a reorder-controlled jitter re-run for H11.</li>
   </ul>
 </div>
 

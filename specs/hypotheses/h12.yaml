@@ -2,7 +2,7 @@ id: H12
 slug: h12
 title: How much loss recovery buys
 claim: H10 found that with recovery off, frame delivery collapses below 0.1% packet loss. H12 re-runs the identical loss sweep with NACK/RTX retransmission on, changing only the recovery setting. With lost packets retransmitted, delivery should stay high where the recovery-off run collapsed, lifting the loss boundary well above 0.1%. If delivery is no better than the recovery-off run, retransmission is not helping at these loss rates.
-status: untested
+status: refuted
 source: Goal 2 boundary behaviour (§7.8), follow-up to H10
 page: analysis/hypotheses/h12.html
 verifier: analysis/hypotheses/h12_loss_recovery.py
@@ -43,9 +43,11 @@ results:
     - runs/experiments/h12-loss-recovery-on.json
   report: analysis/hypotheses/results/h12_report.json
 conclusions:
-  established: []
+  established:
+    - Recovery does not rescue delivery under iid loss. With the full reactive toolbox on (NACK/RTX retransmission + PLI keyframe requests + a 100 ms receiver budget to wait for retransmissions), frame delivery is essentially unchanged from the recovery-off run (H10): at 0.1% loss 37% vs 36%, at 0.5% 24% vs 23%, at 1% 20% vs 18%, at 2% 15% vs 17%. The largest gain at any loss level is 1.6 percentage points, and at 0.25% recovery is slightly worse. RTX is engaged (rtprtxsend present and retransmitting) but does not move the metric.
+    - This revises H10. H10 read the recovery-off cliff as a case for the loss-recovery capability; H12 shows that turning recovery on does not lift the cliff. So the delivery collapse is not simple recoverable packet loss -- if it were, RTX would recover it. The cause is not isolated; leading candidates are the receiver jitter buffer dropping frames around loss-induced gaps, the delivery metric (complete-frame depayload) being pessimistic about partially-received frames, or a SCReAM-under-loss interaction. Isolating it is the real next step, ahead of any assumption that recovery is the fix.
+    - Loss still collapses delivery hard, and H10 and H12 agree on the numbers (about 18-20% delivery at 1% loss either way); that part stands. What is overturned is the remedy. Recovery as configured here is not the fix, and the mechanism behind the collapse must be isolated first. An early budget-0 config also confirmed NACK is a no-op without a receiver budget to wait for retransmissions.
   limits:
-    - Pre-registered: predictions and the verdict rule are fixed before the run. Results are pending the sweep on the aum/veda testbed.
     - A clean A/B with H10: same loss levels, same networks, same workload and ceiling; only recovery (nack on, rtx_buffer_ms 500) differs. PLI and FEC stay off, so this isolates NACK/RTX retransmission alone.
     - Uniform iid loss {0, 0.1, 0.25, 0.5, 1, 2} %. The recovery-on boundary may lie above 2%; this sweep matches H10's range for the contrast rather than hunting the new cliff (a higher-loss sweep would find it).
     - rtx_buffer_ms is 500, so retransmissions older than ~500 ms cannot be served; a tighter latency budget or smaller buffer would weaken recovery.

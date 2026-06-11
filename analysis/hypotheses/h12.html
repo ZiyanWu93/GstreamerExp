@@ -73,7 +73,7 @@
 <p class="nav"><a href="../../index.html">← GstreamerExp hub</a> · <a href="../../README.md">README</a> · <a href="../../docs/HYPOTHESES.md">Hypothesis catalog</a></p>
 
 <h1>H12 — How much loss recovery buys</h1>
-<p><span class="tag untested">untested</span><span class="meta">Goal 2 boundary behaviour (§7.8), follow-up to H10</span></p>
+<p><span class="tag refuted">refuted</span><span class="meta">Goal 2 boundary behaviour (§7.8), follow-up to H10</span></p>
 
 <h2>Claim</h2>
 <p>H10 found that with recovery off, frame delivery collapses below 0.1% packet loss. H12 re-runs the identical loss sweep with NACK/RTX retransmission on, changing only the recovery setting. With lost packets retransmitted, delivery should stay high where the recovery-off run collapsed, lifting the loss boundary well above 0.1%. If delivery is no better than the recovery-off run, retransmission is not helping at these loss rates.</p>
@@ -127,10 +127,16 @@
 
 <h2>Findings and Limitations</h2>
 
+<p class="meta"><strong>Findings</strong></p>
+<ul>
+<li>{'Recovery does not rescue delivery under iid loss. With the full reactive toolbox on (NACK/RTX retransmission + PLI keyframe requests + a 100 ms receiver budget to wait for retransmissions), frame delivery is essentially unchanged from the recovery-off run (H10)': 'at 0.1% loss 37% vs 36%, at 0.5% 24% vs 23%, at 1% 20% vs 18%, at 2% 15% vs 17%. The largest gain at any loss level is 1.6 percentage points, and at 0.25% recovery is slightly worse. RTX is engaged (rtprtxsend present and retransmitting) but does not move the metric.'}</li>
+<li>This revises H10. H10 read the recovery-off cliff as a case for the loss-recovery capability; H12 shows that turning recovery on does not lift the cliff. So the delivery collapse is not simple recoverable packet loss -- if it were, RTX would recover it. The cause is not isolated; leading candidates are the receiver jitter buffer dropping frames around loss-induced gaps, the delivery metric (complete-frame depayload) being pessimistic about partially-received frames, or a SCReAM-under-loss interaction. Isolating it is the real next step, ahead of any assumption that recovery is the fix.</li>
+<li>Loss still collapses delivery hard, and H10 and H12 agree on the numbers (about 18-20% delivery at 1% loss either way); that part stands. What is overturned is the remedy. Recovery as configured here is not the fix, and the mechanism behind the collapse must be isolated first. An early budget-0 config also confirmed NACK is a no-op without a receiver budget to wait for retransmissions.</li>
+</ul>
+
 
 <p class="meta"><strong>Limitations</strong></p>
 <ul>
-<li>{'Pre-registered': 'predictions and the verdict rule are fixed before the run. Results are pending the sweep on the aum/veda testbed.'}</li>
 <li>{'A clean A/B with H10': 'same loss levels, same networks, same workload and ceiling; only recovery (nack on, rtx_buffer_ms 500) differs. PLI and FEC stay off, so this isolates NACK/RTX retransmission alone.'}</li>
 <li>Uniform iid loss {0, 0.1, 0.25, 0.5, 1, 2} %. The recovery-on boundary may lie above 2%; this sweep matches H10's range for the contrast rather than hunting the new cliff (a higher-loss sweep would find it).</li>
 <li>rtx_buffer_ms is 500, so retransmissions older than ~500 ms cannot be served; a tighter latency budget or smaller buffer would weaken recovery.</li>
@@ -140,10 +146,33 @@
 
 
 
+<h2>Figures</h2>
+<figure>
+  <img src="results/h12_delivery_recovery.svg" alt="Frame delivery vs packet loss, recovery ON vs OFF (H10). NACK/RTX retransmission lifts delivery from the recovery-off cliff.">
+  <figcaption>Frame delivery vs packet loss, recovery ON vs OFF (H10). NACK/RTX retransmission lifts delivery from the recovery-off cliff.</figcaption>
+</figure>
 
+
+
+<h2>Tables</h2>
+<h3 style="font-size:14px;margin:14px 0 4px 0;">Frame delivery by packet loss — recovery on vs off</h3>
+<table>
+<thead><tr><th>frame delivery</th><th>0.0%</th><th>0.1%</th><th>0.25%</th><th>0.5%</th><th>1.0%</th><th>2.0%</th></tr></thead>
+<tbody>
+<tr><td>recovery on</td><td class="num">0.961</td><td class="num">0.372</td><td class="num">0.176</td><td class="num">0.244</td><td class="num">0.197</td><td class="num">0.152</td></tr>
+<tr><td>recovery off (H10)</td><td class="num">0.957</td><td class="num">0.362</td><td class="num">0.278</td><td class="num">0.229</td><td class="num">0.181</td><td class="num">0.171</td></tr>
+</tbody>
+</table>
 
 
 <h2>Experimental setup</h2>
+<div class="panel">
+<strong class="label">h12-loss-recovery-on</strong>
+<p>SCReAM loss sweep with recovery ON (NACK/RTX), the H10 twin.</p>
+<p class="meta">Configurations: <code>319</code> (scream+rtx loss=0.0%), <code>320</code> (scream+rtx loss=0.1%), <code>321</code> (scream+rtx loss=0.25%), <code>322</code> (scream+rtx loss=0.5%), <code>323</code> (scream+rtx loss=1.0%), <code>324</code> (scream+rtx loss=2.0%) · reps: 3</p>
+<p class="meta">Spec: <code>specs/experiments/h12-loss-recovery-on.yaml</code> · Record: <code>runs/experiments/h12-loss-recovery-on.json</code> · Run: <code>python3 tools/run_qdt_sweeps.py  # or experiment.py h12-loss-recovery-on --resume</code></p>
+<p class="meta">Status: 18 of 18 runs completed.</p>
+</div>
 
 
 <h2>Required metrics</h2>
