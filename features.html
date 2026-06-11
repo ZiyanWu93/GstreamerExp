@@ -467,7 +467,7 @@
         <li><a class="top" href="#model">2 · Programming model</a></li>
         <li><a class="sub" href="#spec-layers">Spec layers</a></li>
         <li><a class="sub" href="#spec-to-pipeline">From spec to pipeline</a></li>
-        <li><a class="sub" href="#two-impl">Two-implementations rule</a></li>
+        <li><a class="sub" href="#two-impl">Field shapes (tagged vs flat)</a></li>
         <li><a class="sub" href="#verification">Verification contract</a></li>
       </ul>
       <ul class="group">
@@ -550,7 +550,7 @@
   &nbsp;Insights are functions of data, not frozen text.
   &nbsp;Specs validate at load time.
   &nbsp;No silent fallbacks.
-  &nbsp;Two implementations make a pattern; one implementation just uses one shape.
+  &nbsp;A field gets a variant tag only when a second implementation exists; one variant stays a flat value.
 </div>
 
 <h3 id="spec-layers">Spec layers</h3>
@@ -619,11 +619,11 @@
         • metrics.py attaches pad probes per scenario.metrics
         • GLib main loop runs until num_frames or EOS</code></pre>
 
-<h3 id="two-impl">The "two implementations" rule</h3>
+<h3 id="two-impl">Field shapes: tagged vs flat</h3>
 <p>
-  A field is tagged with a <code>kind:</code> discriminator only when
-  two real variants exist. With one variant, it stays flat. The
-  current shape:
+  Rule 5 in practice. A field is tagged with a <code>kind:</code>
+  discriminator only when two real variants exist; with one, it stays a
+  flat value. The current shape:
 </p>
 
 <table>
