@@ -492,6 +492,9 @@
           "netem jitter uses a uniform distribution around a 20 ms base delay; a normal or pareto distribution would reorder differently at the same nominal jitter.",
           "The receiver jitter buffer size (rtpjitterbuffer latency) sets where absorption ends; this measures the system as configured, not a tuned buffer.",
           {
+            "A re-run with a 200 ms receiver budget was tried to rule out a wait-budget cause (the budget-0 setting that neutered NACK in H12). It did not help": "50 ms jitter still delivered 0 frames, in fact worse, because latency_budget_ms is a frame deadline (drop-if-later), not a reorder buffer. So the collapse is the netem reordering itself, not the budget. A clean jitter result needs a reorder-controlled netem model (rate-paced or correlated delay) or an explicitly enlarged rtpjitterbuffer; both are real investigations, not config tweaks."
+          },
+          {
             "Single arm (only scream|gcc exist). Workload-specific (realmotion-avi, 1280x1024 MJPEG, 10 fps, 60 s), 4000 kbps ceiling. 3 reps per cell. Boundary signal is frame delivery": "usable line 80%, collapse below 50%."
           }
         ]
