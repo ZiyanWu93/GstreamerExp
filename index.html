@@ -2070,8 +2070,8 @@ stop_session(session_id)           → ack</pre>
       </tr>
       <tr>
         <td>Does all this hold on other videos?</td>
-        <td><span class="badge untested">not started</span></td>
-        <td>Open, and the most important next step (§7.9).</td>
+        <td><span class="badge untested">single workload</span></td>
+        <td>Not testable today: realmotion-avi is the only real recorded clip, and synthetic patterns are ruled out. A second clip would be needed.</td>
       </tr>
     </tbody>
   </table>
@@ -2530,10 +2530,10 @@ latency_budget_ms: 0</code></pre>
 </p>
 
 <div class="feature-block">
-  <h3>Phase 1 · Make the knob finding trustworthy <span class="small">(runnable now · highest priority)</span></h3>
+  <h3>Phase 1 · Make the knob finding trustworthy <span class="small">(partly runnable)</span></h3>
   <ul>
-    <li class="todo"><strong>A second video.</strong> Re-run the knob question on a harder clip (more motion or higher resolution). If the knobs still do not move quality, the finding is real. If they suddenly do, the encoder's bitrate ceiling was the real constraint all along, which is itself a key result.</li>
-    <li class="todo"><strong>A sharper quality measure.</strong> Add a windowed post-step PSNR (and optionally SSIM) so a recovery effect that whole-run averages wash out cannot hide.</li>
+    <li class="todo"><strong>A second video</strong> — not feasible right now: realmotion-avi is the only real recorded clip available, and synthetic patterns are ruled out. Parked until a harder clip exists.</li>
+    <li class="todo"><strong>A sharper quality measure.</strong> Add a windowed post-step PSNR (and optionally SSIM) so a recovery effect that whole-run averages wash out cannot hide. Per-frame PSNR is already recorded, so this needs no new run.</li>
   </ul>
 </div>
 

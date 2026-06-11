@@ -43,6 +43,7 @@ SWEEPS = [
     "h9-rtt-boundary",
     "h10-loss-boundary",
     "h11-jitter-boundary",
+    "h12-loss-recovery-on",
 ]
 
 

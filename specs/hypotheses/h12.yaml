@@ -1,0 +1,52 @@
+id: H12
+slug: h12
+title: How much loss recovery buys
+claim: H10 found that with recovery off, frame delivery collapses below 0.1% packet loss. H12 re-runs the identical loss sweep with NACK/RTX retransmission on, changing only the recovery setting. With lost packets retransmitted, delivery should stay high where the recovery-off run collapsed, lifting the loss boundary well above 0.1%. If delivery is no better than the recovery-off run, retransmission is not helping at these loss rates.
+status: untested
+source: Goal 2 boundary behaviour (§7.8), follow-up to H10
+page: analysis/hypotheses/h12.html
+verifier: analysis/hypotheses/h12_loss_recovery.py
+predictions:
+  - usable_delivery_at_zero_loss
+  - recovery_raises_delivery_vs_no_recovery
+  - delivery_usable_across_whole_range_with_recovery
+verdict:
+  supported_when_all:
+    - usable_delivery_at_zero_loss
+    - recovery_raises_delivery_vs_no_recovery
+  refuted_when_any:
+    - recovery_does_not_help
+  untested_when_any:
+    - any_cell_failed
+    - required_metric_missing
+setup:
+  environment:
+    topology: controller-worker
+    hosts: { camera: aum, viewer: veda }
+    shaper: tc-qdisc
+    workload: realmotion-avi
+  experiments:
+    - name: h12-loss-recovery-on
+      configurations: [319, 320, 321, 322, 323, 324]
+      role: loss-boundary-recovery-on
+      minimum_completed_reps: 3
+  required_metrics:
+    - frame_count
+    - encoder_target_kbps
+    - wire_bytes
+    - encoded_bitrate
+    - frame_latency
+    - decoder_errors
+    - decoded_psnr
+results:
+  expected_records:
+    - runs/experiments/h12-loss-recovery-on.json
+  report: analysis/hypotheses/results/h12_report.json
+conclusions:
+  established: []
+  limits:
+    - Pre-registered: predictions and the verdict rule are fixed before the run. Results are pending the sweep on the aum/veda testbed.
+    - A clean A/B with H10: same loss levels, same networks, same workload and ceiling; only recovery (nack on, rtx_buffer_ms 500) differs. PLI and FEC stay off, so this isolates NACK/RTX retransmission alone.
+    - Uniform iid loss {0, 0.1, 0.25, 0.5, 1, 2} %. The recovery-on boundary may lie above 2%; this sweep matches H10's range for the contrast rather than hunting the new cliff (a higher-loss sweep would find it).
+    - rtx_buffer_ms is 500, so retransmissions older than ~500 ms cannot be served; a tighter latency budget or smaller buffer would weaken recovery.
+    - Workload-specific (realmotion-avi, 1280x1024 MJPEG, 10 fps, 60 s), 4000 kbps ceiling, keyframe interval 60 frames. 3 reps per cell. Boundary signal is frame delivery.

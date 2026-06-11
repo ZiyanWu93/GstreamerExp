@@ -1,0 +1,27 @@
+name: h12-loss-recovery-on
+description: "H12 \u2014 SCReAM loss sweep with recovery ON (NACK/RTX), the H10 recovery-off\ntwin. Fixed\
+  \ 5 Mbps / 20 ms, realmotion-avi, loose 4000 kbps ceiling. Same six\nloss levels {0, 0.1, 0.25, 0.5,\
+  \ 1, 2} % as H10; only recovery differs. Three\nreps each.\n"
+reps: 3
+varies:
+- network
+- hooks.pre_run
+configurations:
+- id: 319
+  label: 0.0%
+  color: '#c7e9c0'
+- id: 320
+  label: 0.1%
+  color: '#a1d99b'
+- id: 321
+  label: 0.25%
+  color: '#74c476'
+- id: 322
+  label: 0.5%
+  color: '#41ab5d'
+- id: 323
+  label: 1.0%
+  color: '#238b45'
+- id: 324
+  label: 2.0%
+  color: '#005a32'

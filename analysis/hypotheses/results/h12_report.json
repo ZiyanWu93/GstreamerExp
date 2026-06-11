@@ -1,0 +1,18 @@
+{
+  "verdict": "untested",
+  "predicates": {
+    "usable_delivery_at_zero_loss": false,
+    "recovery_raises_delivery_vs_no_recovery": false,
+    "delivery_usable_across_whole_range_with_recovery": false,
+    "recovery_does_not_help": true,
+    "any_cell_failed": false,
+    "required_metric_missing": true
+  },
+  "max_delivery_gain_vs_recovery_off": 0.0,
+  "min_delivery_with_recovery": null,
+  "per_regime": {
+    "loss": {
+      "cells": []
+    }
+  }
+}

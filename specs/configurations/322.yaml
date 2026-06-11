@@ -1,0 +1,41 @@
+meta:
+  name: h12_lossrec_0.5pct
+  description: "H12 cell \u2014 0.5% uniform loss on fixed 5 Mbps / 20 ms, VP8 + SCReAM\
+    \ loose 4000 kbps ceiling, realmotion-avi, RECOVERY ON (NACK/RTX). Loss sweep,\
+    \ the H10 recovery-off twin."
+  flags:
+  - scream
+video: realmotion-avi
+network: fixed-5mbps-20ms-loss0p5pct
+scenario:
+  actors:
+    camera: {}
+    viewer: {}
+  setup_delay_seconds: 3.0
+  drain_delay_seconds: 1.0
+  metrics:
+  - frame_count
+  - encoder_target_kbps
+  - wire_bytes
+  - encoded_bitrate
+  - frame_latency
+  - decoder_errors
+  - decoded_psnr
+codec: vp8
+encoder:
+  bitrate_kbps: 1500
+  keyframe_interval_frames: 60
+congestion_control:
+  algorithm: scream
+  init_bitrate_kbps: 1500
+  min_bitrate_kbps: 200
+  max_bitrate_kbps: 4000
+sink:
+  backend: fake
+  sync: false
+recovery:
+  nack: true
+  pli: true
+  fec: false
+  rtx_buffer_ms: 500
+latency_budget_ms: 100
