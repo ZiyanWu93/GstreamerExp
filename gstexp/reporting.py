@@ -123,6 +123,78 @@ def _stream_block(camera: dict, viewer: dict,
     return block
 
 
+_RTP_HZ = 90000.0   # RTP video clock rate (RTP timestamp units per second)
+
+
+def _correlate_sync_error(streams_meta: list, viewer_data: list) -> dict:
+    """Cross-stream presentation skew: how far apart, in ms, the N cameras'
+    same-instant frames arrive at the viewer.
+
+    For each stream, normalize its viewer-side frame_latency samples to a
+    capture-time t = (rtp_timestamp - base) / 90000 (base = the stream's
+    first rtp_timestamp), bin t to its frame index via the stream's fps, and
+    for every frame index present in >= 2 streams take the spread of arrival
+    wall-clocks, max(wall) - min(wall).
+
+    The walls are NOT skew-corrected on purpose: every viewer worker runs on
+    the SAME viewer host and shares one clock, so any host-vs-controller skew
+    is a common additive constant that cancels EXACTLY in max - min. So the
+    skew is trustworthy in absolute terms even though end-to-end latency is
+    only relatively trustworthy. (This holds only because multi-camera is
+    multi-stream on one viewer host, not multi-host.)
+
+    Returns {} when fewer than two streams carry usable frame_latency — e.g.
+    single-stream configs — so those summaries are unchanged.
+    """
+    per_stream: list = []   # {frame_index: wall} for each usable stream
+    names: list = []
+    for i, viewer in enumerate(viewer_data):
+        meta = streams_meta[i] if i < len(streams_meta) else {}
+        fps = meta.get("fps")
+        samples = (viewer.get("metrics", {}) or {}).get("frame_latency", {}).get("samples", [])
+        if not fps or not samples:
+            continue
+        base = min(ts for ts, _ in samples)
+        frames: dict = {}
+        for ts, wall in samples:
+            k = round((ts - base) / _RTP_HZ * fps)   # frame index since first
+            frames[k] = wall                          # last wins (dups rare)
+        per_stream.append(frames)
+        names.append(meta.get("name", f"stream{i}"))
+
+    if len(per_stream) < 2:
+        return {}
+
+    skews: list = []
+    worst = None   # (skew_ms, lo_name, hi_name)
+    for k in set().union(*(set(m) for m in per_stream)):
+        present = [(m[k], names[j]) for j, m in enumerate(per_stream) if k in m]
+        if len(present) < 2:
+            continue
+        lo, hi = min(present), max(present)
+        skew_ms = (hi[0] - lo[0]) * 1000.0
+        skews.append(skew_ms)
+        if worst is None or skew_ms > worst[0]:
+            worst = (skew_ms, lo[1], hi[1])
+    if not skews:
+        return {}
+
+    skews.sort()
+
+    def pct(p):
+        return skews[min(int(len(skews) * p / 100), len(skews) - 1)]
+
+    return {
+        "samples_count": len(skews),
+        "min_ms":        round(skews[0], 2),
+        "median_ms":     round(pct(50), 2),
+        "p95_ms":        round(pct(95), 2),
+        "p99_ms":        round(pct(99), 2),
+        "max_ms":        round(skews[-1], 2),
+        "worst_pair":    [worst[1], worst[2]],
+    }
+
+
 def build_summary(streams_meta: list, camera_data: list, viewer_data: list,
                   camera_skew: float = 0.0,
                   viewer_skew: float = 0.0) -> dict:
@@ -131,7 +203,9 @@ def build_summary(streams_meta: list, camera_data: list, viewer_data: list,
     block under summary.streams[]; the overall verdict is strict — PASS
     iff every stream PASSes (the teleop contract). camera_data[i] /
     viewer_data[i] are stream i's two result files, aligned with
-    streams_meta (one {name, priority} per stream)."""
+    streams_meta (one {name, priority, fps} per stream). For multi-stream
+    runs a cross-stream sync_error block is added (same-host presentation
+    skew); single-stream runs omit it."""
     streams = []
     for i, meta in enumerate(streams_meta):
         camera = camera_data[i] if i < len(camera_data) else {"missing": True, "errors": []}
@@ -145,7 +219,12 @@ def build_summary(streams_meta: list, camera_data: list, viewer_data: list,
     failed = [s["name"] for s in streams if s["verdict"] != "PASS"]
     errors = [f"stream '{name}' FAILED" for name in failed]
     verdict = "PASS" if not failed else "FAIL"
-    return {"verdict": verdict, "errors": errors, "streams": streams}
+    out = {"verdict": verdict, "errors": errors, "streams": streams}
+
+    sync_error = _correlate_sync_error(streams_meta, viewer_data)
+    if sync_error:
+        out["sync_error"] = sync_error
+    return out
 
 
 def print_report(label: str, run_dir: Path, summary: dict) -> None:
@@ -189,6 +268,12 @@ def print_report(label: str, run_dir: Path, summary: dict) -> None:
                   f"max {L['max_ms']:.1f} ms  (n={L['samples_count']})")
         for e in st["errors"]:
             print(f"    ! {e}")
+    if "sync_error" in summary:
+        sy = summary["sync_error"]
+        print(f"  sync:     median {sy['median_ms']:.1f} ms  "
+              f"p95 {sy['p95_ms']:.1f} ms  max {sy['max_ms']:.1f} ms  "
+              f"(worst {sy['worst_pair'][0]}<->{sy['worst_pair'][1]}, "
+              f"n={sy['samples_count']})")
     if summary["errors"]:
         for e in summary["errors"]:
             print(f"  ! {e}")

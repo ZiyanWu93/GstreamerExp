@@ -99,7 +99,10 @@ def run_configuration(config_arg: str, *,
     meta = doc.get("meta") or {}
     scenario = doc["scenario"]
     hooks = doc.get("hooks") or {}
-    streams_meta = [{"name": st["name"], "priority": st["priority"]}
+    # fps is carried for the cross-stream sync_error correlator (it bins
+    # each stream's frames by index); source is inlined by resolve_includes.
+    streams_meta = [{"name": st["name"], "priority": st["priority"],
+                     "fps": st["source"]["fps"]}
                     for st in doc["streams"]]
 
     setup_delay = float(scenario["setup_delay_seconds"])
