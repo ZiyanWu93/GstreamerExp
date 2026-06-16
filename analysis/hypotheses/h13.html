@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>H13 — Does a shorter keyframe interval soften the loss cliff?</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --ink: #1f2328;
+    --muted: #5f6b7a;
+    --rule: #d9dde5;
+    --accent: #2563eb;
+    --good-bg: #ecf7ec; --good-fg: #1d6f1d;
+    --warn-bg: #fdf3e7; --warn-fg: #a14a02;
+    --info-bg: #f0f4fa; --info-fg: #1e3a73;
+    --panel-bg: #fafbfc;
+    --table-head: #f4f6f9;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                 Helvetica, Arial, sans-serif;
+    max-width: 880px; margin: 32px auto; padding: 0 18px 60px;
+    color: var(--ink); line-height: 1.55; background: var(--bg);
+  }
+  h1 { font-size: 22px; margin: 0 0 4px 0; }
+  h2 { font-size: 17px; margin: 28px 0 8px 0;
+       border-bottom: 1px solid var(--rule); padding-bottom: 4px; }
+  p { margin: 8px 0; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .nav { font-size: 13px; margin-bottom: 14px; }
+  .tag { display: inline-block; font-size: 12px; padding: 2px 8px;
+         border-radius: 10px; background: var(--info-bg);
+         color: var(--info-fg); margin-right: 6px; }
+  .tag.supported    { background: var(--good-bg); color: var(--good-fg); }
+  .tag.refuted      { background: var(--warn-bg); color: var(--warn-fg); }
+  .tag.regime-dependent { background: var(--warn-bg); color: var(--warn-fg); }
+  .panel { background: var(--panel-bg); border: 1px solid var(--rule);
+           border-radius: 6px; padding: 12px 16px; margin: 14px 0; }
+  .panel strong.label { display: block; font-size: 12px;
+                        text-transform: uppercase; letter-spacing: 0.5px;
+                        color: var(--muted); margin-bottom: 4px; }
+  ul { padding-left: 22px; margin: 8px 0; }
+  ul li { margin-bottom: 4px; }
+  figure { margin: 14px 0; }
+  figure img { max-width: 100%; height: auto;
+               border: 1px solid var(--rule); border-radius: 4px;
+               background: white; padding: 6px; }
+  figure figcaption { font-size: 13px; color: var(--muted);
+                      margin-top: 6px; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px;
+          margin: 10px 0 18px 0; }
+  th, td { border: 1px solid var(--rule); padding: 4px 8px;
+           text-align: left; vertical-align: top; }
+  th { background: var(--table-head); font-weight: 600; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  pre, code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+              font-size: 13px; }
+  pre { background: var(--panel-bg); border: 1px solid var(--rule);
+        padding: 8px 10px; border-radius: 4px; overflow-x: auto; }
+  .meta { font-size: 13px; color: var(--muted); }
+  .source { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .footer { font-size: 12px; color: var(--muted); margin-top: 36px;
+            border-top: 1px solid var(--rule); padding-top: 10px; }
+  dl.glossary { margin: 8px 0 18px 0; }
+  dl.glossary dt { font-weight: 600; margin-top: 10px; }
+  dl.glossary dd { margin: 2px 0 0 0; color: var(--ink); font-size: 14px; }
+</style>
+</head>
+<body>
+
+<p class="nav"><a href="../../index.html">← GstreamerExp hub</a> · <a href="../../README.md">README</a> · <a href="../../docs/HYPOTHESES.md">Hypothesis catalog</a></p>
+
+<h1>H13 — Does a shorter keyframe interval soften the loss cliff?</h1>
+<p><span class="tag untested">untested</span><span class="meta">Goal 2 boundary behaviour (§7.8), validates the loss-collapse diagnostic (H10/H12)</span></p>
+
+<h2>Claim</h2>
+<p>The loss-collapse diagnostic concluded that H10/H12's delivery cliff at 1% loss is a receiver-side VP8 reference-chain desync gated by the 60-frame keyframe interval — one early gap breaks inter-frame prediction and the stream cannot re-anchor before the next loss re-breaks it. The falsifiable prediction is that shortening the keyframe interval bounds the desync window, so complete-frame delivery should rise as the GOP shrinks. Holding H10's 1% recovery-off cell fixed and sweeping the keyframe interval over 60, 30, 15, 8, 4, 2 frames, delivery should climb well above the ~18% long-GOP baseline. If delivery stays collapsed regardless of GOP, the GOP is not the cause and the diagnostic is wrong.</p>
+
+<h2>Predictions</h2>
+
+<ul>
+<li><code>shorter_gop_raises_delivery</code></li>
+<li><code>delivery_rises_monotonically_as_gop_shrinks</code></li>
+<li><code>usable_delivery_recovered_at_short_gop</code></li>
+</ul>
+
+
+<h2>Verdict</h2>
+
+<table>
+<thead><tr><th>Outcome</th><th>Predicates</th></tr></thead>
+<tbody>
+
+
+
+<tr><td><strong>Supported when all</strong></td><td>
+<code>shorter_gop_raises_delivery</code><br><code>usable_delivery_recovered_at_short_gop</code>
+</td></tr>
+
+
+
+<tr><td><strong>Refuted when any</strong></td><td>
+<code>gop_does_not_affect_delivery</code>
+</td></tr>
+
+
+
+
+
+<tr><td><strong>Untested when any</strong></td><td>
+<code>any_cell_failed</code><br><code>required_metric_missing</code>
+</td></tr>
+
+
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+<h2>Findings and Limitations</h2>
+
+
+<p class="meta"><strong>Limitations</strong></p>
+<ul>
+<li>Pre-registered: predictions and the verdict rule are fixed before the run. Results pending the sweep on the aum/veda testbed.</li>
+<li>Single variable. Only encoder.keyframe_interval_frames changes across the six cells; loss (1% uniform), network, ceiling, recovery (off), and workload are held at H10's cell, so any delivery change is attributable to the GOP.</li>
+<li>Trade-off, not a free lunch. Shorter GOPs spend more of the 4000 kbps budget on keyframes, so PSNR-of-delivered may fall even as delivery rises; the boundary signal is delivery, and PSNR is reported alongside.</li>
+<li>Confounded by frame size. A shorter GOP makes each frame larger (more packets), raising per-frame loss probability, which works against delivery; if delivery still rises, the re-anchoring effect dominates the larger-frame effect.</li>
+<li>Workload-specific (realmotion-avi, 1280x1024 MJPEG, 10 fps, 60 s), recovery off. 3 reps per cell. Boundary signal is frame delivery.</li>
+</ul>
+
+
+
+
+
+
+
+<h2>Experimental setup</h2>
+
+
+<h2>Required metrics</h2>
+<ul>
+<li><code>frame_count</code></li>
+<li><code>encoder_target_kbps</code></li>
+<li><code>wire_bytes</code></li>
+<li><code>encoded_bitrate</code></li>
+<li><code>frame_latency</code></li>
+<li><code>decoder_errors</code></li>
+<li><code>decoded_psnr</code></li>
+</ul>
+
+
+
+<h2>Reproducibility</h2>
+<p>This page is generated from <code>specs/hypotheses/h13.yaml</code> + <code>analysis/hypotheses/results/h13_report.json</code> + figures under <code>analysis/hypotheses/results/</code>.</p>
+<pre>python3 analysis/hypotheses/build_reports.py
+python3 analysis/hypotheses/build_pages.py
+python3 analysis/hypotheses/h13_keyframe_loss.py</pre>
+
+<p class="source">Source: Goal 2 boundary behaviour (§7.8), validates the loss-collapse diagnostic (H10/H12)</p>
+
+<p class="footer">Generated by <code>analysis/hypotheses/build_pages.py</code>. Do not hand-edit; modify <code>specs/hypotheses/h13.yaml</code> or the template instead.</p>
+
+</body>
+</html>

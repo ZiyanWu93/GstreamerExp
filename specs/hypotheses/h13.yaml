@@ -1,0 +1,52 @@
+id: H13
+slug: h13
+title: Does a shorter keyframe interval soften the loss cliff?
+claim: The loss-collapse diagnostic concluded that H10/H12's delivery cliff at 1% loss is a receiver-side VP8 reference-chain desync gated by the 60-frame keyframe interval — one early gap breaks inter-frame prediction and the stream cannot re-anchor before the next loss re-breaks it. The falsifiable prediction is that shortening the keyframe interval bounds the desync window, so complete-frame delivery should rise as the GOP shrinks. Holding H10's 1% recovery-off cell fixed and sweeping the keyframe interval over 60, 30, 15, 8, 4, 2 frames, delivery should climb well above the ~18% long-GOP baseline. If delivery stays collapsed regardless of GOP, the GOP is not the cause and the diagnostic is wrong.
+status: untested
+source: Goal 2 boundary behaviour (§7.8), validates the loss-collapse diagnostic (H10/H12)
+page: analysis/hypotheses/h13.html
+verifier: analysis/hypotheses/h13_keyframe_loss.py
+predictions:
+  - shorter_gop_raises_delivery
+  - delivery_rises_monotonically_as_gop_shrinks
+  - usable_delivery_recovered_at_short_gop
+verdict:
+  supported_when_all:
+    - shorter_gop_raises_delivery
+    - usable_delivery_recovered_at_short_gop
+  refuted_when_any:
+    - gop_does_not_affect_delivery
+  untested_when_any:
+    - any_cell_failed
+    - required_metric_missing
+setup:
+  environment:
+    topology: controller-worker
+    hosts: { camera: aum, viewer: veda }
+    shaper: tc-qdisc
+    workload: realmotion-avi
+  experiments:
+    - name: h13-keyframe-loss
+      configurations: [325, 326, 327, 328, 329, 330]
+      role: keyframe-sweep-at-1pct-loss
+      minimum_completed_reps: 3
+  required_metrics:
+    - frame_count
+    - encoder_target_kbps
+    - wire_bytes
+    - encoded_bitrate
+    - frame_latency
+    - decoder_errors
+    - decoded_psnr
+results:
+  expected_records:
+    - runs/experiments/h13-keyframe-loss.json
+  report: analysis/hypotheses/results/h13_report.json
+conclusions:
+  established: []
+  limits:
+    - Pre-registered: predictions and the verdict rule are fixed before the run. Results pending the sweep on the aum/veda testbed.
+    - Single variable. Only encoder.keyframe_interval_frames changes across the six cells; loss (1% uniform), network, ceiling, recovery (off), and workload are held at H10's cell, so any delivery change is attributable to the GOP.
+    - Trade-off, not a free lunch. Shorter GOPs spend more of the 4000 kbps budget on keyframes, so PSNR-of-delivered may fall even as delivery rises; the boundary signal is delivery, and PSNR is reported alongside.
+    - Confounded by frame size. A shorter GOP makes each frame larger (more packets), raising per-frame loss probability, which works against delivery; if delivery still rises, the re-anchoring effect dominates the larger-frame effect.
+    - Workload-specific (realmotion-avi, 1280x1024 MJPEG, 10 fps, 60 s), recovery off. 3 reps per cell. Boundary signal is frame delivery.

@@ -1,0 +1,19 @@
+{
+  "verdict": "untested",
+  "predicates": {
+    "shorter_gop_raises_delivery": false,
+    "delivery_rises_monotonically_as_gop_shrinks": true,
+    "usable_delivery_recovered_at_short_gop": false,
+    "gop_does_not_affect_delivery": true,
+    "any_cell_failed": false,
+    "required_metric_missing": true
+  },
+  "delivery_at_gop60": null,
+  "delivery_at_gop2": null,
+  "delivery_gain_short_vs_default": 0.0,
+  "per_regime": {
+    "keyframe": {
+      "cells": []
+    }
+  }
+}

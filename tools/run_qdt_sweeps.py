@@ -44,6 +44,7 @@ SWEEPS = [
     "h10-loss-boundary",
     "h11-jitter-boundary",
     "h12-loss-recovery-on",
+    "h13-keyframe-loss",
 ]
 
 

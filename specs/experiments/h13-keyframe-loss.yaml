@@ -1,0 +1,27 @@
+name: h13-keyframe-loss
+description: "H13 \u2014 keyframe-interval sweep at a fixed 1% packet loss (H10's recovery-off\ncell),\
+  \ holding everything else constant and varying only the VP8 keyframe\ninterval over {60, 30, 15, 8,\
+  \ 4, 2} frames. Three reps each. Tests the loss-\ncollapse diagnostic's prediction that a shorter GOP\
+  \ softens the cliff by\nbounding the reference-chain desync window.\n"
+reps: 3
+varies:
+- encoder.keyframe_interval_frames
+configurations:
+- id: 325
+  label: 60 frames
+  color: '#67000d'
+- id: 326
+  label: 30 frames
+  color: '#a50f15'
+- id: 327
+  label: 15 frames
+  color: '#de2d26'
+- id: 328
+  label: 8 frames
+  color: '#fb6a4a'
+- id: 329
+  label: 4 frames
+  color: '#fcae91'
+- id: 330
+  label: 2 frames
+  color: '#fee5d9'
