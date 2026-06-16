@@ -1,11 +1,9 @@
 meta:
   name: h6_qdt_100_fluct
-  description: "H6 cell \u2014 queue-delay-target 100 ms on fluctuating-5mbps-300kbps,\
-    \ VP8 + SCReAM ceiling 4000 kbps, streaming realmotion-avi."
+  description: H6 cell — queue-delay-target 100 ms on fluctuating-5mbps-300kbps, VP8
+    + SCReAM ceiling 4000 kbps, streaming realmotion-avi.
   flags:
   - scream
-video: realmotion-avi
-network: fluctuating-5mbps-300kbps
 scenario:
   actors:
     camera: {}
@@ -20,22 +18,30 @@ scenario:
   - frame_latency
   - decoder_errors
   - decoded_psnr
-codec: vp8
-encoder:
-  bitrate_kbps: 1500
-  keyframe_interval_frames: 60
-congestion_control:
-  algorithm: scream
-  init_bitrate_kbps: 1500
-  min_bitrate_kbps: 200
-  max_bitrate_kbps: 4000
-  scream:
-    delay_target_seconds: 0.1
-sink:
-  backend: fake
-  sync: false
-recovery:
-  nack: false
-  pli: false
-  fec: false
-latency_budget_ms: 0
+sync:
+  mode: shared_epoch
+  termination: all
+streams:
+- name: main
+  priority: 0
+  video: realmotion-avi
+  codec: vp8
+  encoder:
+    bitrate_kbps: 1500
+    keyframe_interval_frames: 60
+  congestion_control:
+    algorithm: scream
+    init_bitrate_kbps: 1500
+    min_bitrate_kbps: 200
+    max_bitrate_kbps: 4000
+    scream:
+      delay_target_seconds: 0.1
+  sink:
+    backend: fake
+    sync: false
+  recovery:
+    nack: false
+    pli: false
+    fec: false
+  latency_budget_ms: 0
+  network: fluctuating-5mbps-300kbps

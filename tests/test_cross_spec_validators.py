@@ -44,13 +44,16 @@ def assert_validation_fails_with(test_case, expected_substring: str):
 # A minimal valid configuration the cross-spec tests can build on. It
 # uses the real video and network specs (so resolve_includes works) but
 # everything else is inline so the test isn't coupled to the project's
-# actual configurations. No `transport` block — port is derived from
-# the file id.
+# actual configurations. No `transport` block — ports are derived from
+# the file id and stream index.
+#
+# New multi-stream schema: `meta` + `scenario` stay top-level, `sync` is a
+# required top-level block, and the former single-stream payload (video,
+# codec, encoder, congestion_control, sink, recovery, latency_budget_ms,
+# network) lives inside a single `streams[0]` block carrying name+priority.
 def _minimal_config(*, cc_algorithm: str = "scream") -> dict:
     return {
         "meta": {"name": "fixture", "description": "test fixture"},
-        "video": "ball-480p15",
-        "network": "loopback",
         "scenario": {
             "actors": {
                 "camera": {"host": "127.0.0.1"},
@@ -60,20 +63,29 @@ def _minimal_config(*, cc_algorithm: str = "scream") -> dict:
             "drain_delay_seconds": 1.0,
             "metrics": ["frame_count", "encoder_target_kbps"],
         },
-        "codec": "vp8",
-        "encoder": {
-            "bitrate_kbps": 500,
-            "keyframe_interval_frames": 60,
-        },
-        "congestion_control": {
-            "algorithm": cc_algorithm,
-            "init_bitrate_kbps": 500,
-            "min_bitrate_kbps": 200,
-            "max_bitrate_kbps": 4000,
-        },
-        "sink": {"backend": "fake", "sync": False},
-        "recovery": {"nack": False, "pli": False, "fec": False},
-        "latency_budget_ms": 0,
+        "sync": {"mode": "shared_epoch", "termination": "all"},
+        "streams": [
+            {
+                "name": "main",
+                "priority": 0,
+                "video": "ball-480p15",
+                "network": "loopback",
+                "codec": "vp8",
+                "encoder": {
+                    "bitrate_kbps": 500,
+                    "keyframe_interval_frames": 60,
+                },
+                "congestion_control": {
+                    "algorithm": cc_algorithm,
+                    "init_bitrate_kbps": 500,
+                    "min_bitrate_kbps": 200,
+                    "max_bitrate_kbps": 4000,
+                },
+                "sink": {"backend": "fake", "sync": False},
+                "recovery": {"nack": False, "pli": False, "fec": False},
+                "latency_budget_ms": 0,
+            },
+        ],
     }
 
 
@@ -97,21 +109,23 @@ class TestExperimentVariesValidator(unittest.TestCase):
             tmp = Path(tmp)
             cfg_a = _minimal_config(cc_algorithm="scream")
             cfg_b = _minimal_config(cc_algorithm="gcc")
-            # Inject an undeclared divergence: different encoder bitrate
-            cfg_b["encoder"]["bitrate_kbps"] = 1000
+            # Inject an undeclared divergence on a streams[0] path that is
+            # NOT in `varies`: different encoder bitrate.
+            cfg_b["streams"][0]["encoder"]["bitrate_kbps"] = 1000
             experiment_doc = {
                 "name": "fixture",
                 "description": "diverging fixture",
                 "reps": 1,
-                "varies": ["congestion_control.algorithm",
-                           "congestion_control.gcc", "congestion_control.scream"],
+                "varies": ["streams[0].congestion_control.algorithm",
+                           "streams[0].congestion_control.gcc",
+                           "streams[0].congestion_control.scream"],
                 "configurations": [
-                    {"id": "a", "label": "A", "color": "#ff0000"},
-                    {"id": "b", "label": "B", "color": "#0000ff"},
+                    {"id": "1", "label": "A", "color": "#ff0000"},
+                    {"id": "2", "label": "B", "color": "#0000ff"},
                 ],
             }
             configs_dir, spec_path = self._setup_fixtures(
-                tmp, configs={"a": cfg_a, "b": cfg_b},
+                tmp, configs={"1": cfg_a, "2": cfg_b},
                 experiment_doc=experiment_doc)
 
             with patch.object(experiment_mod, "CONFIGURATIONS_DIR", configs_dir):
@@ -129,15 +143,16 @@ class TestExperimentVariesValidator(unittest.TestCase):
                 "name": "fixture",
                 "description": "matching fixture",
                 "reps": 1,
-                "varies": ["congestion_control.algorithm",
-                           "congestion_control.gcc", "congestion_control.scream"],
+                "varies": ["streams[0].congestion_control.algorithm",
+                           "streams[0].congestion_control.gcc",
+                           "streams[0].congestion_control.scream"],
                 "configurations": [
-                    {"id": "a", "label": "A", "color": "#ff0000"},
-                    {"id": "b", "label": "B", "color": "#0000ff"},
+                    {"id": "1", "label": "A", "color": "#ff0000"},
+                    {"id": "2", "label": "B", "color": "#0000ff"},
                 ],
             }
             configs_dir, spec_path = self._setup_fixtures(
-                tmp, configs={"a": cfg_a, "b": cfg_b},
+                tmp, configs={"1": cfg_a, "2": cfg_b},
                 experiment_doc=experiment_doc)
             with patch.object(experiment_mod, "CONFIGURATIONS_DIR", configs_dir):
                 experiment_mod._load_and_validate_spec(spec_path)
@@ -150,8 +165,8 @@ class TestExperimentVariesValidator(unittest.TestCase):
                 "reps": 1,
                 "varies": [],
                 "configurations": [
-                    {"id": "a", "label": "A", "color": "#ff0000"},
-                    {"id": "a", "label": "B", "color": "#0000ff"},
+                    {"id": "1", "label": "A", "color": "#ff0000"},
+                    {"id": "1", "label": "B", "color": "#0000ff"},
                 ],
             }
             (tmp / "configurations").mkdir()

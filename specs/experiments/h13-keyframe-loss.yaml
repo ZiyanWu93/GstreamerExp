@@ -5,7 +5,7 @@ description: "H13 \u2014 keyframe-interval sweep at a fixed 1% packet loss (H10'
   \ softens the cliff by\nbounding the reference-chain desync window.\n"
 reps: 3
 varies:
-- encoder.keyframe_interval_frames
+- streams[0].encoder.keyframe_interval_frames
 configurations:
 - id: 325
   label: 60 frames

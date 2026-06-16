@@ -1,11 +1,10 @@
 meta:
   name: distributed_gcc_5g_rb_x0p33_snow_384x216
-  description: Distributed (aum->veda) GCC over `mahimahi-5g-rb-100ms-x0p33` using calibrated 384x216x30 snow video.
+  description: Distributed (aum->veda) GCC over `mahimahi-5g-rb-100ms-x0p33` using
+    calibrated 384x216x30 snow video.
   flags:
   - sudo
   - gcc
-video: snow-384x216-30s
-network: mahimahi-5g-rb-100ms-x0p33
 scenario:
   actors:
     camera: {}
@@ -20,20 +19,28 @@ scenario:
   - encoded_bitrate
   - decoder_errors
   - late_drops
-codec: vp8
-encoder:
-  bitrate_kbps: 1000
-  keyframe_interval_frames: 60
-congestion_control:
-  algorithm: gcc
-  init_bitrate_kbps: 1000
-  min_bitrate_kbps: 100
-  max_bitrate_kbps: 4000
-sink:
-  backend: fake
-  sync: false
-recovery:
-  nack: false
-  pli: false
-  fec: false
-latency_budget_ms: 0
+sync:
+  mode: shared_epoch
+  termination: all
+streams:
+- name: main
+  priority: 0
+  video: snow-384x216-30s
+  codec: vp8
+  encoder:
+    bitrate_kbps: 1000
+    keyframe_interval_frames: 60
+  congestion_control:
+    algorithm: gcc
+    init_bitrate_kbps: 1000
+    min_bitrate_kbps: 100
+    max_bitrate_kbps: 4000
+  sink:
+    backend: fake
+    sync: false
+  recovery:
+    nack: false
+    pli: false
+    fec: false
+  latency_budget_ms: 0
+  network: mahimahi-5g-rb-100ms-x0p33

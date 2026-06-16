@@ -1,15 +1,21 @@
 meta:
   name: distributed_scream_norecovery_budget50_fluc
-  description: "Distributed (aum\u2192veda) SCReAM at 720p30 over\n`fluctuating-5mbps-300kbps`.\
-    \ Recovery: none (no retransmission).\nLatency budget: 50 ms enforced. One arm\
-    \ of the H4 fluctuating-network\nexperiment \u2014 same 2\xD72\xD72 (CC \xD7 retransmission\
-    \ \xD7 budget) as the\nconstant-network version, but on a more realistic\ncapacity-step\
-    \ network.\n"
+  description: 'Distributed (aum→veda) SCReAM at 720p30 over
+
+    `fluctuating-5mbps-300kbps`. Recovery: none (no retransmission).
+
+    Latency budget: 50 ms enforced. One arm of the H4 fluctuating-network
+
+    experiment — same 2×2×2 (CC × retransmission × budget) as the
+
+    constant-network version, but on a more realistic
+
+    capacity-step network.
+
+    '
   flags:
   - sudo
   - scream
-video: ball-720p30
-network: fluctuating-5mbps-300kbps
 scenario:
   actors:
     camera: {}
@@ -24,20 +30,28 @@ scenario:
   - encoded_bitrate
   - decoder_errors
   - late_drops
-codec: vp8
-encoder:
-  bitrate_kbps: 1500
-  keyframe_interval_frames: 60
-congestion_control:
-  algorithm: scream
-  init_bitrate_kbps: 1500
-  min_bitrate_kbps: 200
-  max_bitrate_kbps: 4000
-sink:
-  backend: fake
-  sync: false
-recovery:
-  nack: false
-  pli: false
-  fec: false
-latency_budget_ms: 50
+sync:
+  mode: shared_epoch
+  termination: all
+streams:
+- name: main
+  priority: 0
+  video: ball-720p30
+  codec: vp8
+  encoder:
+    bitrate_kbps: 1500
+    keyframe_interval_frames: 60
+  congestion_control:
+    algorithm: scream
+    init_bitrate_kbps: 1500
+    min_bitrate_kbps: 200
+    max_bitrate_kbps: 4000
+  sink:
+    backend: fake
+    sync: false
+  recovery:
+    nack: false
+    pli: false
+    fec: false
+  latency_budget_ms: 50
+  network: fluctuating-5mbps-300kbps

@@ -15,9 +15,9 @@ description: |
   NACK + PLI should pareto-dominate either alone.
 reps: 10
 varies:
-  - recovery.nack
-  - recovery.pli
-  - recovery.rtx_buffer_ms
+  - streams[0].recovery.nack
+  - streams[0].recovery.pli
+  - streams[0].recovery.rtx_buffer_ms
 configurations:
   - id: 14
     label: neither

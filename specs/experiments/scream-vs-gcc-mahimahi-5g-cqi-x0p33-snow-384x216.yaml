@@ -6,7 +6,7 @@ description: >
   controller.
 reps: 3
 varies:
-- congestion_control.algorithm
+- streams[0].congestion_control.algorithm
 configurations:
 - id: 81
   label: SCReAM CQI x0.33 snow 384x216

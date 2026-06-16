@@ -7,7 +7,7 @@ description: |
   — the question H6 left open at its loose 4000 kbps ceiling.
 reps: 3
 varies:
-  - congestion_control.scream.delay_target_seconds
+  - streams[0].congestion_control.scream.delay_target_seconds
 configurations:
   - id: 119
     label: qdt 10ms

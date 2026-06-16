@@ -1,0 +1,93 @@
+meta:
+  name: teleop_3cam_heterogeneous
+  description: >
+    3-camera teleoperation, aum -> veda. Front is the high-priority driving
+    view (SCReAM, no recovery, clean link); rear is SCReAM with NACK/PLI over
+    a 1% loss link; left is GCC with FEC over a 50 ms link. Each camera rides
+    its own shaped tc lane on the shared NIC (per-stream impairment) and its
+    own (rtp, rtcp) port pair. Cross-stream sync (shared epoch + sync_error)
+    is deferred to a later increment; this proves the multi-stream spine.
+  flags:
+  - sudo
+  - scream
+scenario:
+  actors:
+    camera: {}
+    viewer: {}
+  setup_delay_seconds: 3.0
+  drain_delay_seconds: 1.0
+  metrics:
+  - frame_count
+  - encoder_target_kbps
+  - wire_bytes
+  - encoded_bitrate
+  - frame_latency
+sync:
+  mode: shared_epoch
+  termination: all
+streams:
+- name: front
+  priority: 0
+  video: realmotion-avi
+  codec: vp8
+  encoder:
+    bitrate_kbps: 1500
+    keyframe_interval_frames: 60
+  congestion_control:
+    algorithm: scream
+    init_bitrate_kbps: 1500
+    min_bitrate_kbps: 200
+    max_bitrate_kbps: 4000
+  sink:
+    backend: fake
+    sync: false
+  recovery:
+    nack: false
+    pli: false
+    fec: false
+  latency_budget_ms: 0
+  network: fixed-5mbps-20ms
+- name: rear
+  priority: 1
+  video: realmotion-avi
+  codec: vp8
+  encoder:
+    bitrate_kbps: 1000
+    keyframe_interval_frames: 60
+  congestion_control:
+    algorithm: scream
+    init_bitrate_kbps: 1000
+    min_bitrate_kbps: 150
+    max_bitrate_kbps: 3000
+  sink:
+    backend: fake
+    sync: false
+  recovery:
+    nack: true
+    pli: true
+    fec: false
+    rtx_buffer_ms: 200
+  latency_budget_ms: 250
+  network: fixed-5mbps-20ms-loss1pct
+- name: left
+  priority: 2
+  video: realmotion-avi
+  codec: vp8
+  encoder:
+    bitrate_kbps: 800
+    keyframe_interval_frames: 60
+  congestion_control:
+    algorithm: gcc
+    init_bitrate_kbps: 800
+    min_bitrate_kbps: 100
+    max_bitrate_kbps: 2500
+  sink:
+    backend: fake
+    sync: false
+  recovery:
+    nack: false
+    pli: false
+    fec: true
+    fec_percentage: 20
+  latency_budget_ms: 250
+  network: fixed-5mbps-50ms

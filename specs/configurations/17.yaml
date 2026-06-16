@@ -1,14 +1,12 @@
 meta:
   name: distributed_scream_720p_fec
-  description: "Distributed (aum\u2192veda) SCReAM at 720p30 under fluctuating-5mbps-300kbps,\
-    \ with ULPFEC at 25% overhead but without NACK or PLI. Smoke-tests the FEC pipeline\
-    \ path end-to-end and provides the FEC-only arm for a later 3-axis (NACK \xD7\
-    \ PLI \xD7 FEC) recovery study."
+  description: Distributed (aum→veda) SCReAM at 720p30 under fluctuating-5mbps-300kbps,
+    with ULPFEC at 25% overhead but without NACK or PLI. Smoke-tests the FEC pipeline
+    path end-to-end and provides the FEC-only arm for a later 3-axis (NACK × PLI ×
+    FEC) recovery study.
   flags:
   - sudo
   - scream
-video: ball-720p30
-network: fluctuating-5mbps-300kbps
 scenario:
   actors:
     camera: {}
@@ -22,21 +20,29 @@ scenario:
   - wire_bytes
   - encoded_bitrate
   - decoder_errors
-codec: vp8
-encoder:
-  bitrate_kbps: 1500
-  keyframe_interval_frames: 60
-congestion_control:
-  algorithm: scream
-  init_bitrate_kbps: 1500
-  min_bitrate_kbps: 200
-  max_bitrate_kbps: 4000
-sink:
-  backend: fake
-  sync: false
-recovery:
-  nack: false
-  pli: false
-  fec: true
-  fec_percentage: 25
-latency_budget_ms: 0
+sync:
+  mode: shared_epoch
+  termination: all
+streams:
+- name: main
+  priority: 0
+  video: ball-720p30
+  codec: vp8
+  encoder:
+    bitrate_kbps: 1500
+    keyframe_interval_frames: 60
+  congestion_control:
+    algorithm: scream
+    init_bitrate_kbps: 1500
+    min_bitrate_kbps: 200
+    max_bitrate_kbps: 4000
+  sink:
+    backend: fake
+    sync: false
+  recovery:
+    nack: false
+    pli: false
+    fec: true
+    fec_percentage: 25
+  latency_budget_ms: 0
+  network: fluctuating-5mbps-300kbps

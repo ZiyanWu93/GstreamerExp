@@ -19,10 +19,10 @@ description: |
      SCReAM's lateness tail is larger than GCC's.
 reps: 5
 varies:
-  - congestion_control.algorithm
-  - recovery.nack
-  - recovery.rtx_buffer_ms
-  - latency_budget_ms
+  - streams[0].congestion_control.algorithm
+  - streams[0].recovery.nack
+  - streams[0].recovery.rtx_buffer_ms
+  - streams[0].latency_budget_ms
 configurations:
   - id: 41
     label: SCReAM no-rec budget=0

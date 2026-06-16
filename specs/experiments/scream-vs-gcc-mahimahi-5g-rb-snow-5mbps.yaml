@@ -5,7 +5,7 @@ description: >
   primary stress trace for realistic-trace CC comparison.
 reps: 3
 varies:
-- congestion_control.algorithm
+- streams[0].congestion_control.algorithm
 configurations:
 - id: 73
   label: SCReAM snow 5M

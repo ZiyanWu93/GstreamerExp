@@ -5,7 +5,7 @@ description: |
   200, 500} ms, three reps each.
 reps: 3
 varies:
-  - congestion_control.scream.delay_target_seconds
+  - streams[0].congestion_control.scream.delay_target_seconds
 configurations:
   - id: 101
     label: qdt 10ms

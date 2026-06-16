@@ -1,15 +1,23 @@
 meta:
   name: distributed_gcc_norecovery_budget50
-  description: "Distributed (aum\u2192veda) GCC at 720p30 over\n`clean-5mbps-50ms-3pct-uniform`.\
-    \ Recovery: none.\nLatency budget: 50 ms (tighter than the 100 ms RTT, so any\n\
-    NACK retransmission round-trip exceeds the budget).\nFollow-up arm to the H4 experiment\
-    \ `nack-latency-budget`,\ntesting whether the H4 prediction holds at a budget\
-    \ tighter\nthan the network's RTT.\n"
+  description: 'Distributed (aum→veda) GCC at 720p30 over
+
+    `clean-5mbps-50ms-3pct-uniform`. Recovery: none.
+
+    Latency budget: 50 ms (tighter than the 100 ms RTT, so any
+
+    NACK retransmission round-trip exceeds the budget).
+
+    Follow-up arm to the H4 experiment `nack-latency-budget`,
+
+    testing whether the H4 prediction holds at a budget tighter
+
+    than the network''s RTT.
+
+    '
   flags:
   - sudo
   - gcc
-video: ball-720p30
-network: clean-5mbps-50ms-3pct-uniform
 scenario:
   actors:
     camera: {}
@@ -24,20 +32,28 @@ scenario:
   - encoded_bitrate
   - decoder_errors
   - late_drops
-codec: vp8
-encoder:
-  bitrate_kbps: 1500
-  keyframe_interval_frames: 60
-congestion_control:
-  algorithm: gcc
-  init_bitrate_kbps: 1500
-  min_bitrate_kbps: 200
-  max_bitrate_kbps: 4000
-sink:
-  backend: fake
-  sync: false
-recovery:
-  nack: false
-  pli: false
-  fec: false
-latency_budget_ms: 50
+sync:
+  mode: shared_epoch
+  termination: all
+streams:
+- name: main
+  priority: 0
+  video: ball-720p30
+  codec: vp8
+  encoder:
+    bitrate_kbps: 1500
+    keyframe_interval_frames: 60
+  congestion_control:
+    algorithm: gcc
+    init_bitrate_kbps: 1500
+    min_bitrate_kbps: 200
+    max_bitrate_kbps: 4000
+  sink:
+    backend: fake
+    sync: false
+  recovery:
+    nack: false
+    pli: false
+    fec: false
+  latency_budget_ms: 50
+  network: clean-5mbps-50ms-3pct-uniform

@@ -36,12 +36,22 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from gstexp.runner import _ssh, _measure_clock_skew                   # noqa: E402
-from gstexp.validation import _compile_network_steps                   # noqa: E402
+from gstexp.validation import (_compile_streams_network,               # noqa: E402
+                               _port_for_stream)
 
 
 # --- knobs --------------------------------------------------------------
 
-_PROBE_PORT = 31000
+# The HTB-based compiler classifies a stream's lane by its destination
+# port: `match ip dport <rtp_port> 0xfffe`. The probe must therefore send
+# on the SAME port the compiler filtered, or the tc lane never catches it
+# and we'd measure the unshaped passthrough class. We probe a single
+# representative stream (idx 0) of a notional config and reuse its
+# derived rtp_port both as the compiler's filter port and the probe's
+# UDP destination port, keeping the two in lockstep.
+_PROBE_CONFIG_ID = "0"
+_PROBE_STREAM_IDX = 0
+_PROBE_PORT = _port_for_stream(_PROBE_CONFIG_ID, _PROBE_STREAM_IDX)
 # Probe rate must fit the smallest TBF cap in any tested spec, otherwise
 # TBF (downstream of netem) drops the rate-cap excess and we'd attribute
 # rate-cap drops to the loss model. 100 pps × 32-byte payload + ~62 byte
@@ -241,17 +251,36 @@ def main():
           f"({len(steps)} steps; durations="
           f"{[s['duration'] for s in steps]})")
 
-    # Inject NIC into hook scripts (mirrors what resolve_includes does
-    # with network_env). The compiler doesn't know the NIC; the spec's
-    # scripts reference $NIC and the caller exports it. Filter by role —
-    # only this direction's hooks get tc applied.
-    hooks = _compile_network_steps(spec_path, spec)
-    nic_export = f'export NIC={shlex.quote(args.nic)}\n'
+    # Compile the spec into tc hooks. The multi-stream compiler takes a
+    # list of per-stream network profiles; we wrap this single spec as a
+    # one-element stream_nets list (idx 0, a probe name, the rtp_port the
+    # probe sends on, and the parsed network yaml). It returns
+    # {phase: [hook, ...]} with one camera + one viewer hook per phase
+    # when both directions are shaped; we filter to the role of interest
+    # below so the other direction stays unimpaired during the probe.
+    stream_nets = [{
+        "idx": _PROBE_STREAM_IDX,
+        "name": f"probe-{args.spec}",
+        "rtp_port": _PROBE_PORT,
+        "spec": spec,
+    }]
+    hooks = _compile_streams_network(stream_nets, spec_path.name)
+
+    # Inject NIC + PEER_IP into hook scripts (mirrors what resolve_includes
+    # does with network_env + actor topology). The compiler doesn't know
+    # the NIC, and the HTB-based tc rules filter by `match ip dst
+    # $PEER_IP_RESOLVED ... match ip dport <rtp_port>`, so the lane only
+    # catches probe traffic when PEER_IP names the receiving host and the
+    # probe sends on _PROBE_PORT. PEER_IP is the recv host (the peer of
+    # the shaping sender). Filter by role — only this direction's hooks
+    # get tc applied.
+    env_export = (f'export NIC={shlex.quote(args.nic)}\n'
+                  f'export PEER_IP={shlex.quote(recv_host)}\n')
     role_hooks: dict = {phase: [h for h in hook_list if h["host"] == hook_role]
                         for phase, hook_list in hooks.items()}
     for hook_list in role_hooks.values():
         for h in hook_list:
-            h["script"] = nic_export + h["script"]
+            h["script"] = env_export + h["script"]
 
     # --- clock skew ----------------------------------------------------
     # rx-tx offset is in the recv-host's frame minus the send-host's frame,

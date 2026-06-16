@@ -7,6 +7,14 @@ mutation is rejected. Tests cover the constraints the validator is
 responsible for today: typos at any nesting level, missing required
 blocks, conditional rules (sink.path with file backend), the metric
 registry cross-check, and CC algorithm dispatch / value validation.
+
+Config 8 is now a multi-stream document: the single-stream payload
+(source/codec/encoder/sink/recovery/latency_budget_ms + optional
+congestion_control) lives under `streams[0]`, joined by `name`/`priority`,
+and a top-level `sync:` block declares cross-stream synchronization. So a
+mutation that used to read `doc["codec"]` now reads
+`doc["streams"][0]["codec"]`, and per-stream validator errors are
+index-tagged with a `streams[0].` prefix.
 """
 
 from __future__ import annotations
@@ -53,6 +61,13 @@ def _resolve_and_validate(doc: dict) -> None:
     validate_doc(doc, BASE_CONFIG_PATH)
 
 
+def _stream0(doc: dict) -> dict:
+    """The lone stream of config 8 — where the former single-stream
+    payload (codec/encoder/sink/recovery/...) now lives. Mutations that
+    used to read doc["<key>"] now read _stream0(doc)["<key>"]."""
+    return doc["streams"][0]
+
+
 class TestTopLevelStructure(unittest.TestCase):
 
     def setUp(self):
@@ -64,7 +79,17 @@ class TestTopLevelStructure(unittest.TestCase):
             _resolve_and_validate(self.doc)
 
     def test_missing_required_block_rejected(self):
-        del self.doc["codec"]
+        # A required per-stream field (codec) is missing — surfaces with
+        # the index-tagged `streams[0]. missing key(s)` message that points
+        # at the offending stream.
+        del _stream0(self.doc)["codec"]
+        with assert_validation_fails_with(self, "streams[0]. missing key(s)"):
+            _resolve_and_validate(self.doc)
+
+    def test_missing_required_top_level_block_rejected(self):
+        # A required top-level block (sync) is missing — distinct from a
+        # missing per-stream field; surfaces with "missing required block".
+        del self.doc["sync"]
         with assert_validation_fails_with(self, "missing required block"):
             _resolve_and_validate(self.doc)
 
@@ -72,30 +97,30 @@ class TestTopLevelStructure(unittest.TestCase):
         # The codec discriminator is checked against the implemented set;
         # asking for h264 today produces a precise error rather than a
         # confusing "no element h264enc" failure at pipeline-build time.
-        self.doc["codec"] = "h264"
-        with assert_validation_fails_with(self, "`codec` must be one of"):
+        _stream0(self.doc)["codec"] = "h264"
+        with assert_validation_fails_with(self, "codec must be one of"):
             _resolve_and_validate(self.doc)
 
     def test_unknown_key_inside_pipeline_block_rejected(self):
         # Per-block allow-set check: any key not in the block's schema is
         # rejected with the expected-set listed.
-        self.doc["encoder"]["extra_field"] = 42
+        _stream0(self.doc)["encoder"]["extra_field"] = 42
         with assert_validation_fails_with(self, "encoder: unknown key"):
             _resolve_and_validate(self.doc)
 
     def test_latency_budget_required(self):
-        del self.doc["latency_budget_ms"]
-        with assert_validation_fails_with(self, "missing required block"):
+        del _stream0(self.doc)["latency_budget_ms"]
+        with assert_validation_fails_with(self, "streams[0]. missing key(s)"):
             _resolve_and_validate(self.doc)
 
     def test_latency_budget_must_be_int(self):
-        self.doc["latency_budget_ms"] = "100"
+        _stream0(self.doc)["latency_budget_ms"] = "100"
         with assert_validation_fails_with(self,
                 "latency_budget_ms must be a non-negative integer"):
             _resolve_and_validate(self.doc)
 
     def test_latency_budget_negative_rejected(self):
-        self.doc["latency_budget_ms"] = -1
+        _stream0(self.doc)["latency_budget_ms"] = -1
         with assert_validation_fails_with(self,
                 "latency_budget_ms must be a non-negative integer"):
             _resolve_and_validate(self.doc)
@@ -103,8 +128,70 @@ class TestTopLevelStructure(unittest.TestCase):
     def test_latency_budget_zero_disables(self):
         # 0 is the explicit "no enforcement" value; the validator
         # accepts it without complaint.
-        self.doc["latency_budget_ms"] = 0
+        _stream0(self.doc)["latency_budget_ms"] = 0
         _resolve_and_validate(self.doc)
+
+
+class TestSyncBlock(unittest.TestCase):
+    """The `sync:` block declares how the N streams are cross-synchronized
+    — discriminated by `mode`, with a `termination` policy. It's a required
+    top-level block; a typo or bad value must surface at load time, not
+    inside the start-barrier."""
+
+    def setUp(self):
+        self.doc = deepcopy(BASE_DOC)
+
+    def test_sync_missing_key_rejected(self):
+        del self.doc["sync"]["termination"]
+        with assert_validation_fails_with(self, "sync: missing key"):
+            _resolve_and_validate(self.doc)
+
+    def test_sync_unknown_key_rejected(self):
+        self.doc["sync"]["barrier"] = "soft"
+        with assert_validation_fails_with(self, "sync: unknown key"):
+            _resolve_and_validate(self.doc)
+
+    def test_sync_bad_mode_rejected(self):
+        self.doc["sync"]["mode"] = "wallclock"
+        with assert_validation_fails_with(self, "sync.mode must be one of"):
+            _resolve_and_validate(self.doc)
+
+    def test_sync_bad_termination_rejected(self):
+        self.doc["sync"]["termination"] = "longest"
+        with assert_validation_fails_with(self,
+                "sync.termination must be one of"):
+            _resolve_and_validate(self.doc)
+
+
+class TestStreamsStructure(unittest.TestCase):
+    """The top-level `streams:` list is required, non-empty, and each
+    entry needs a unique name — the port stride and the per-stream
+    degradation order both key off identity, so a collision must fail
+    at load time."""
+
+    def setUp(self):
+        self.doc = deepcopy(BASE_DOC)
+
+    def test_empty_streams_rejected(self):
+        self.doc["streams"] = []
+        with assert_validation_fails_with(self,
+                "`streams` must be a non-empty list"):
+            _resolve_and_validate(self.doc)
+
+    def test_duplicate_stream_name_rejected(self):
+        # A second stream that reuses the first's name collides. Give it a
+        # distinct port-driving identity is impossible without a unique
+        # name, so the validator rejects the duplicate.
+        second = deepcopy(_stream0(self.doc))    # same name: "main"
+        self.doc["streams"].append(second)
+        with assert_validation_fails_with(self, "streams: duplicate name"):
+            _resolve_and_validate(self.doc)
+
+    def test_negative_priority_rejected(self):
+        _stream0(self.doc)["priority"] = -1
+        with assert_validation_fails_with(self,
+                "priority must be a non-negative integer"):
+            _resolve_and_validate(self.doc)
 
 
 class TestSourceBackend(unittest.TestCase):
@@ -114,11 +201,13 @@ class TestSourceBackend(unittest.TestCase):
 
     def setUp(self):
         self.doc = deepcopy(BASE_DOC)
-        # The base config uses `video: ...` which inlines source at
-        # resolve time. To mutate source, drop the video ref and set
-        # source inline (mirrors the schema's mutual exclusion).
-        self.doc.pop("video", None)
-        self.doc["source"] = {
+        # The base config's stream uses `video: ...` which inlines source
+        # at resolve time. To mutate source, drop the video ref and set
+        # source inline on the stream (mirrors the schema's mutual
+        # exclusion).
+        st = _stream0(self.doc)
+        st.pop("video", None)
+        st["source"] = {
             "backend": "synthetic",
             "width": 640,
             "height": 480,
@@ -132,26 +221,27 @@ class TestSourceBackend(unittest.TestCase):
         # `camera` (real v4l2-style hardware capture) is the next un-
         # implemented backend — preserves the rejection-pathway test
         # now that `file` works.
-        self.doc["source"]["backend"] = "camera"
-        del self.doc["source"]["synthetic"]
+        _stream0(self.doc)["source"]["backend"] = "camera"
+        del _stream0(self.doc)["source"]["synthetic"]
         with assert_validation_fails_with(self, "source.backend `camera` is not implemented"):
             _resolve_and_validate(self.doc)
 
     def test_wrong_source_subblock_rejected(self):
         # backend=synthetic but a `file` sub-block also set.
-        self.doc["source"]["file"] = {"path": "/tmp/x", "loop": True}
+        _stream0(self.doc)["source"]["file"] = {"path": "/tmp/x", "loop": True}
         with assert_validation_fails_with(self, "block set but backend is 'synthetic'"):
             _resolve_and_validate(self.doc)
 
     def test_synthetic_missing_pattern_rejected(self):
-        self.doc["source"]["synthetic"] = {}
+        _stream0(self.doc)["source"]["synthetic"] = {}
         with assert_validation_fails_with(self, "source.synthetic: missing key"):
             _resolve_and_validate(self.doc)
 
     def _switch_to_file(self, sub):
-        del self.doc["source"]["synthetic"]
-        self.doc["source"]["backend"] = "file"
-        self.doc["source"]["file"] = sub
+        source = _stream0(self.doc)["source"]
+        del source["synthetic"]
+        source["backend"] = "file"
+        source["file"] = sub
 
     def test_file_missing_path_rejected(self):
         self._switch_to_file({"loop": True})
@@ -184,17 +274,17 @@ class TestSinkConditionalRules(unittest.TestCase):
     def test_autovideo_sink_rejected(self):
         # Visual rendering moved to expo specs; configurations carry
         # only measurement sinks.
-        self.doc["sink"] = {"backend": "autovideo", "sync": True}
+        _stream0(self.doc)["sink"] = {"backend": "autovideo", "sync": True}
         with assert_validation_fails_with(self, "sink.backend must be one of"):
             _resolve_and_validate(self.doc)
 
     def test_sink_path_with_non_file_backend_rejected(self):
-        self.doc["sink"] = {"backend": "fake", "sync": False, "path": "/tmp/x"}
+        _stream0(self.doc)["sink"] = {"backend": "fake", "sync": False, "path": "/tmp/x"}
         with assert_validation_fails_with(self, "only applies when backend"):
             _resolve_and_validate(self.doc)
 
     def test_file_backend_without_path_rejected(self):
-        self.doc["sink"] = {"backend": "file", "sync": False}
+        _stream0(self.doc)["sink"] = {"backend": "file", "sync": False}
         with assert_validation_fails_with(self, "sink: `path` is required"):
             _resolve_and_validate(self.doc)
 
@@ -265,65 +355,65 @@ class TestRecoveryBlock(unittest.TestCase):
         self.doc = deepcopy(BASE_DOC)
 
     def test_recovery_block_required(self):
-        del self.doc["recovery"]
-        with assert_validation_fails_with(self, "missing required block"):
+        del _stream0(self.doc)["recovery"]
+        with assert_validation_fails_with(self, "streams[0]. missing key(s)"):
             _resolve_and_validate(self.doc)
 
     def test_buffer_ms_required_when_nack_true(self):
-        self.doc["recovery"] = {"nack": True, "pli": False, "fec": False}
+        _stream0(self.doc)["recovery"] = {"nack": True, "pli": False, "fec": False}
         with assert_validation_fails_with(self, "rtx_buffer_ms` is required"):
             _resolve_and_validate(self.doc)
 
     def test_buffer_ms_forbidden_when_nack_false(self):
-        self.doc["recovery"] = {"nack": False, "pli": False, "fec": False,
-                                "rtx_buffer_ms": 500}
+        _stream0(self.doc)["recovery"] = {"nack": False, "pli": False, "fec": False,
+                                          "rtx_buffer_ms": 500}
         with assert_validation_fails_with(self, "only applies when nack: true"):
             _resolve_and_validate(self.doc)
 
     def test_unknown_recovery_key_rejected(self):
-        self.doc["recovery"]["red"] = True
+        _stream0(self.doc)["recovery"]["red"] = True
         with assert_validation_fails_with(self, "recovery: unknown key"):
             _resolve_and_validate(self.doc)
 
     def test_nack_must_be_bool(self):
-        self.doc["recovery"] = {"nack": "yes", "pli": False, "fec": False}
+        _stream0(self.doc)["recovery"] = {"nack": "yes", "pli": False, "fec": False}
         with assert_validation_fails_with(self, "recovery.nack must be a bool"):
             _resolve_and_validate(self.doc)
 
     def test_pli_required(self):
-        self.doc["recovery"] = {"nack": False, "fec": False}    # missing pli
+        _stream0(self.doc)["recovery"] = {"nack": False, "fec": False}    # missing pli
         with assert_validation_fails_with(self, "recovery: missing key"):
             _resolve_and_validate(self.doc)
 
     def test_pli_must_be_bool(self):
-        self.doc["recovery"] = {"nack": False, "pli": "yes", "fec": False}
+        _stream0(self.doc)["recovery"] = {"nack": False, "pli": "yes", "fec": False}
         with assert_validation_fails_with(self, "recovery.pli must be a bool"):
             _resolve_and_validate(self.doc)
 
     def test_fec_required(self):
-        self.doc["recovery"] = {"nack": False, "pli": False}     # missing fec
+        _stream0(self.doc)["recovery"] = {"nack": False, "pli": False}     # missing fec
         with assert_validation_fails_with(self, "recovery: missing key"):
             _resolve_and_validate(self.doc)
 
     def test_fec_must_be_bool(self):
-        self.doc["recovery"] = {"nack": False, "pli": False, "fec": "yes"}
+        _stream0(self.doc)["recovery"] = {"nack": False, "pli": False, "fec": "yes"}
         with assert_validation_fails_with(self, "recovery.fec must be a bool"):
             _resolve_and_validate(self.doc)
 
     def test_fec_percentage_required_when_fec_true(self):
-        self.doc["recovery"] = {"nack": False, "pli": False, "fec": True}
+        _stream0(self.doc)["recovery"] = {"nack": False, "pli": False, "fec": True}
         with assert_validation_fails_with(self, "fec_percentage` is required"):
             _resolve_and_validate(self.doc)
 
     def test_fec_percentage_forbidden_when_fec_false(self):
-        self.doc["recovery"] = {"nack": False, "pli": False, "fec": False,
-                                "fec_percentage": 25}
+        _stream0(self.doc)["recovery"] = {"nack": False, "pli": False, "fec": False,
+                                          "fec_percentage": 25}
         with assert_validation_fails_with(self, "only applies when fec: true"):
             _resolve_and_validate(self.doc)
 
     def test_fec_percentage_out_of_range(self):
-        self.doc["recovery"] = {"nack": False, "pli": False, "fec": True,
-                                "fec_percentage": 150}
+        _stream0(self.doc)["recovery"] = {"nack": False, "pli": False, "fec": True,
+                                          "fec_percentage": 150}
         with assert_validation_fails_with(self, "fec_percentage must be an integer in"):
             _resolve_and_validate(self.doc)
 
@@ -335,29 +425,29 @@ class TestCongestionControlDispatch(unittest.TestCase):
 
     def test_wrong_subblock_for_algorithm_rejected(self):
         # config 8 has algorithm: scream; gcc block must be forbidden
-        self.doc["congestion_control"]["gcc"] = {"estimator": "kalman"}
+        _stream0(self.doc)["congestion_control"]["gcc"] = {"estimator": "kalman"}
         with assert_validation_fails_with(self, "`gcc` block set but algorithm is 'scream'"):
             _resolve_and_validate(self.doc)
 
     def test_scream_knob_typo_caught(self):
-        self.doc["congestion_control"]["scream"] = {"delay_targt_seconds": 0.06}
+        _stream0(self.doc)["congestion_control"]["scream"] = {"delay_targt_seconds": 0.06}
         with assert_validation_fails_with(self, "congestion_control.scream: unknown key"):
             _resolve_and_validate(self.doc)
 
     def test_invalid_ect_value_rejected(self):
-        self.doc["congestion_control"]["scream"] = {"ect": 2}     # valid set is {-1, 0, 1, 3}
+        _stream0(self.doc)["congestion_control"]["scream"] = {"ect": 2}     # valid set is {-1, 0, 1, 3}
         with assert_validation_fails_with(self, "ect must be one of"):
             _resolve_and_validate(self.doc)
 
     def test_unknown_algorithm_rejected(self):
-        self.doc["congestion_control"]["algorithm"] = "bbr"
+        _stream0(self.doc)["congestion_control"]["algorithm"] = "bbr"
         with assert_validation_fails_with(self, "must be 'scream' or 'gcc'"):
             _resolve_and_validate(self.doc)
 
     def test_invalid_gcc_estimator_rejected(self):
         # Switch to gcc algorithm (and remove scream-only fields if any)
-        self.doc["congestion_control"]["algorithm"] = "gcc"
-        self.doc["congestion_control"]["gcc"] = {"estimator": "kullback-leibler"}
+        _stream0(self.doc)["congestion_control"]["algorithm"] = "gcc"
+        _stream0(self.doc)["congestion_control"]["gcc"] = {"estimator": "kullback-leibler"}
         with assert_validation_fails_with(self, "estimator must be one of"):
             _resolve_and_validate(self.doc)
 
@@ -372,8 +462,9 @@ class TestDecodedPsnrConstraints(unittest.TestCase):
     def setUp(self):
         self.doc = deepcopy(BASE_DOC)
         # Resolve source inline so we can mutate clock_overlay / backend.
-        self.doc.pop("video", None)
-        self.doc["source"] = {
+        st = _stream0(self.doc)
+        st.pop("video", None)
+        st["source"] = {
             "backend": "synthetic",
             "width": 640,
             "height": 480,
@@ -392,7 +483,7 @@ class TestDecodedPsnrConstraints(unittest.TestCase):
         # file backend is supported as long as loop=false (camera and
         # viewer seek-on-EOS aren't synchronized, so single-pass only).
         self.doc["scenario"]["metrics"].append("decoded_psnr")
-        self.doc["source"] = {
+        _stream0(self.doc)["source"] = {
             "backend": "file",
             "width": 1280, "height": 720, "fps": 30,
             "num_frames": 600, "clock_overlay": False,
@@ -403,21 +494,21 @@ class TestDecodedPsnrConstraints(unittest.TestCase):
 
     def test_decoded_psnr_rejects_file_with_loop(self):
         self.doc["scenario"]["metrics"].append("decoded_psnr")
-        self.doc["source"] = {
+        _stream0(self.doc)["source"] = {
             "backend": "file",
             "width": 1280, "height": 720, "fps": 30,
             "num_frames": 600, "clock_overlay": False,
             "file": {"path": "/tmp/whatever.webm", "loop": True},
         }
         with assert_validation_fails_with(
-                self, "requires source.file.loop == false"):
+                self, "requires file.loop == false"):
             _resolve_and_validate(self.doc)
 
     def test_decoded_psnr_rejects_clock_overlay(self):
         self.doc["scenario"]["metrics"].append("decoded_psnr")
-        self.doc["source"]["clock_overlay"] = True
+        _stream0(self.doc)["source"]["clock_overlay"] = True
         with assert_validation_fails_with(
-                self, "decoded_psnr requires source.clock_overlay == false"):
+                self, "decoded_psnr metric requires clock_overlay == false"):
             _resolve_and_validate(self.doc)
 
     def test_projection_omits_ground_truth_when_metric_off(self):
@@ -426,15 +517,16 @@ class TestDecodedPsnrConstraints(unittest.TestCase):
         from gstexp.validation import project_to_roles
         doc = resolve_includes(deepcopy(self.doc), PROJECT_ROOT, BASE_CONFIG_PATH)
         validate_doc(doc, BASE_CONFIG_PATH)
-        _camera, viewer = project_to_roles(doc, "8")
-        self.assertNotIn("ground_truth", viewer)
+        _cameras, viewers = project_to_roles(doc, "8")
+        self.assertNotIn("ground_truth", viewers[0])
 
     def test_projection_carries_ground_truth_when_metric_on(self):
         from gstexp.validation import project_to_roles
         self.doc["scenario"]["metrics"].append("decoded_psnr")
         doc = resolve_includes(deepcopy(self.doc), PROJECT_ROOT, BASE_CONFIG_PATH)
         validate_doc(doc, BASE_CONFIG_PATH)
-        _camera, viewer = project_to_roles(doc, "8")
+        _cameras, viewers = project_to_roles(doc, "8")
+        viewer = viewers[0]
         self.assertIn("ground_truth", viewer)
         self.assertEqual(viewer["ground_truth"]["backend"], "synthetic")
         self.assertEqual(viewer["ground_truth"]["width"], 640)

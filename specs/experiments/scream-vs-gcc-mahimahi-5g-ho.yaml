@@ -4,7 +4,7 @@ description: SCReAM vs GCC at 720p30 across the full 5G Mahimahi ho trace. No re
   under realistic time-varying capacity.
 reps: 5
 varies:
-- congestion_control.algorithm
+- streams[0].congestion_control.algorithm
 configurations:
 - id: 57
   label: SCReAM

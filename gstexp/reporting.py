@@ -62,9 +62,10 @@ def _correlate_latency(camera: dict, viewer: dict,
     }
 
 
-def build_summary(camera: dict, viewer: dict,
-                  camera_skew: float = 0.0,
-                  viewer_skew: float = 0.0) -> dict:
+def _stream_block(camera: dict, viewer: dict,
+                  camera_skew: float, viewer_skew: float) -> dict:
+    """Summarize one stream from its (camera, viewer) result pair —
+    the single-stream summary shape, now nested under summary.streams[]."""
     errors = []
     if camera.get("missing"):
         errors.append("camera result file missing")
@@ -81,7 +82,6 @@ def build_summary(camera: dict, viewer: dict,
         errors.append("no frames received")
     # Frame loss alone is not a failure — under impairment it is expected.
 
-    verdict = "PASS" if not errors else "FAIL"
     camera_summary = {
         "frames_sent":      sent,
         "duration_seconds": camera.get("duration_seconds", 0),
@@ -109,53 +109,86 @@ def build_summary(camera: dict, viewer: dict,
     if decoder:
         viewer_summary["decoder_errors"] = decoder
 
-    out = {"verdict": verdict, "errors": errors,
-           "camera": camera_summary, "viewer": viewer_summary}
-
+    block = {
+        "verdict": "PASS" if not errors else "FAIL",
+        "errors": errors,
+        "camera": camera_summary,
+        "viewer": viewer_summary,
+    }
     latency = _correlate_latency(camera, viewer,
                                  camera_skew=camera_skew,
                                  viewer_skew=viewer_skew)
     if latency:
-        out["latency"] = latency
-    return out
+        block["latency"] = latency
+    return block
+
+
+def build_summary(streams_meta: list, camera_data: list, viewer_data: list,
+                  camera_skew: float = 0.0,
+                  viewer_skew: float = 0.0) -> dict:
+    """Aggregate N (camera, viewer) result pairs into the multi-stream
+    summary. Each stream gets its own verdict + camera/viewer/latency
+    block under summary.streams[]; the overall verdict is strict — PASS
+    iff every stream PASSes (the teleop contract). camera_data[i] /
+    viewer_data[i] are stream i's two result files, aligned with
+    streams_meta (one {name, priority} per stream)."""
+    streams = []
+    for i, meta in enumerate(streams_meta):
+        camera = camera_data[i] if i < len(camera_data) else {"missing": True, "errors": []}
+        viewer = viewer_data[i] if i < len(viewer_data) else {"missing": True, "errors": []}
+        block = _stream_block(camera, viewer, camera_skew, viewer_skew)
+        block["stream_id"] = i
+        block["name"] = meta.get("name", f"stream{i}")
+        block["priority"] = meta.get("priority", 0)
+        streams.append(block)
+
+    failed = [s["name"] for s in streams if s["verdict"] != "PASS"]
+    errors = [f"stream '{name}' FAILED" for name in failed]
+    verdict = "PASS" if not failed else "FAIL"
+    return {"verdict": verdict, "errors": errors, "streams": streams}
 
 
 def print_report(label: str, run_dir: Path, summary: dict) -> None:
-    s = summary["camera"]
-    r = summary["viewer"]
     print()
     print(f"=== {label}: {summary['verdict']} ===")
-    print(f"  camera:   {s['frames_sent']:>4d} frames  "
-          f"{s['duration_seconds']:>5.1f}s  exit={s['exit_reason']}")
-    if "encoder_target" in s:
-        b = s["encoder_target"]
-        print(f"            target  {b['first_kbps']} → {b['last_kbps']} kbps "
-              f"(min {b['min_kbps']}, max {b['max_kbps']})")
-    if "encoded_bitrate" in s:
-        e = s["encoded_bitrate"]
-        print(f"            encoded {e['first_kbps']} → {e['last_kbps']} kbps "
-              f"(mean {e['mean_kbps']})")
-    if "wire_bytes" in s:
-        w = s["wire_bytes"]
-        print(f"            wire    {w['first_kbps']} → {w['last_kbps']} kbps "
-              f"(mean {w['mean_kbps']}, total {w['total_bytes']/1000:.1f} KB)")
-    print(f"  viewer:   {r['frames_depayloaded']:>4d} frames  "
-          f"{r['duration_seconds']:>5.1f}s  exit={r['exit_reason']}")
-    if "wire_bytes" in r:
-        w = r["wire_bytes"]
-        print(f"            wire    {w['first_kbps']} → {w['last_kbps']} kbps "
-              f"(mean {w['mean_kbps']}, total {w['total_bytes']/1000:.1f} KB)")
-    if "decoder_errors" in r:
-        d = r["decoder_errors"]
-        total = d['depay_warnings'] + d['decoder_warnings'] + d['other_warnings']
-        if total:
-            print(f"            warnings depay={d['depay_warnings']} "
-                  f"decoder={d['decoder_warnings']} other={d['other_warnings']}")
-    if "latency" in summary:
-        L = summary["latency"]
-        print(f"  latency:  median {L['median_ms']:.1f} ms  "
-              f"p95 {L['p95_ms']:.1f} ms  p99 {L['p99_ms']:.1f} ms  "
-              f"max {L['max_ms']:.1f} ms  (n={L['samples_count']})")
+    for st in summary["streams"]:
+        s = st["camera"]
+        r = st["viewer"]
+        print(f"  [{st['stream_id']}] {st['name']} "
+              f"(prio {st['priority']}): {st['verdict']}")
+        print(f"    camera: {s['frames_sent']:>4d} frames  "
+              f"{s['duration_seconds']:>5.1f}s  exit={s['exit_reason']}")
+        if "encoder_target" in s:
+            b = s["encoder_target"]
+            print(f"            target  {b['first_kbps']} → {b['last_kbps']} kbps "
+                  f"(min {b['min_kbps']}, max {b['max_kbps']})")
+        if "encoded_bitrate" in s:
+            e = s["encoded_bitrate"]
+            print(f"            encoded {e['first_kbps']} → {e['last_kbps']} kbps "
+                  f"(mean {e['mean_kbps']})")
+        if "wire_bytes" in s:
+            w = s["wire_bytes"]
+            print(f"            wire    {w['first_kbps']} → {w['last_kbps']} kbps "
+                  f"(mean {w['mean_kbps']}, total {w['total_bytes']/1000:.1f} KB)")
+        print(f"    viewer: {r['frames_depayloaded']:>4d} frames  "
+              f"{r['duration_seconds']:>5.1f}s  exit={r['exit_reason']}")
+        if "wire_bytes" in r:
+            w = r["wire_bytes"]
+            print(f"            wire    {w['first_kbps']} → {w['last_kbps']} kbps "
+                  f"(mean {w['mean_kbps']}, total {w['total_bytes']/1000:.1f} KB)")
+        if "decoder_errors" in r:
+            d = r["decoder_errors"]
+            total = d['depay_warnings'] + d['decoder_warnings'] + d['other_warnings']
+            if total:
+                print(f"            warnings depay={d['depay_warnings']} "
+                      f"decoder={d['decoder_warnings']} other={d['other_warnings']}")
+        if "latency" in st:
+            L = st["latency"]
+            print(f"            latency median {L['median_ms']:.1f} ms  "
+                  f"p95 {L['p95_ms']:.1f} ms  p99 {L['p99_ms']:.1f} ms  "
+                  f"max {L['max_ms']:.1f} ms  (n={L['samples_count']})")
+        for e in st["errors"]:
+            print(f"    ! {e}")
     if summary["errors"]:
         for e in summary["errors"]:
             print(f"  ! {e}")

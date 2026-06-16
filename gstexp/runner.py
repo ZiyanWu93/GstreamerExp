@@ -373,25 +373,32 @@ def _run_post_run(post_hooks: list, *,
 
 def run_distributed(
     *, project_root: Path,
-    effective_camera_local: Path, effective_viewer_local: Path,
-    run_dir: Path, camera_result: Path, viewer_result: Path,
+    camera_specs: list, viewer_specs: list,
+    run_dir: Path, camera_results: list, viewer_results: list,
     camera_host: str, viewer_host: str, remote_project_root: str,
     view_display, view_xauthority,
     setup_delay: float, drain_delay: float,
     pre_hooks: list, during_hooks: list, post_hooks: list,
     metric_args: list,
 ) -> None:
-    """Controller/worker runner: sync payload, spawn workers via SSH,
-    coordinate, fetch result files back."""
-    run_id = run_dir.name                          # e.g. "2026-04-30T..."
-    remote_camera_pid = f"/tmp/gstexp-{run_id}-camera.pid"
-    remote_viewer_pid = f"/tmp/gstexp-{run_id}-viewer.pid"
-    remote_camera_result = f"/tmp/gstexp-{run_id}-camera.json"
-    remote_viewer_result = f"/tmp/gstexp-{run_id}-viewer.json"
-    remote_camera_spec = f"/tmp/gstexp-{run_id}-camera-spec.json"
-    remote_viewer_spec = f"/tmp/gstexp-{run_id}-viewer-spec.json"
+    """Controller/worker runner for N streams: sync payload, spawn 2N
+    workers via SSH (N cameras on one host, N viewers on the other),
+    coordinate, and fetch every result file back.
 
-    print(f"[controller] workers: camera={camera_host}, viewer={viewer_host}")
+    Each stream rides its own (rtp, rtcp) port pair, so the N flows never
+    collide on the shared NIC; per-stream spec/result/pid paths keep their
+    outputs separate. `camera_specs[i]` and `viewer_specs[i]` are the two
+    ends of stream i, index-aligned with `camera_results` / `viewer_results`.
+    Each worker still receives ONE single-stream spec and never knows N>1.
+    """
+    run_id = run_dir.name                          # e.g. "2026-04-30T..."
+    n = len(camera_specs)
+
+    def _remote(role: str, i: int, kind: str) -> str:
+        return f"/tmp/gstexp-{run_id}-{role}-{i}.{kind}"
+
+    print(f"[controller] workers: camera={camera_host}, viewer={viewer_host}, "
+          f"streams={n}")
     print(f"[controller] remote_project_root={remote_project_root}")
 
     # 1) Sync the minimal runtime payload to both workers. The controller
@@ -400,9 +407,9 @@ def run_distributed(
     for host in (camera_host, viewer_host):
         _sync_worker_payload(project_root, host, remote_project_root)
 
-    # 1b) Measure clock skew (host_clock - controller_clock) for each host
-    #     so we can subtract it from latency raw deltas. NTP is unreliable
-    #     on these hosts, so we self-measure (cached for _SKEW_CACHE_TTL).
+    # 1b) Measure clock skew (host_clock - controller_clock) per host — one
+    #     pair of scalars shared across that host's N streams. NTP is
+    #     unreliable on these hosts, so we self-measure (cached).
     camera_skew = _measure_clock_skew(camera_host)
     viewer_skew = _measure_clock_skew(viewer_host)
     print(f"[scenario] clock skew: camera={camera_skew:+.3f}s "
@@ -419,20 +426,13 @@ def run_distributed(
     # 3) Build worker env / command strings. Pure string assembly, no
     #    side effects — done before the try/finally so the cleanup block
     #    doesn't have to know about partial-init states.
-    # Project-local plugin paths layer on top of the GStreamer 1.24 env that
-    # env.sh sets up. Order matters: project-local plugins (gstscream in
-    # .scream-plugin) come first so they override anything similarly-named
-    # in the system path.
     plugin_path = f"{remote_project_root}/.scream-plugin"
     lib_path = f"{remote_project_root}/scream/code/wrapper_lib"
-    # No quotes around the values: bash won't expand ~ inside double quotes,
-    # and the paths have no whitespace so quoting buys us nothing.
     common_env = [
         f"GST_PLUGIN_PATH={plugin_path}:$GST_PLUGIN_PATH",
         f"LD_LIBRARY_PATH={lib_path}:$LD_LIBRARY_PATH",
     ]
-    # DISPLAY / XAUTHORITY only apply to the viewer, and only when expo
-    # mode is on (view_display is set). The camera never renders.
+    # DISPLAY / XAUTHORITY only apply to the viewer, and only in expo mode.
     viewer_env = list(common_env)
     if view_display:
         viewer_env.append(f"DISPLAY={view_display}")
@@ -447,11 +447,9 @@ def run_distributed(
         viewer_extra_args = f"{extra_args} --view-display {view_display}".strip()
 
     def _ssh_worker_cmd(spec_path, result_path, pid_file, env_str, args_extra):
-        # Source ~/gst-1.24/env.sh first to point at the locally-built
-        # GStreamer 1.24 (system has 1.16 which is too old for rtpgccbwe);
-        # then layer the project-local plugin path on top. Worker writes
-        # its own PID to pid_file at startup so we don't need shell-level
-        # `& wait $!` plumbing across SSH.
+        # Source env.sh for the locally-built GStreamer 1.24, then layer the
+        # project-local plugin path on top. The worker writes its own PID to
+        # pid_file so we don't need `& wait $!` plumbing across SSH.
         return (
             f"cd {remote_project_root} && "
             f"source $HOME/gst-1.24/env.sh && "
@@ -460,19 +458,13 @@ def run_distributed(
         )
 
     # Cleanup discipline: every state-changing allocation pushes its
-    # teardown onto the ExitStack at the moment of allocation. The stack
-    # unwinds in LIFO order on any exit path (success, exception,
-    # KeyboardInterrupt). Each callback is best-effort and never raises,
-    # so one failing teardown can't skip the rest. Exceptions raised
-    # inside the with-block (other than KeyboardInterrupt, which we swallow
-    # to preserve the prior CLI semantic) propagate to the caller after
-    # cleanup completes.
+    # teardown onto the ExitStack, which unwinds LIFO on any exit path.
+    # Per stream we push fetch THEN kill, so for each worker kill (later)
+    # runs before its fetch (earlier) — the worker is killed, then its
+    # finalized result file is pulled back. Order across streams doesn't
+    # matter; each callback is best-effort and never raises.
     with contextlib.ExitStack() as stack:
         try:
-            # post_run runs LAST in unwind: register first. It's gated on
-            # pre_run being attempted, so we register it just BEFORE
-            # invoking pre_run — that way a pre_run failure mid-script
-            # still triggers post_run on the way out.
             stack.callback(_run_post_run, post_hooks,
                            camera_host=camera_host, viewer_host=viewer_host,
                            project_root=project_root)
@@ -480,56 +472,51 @@ def run_distributed(
                            camera_host=camera_host, viewer_host=viewer_host,
                            project_root=project_root, check=True)
 
-            # scp effective spec files to each remote. The remote tmp
-            # files are cleaned up by _fetch_and_cleanup_remote on
-            # unwind, so no explicit teardown for them here.
-            print("[scenario] scp effective specs", flush=True)
-            subprocess.run(
-                ["scp", str(effective_camera_local), f"{camera_host}:{remote_camera_spec}"],
-                check=True,
-            )
-            subprocess.run(
-                ["scp", str(effective_viewer_local), f"{viewer_host}:{remote_viewer_spec}"],
-                check=True,
-            )
+            # scp each stream's spec to its host. The remote tmp files are
+            # cleaned up by _fetch_and_cleanup_remote on unwind.
+            print(f"[scenario] scp {n} camera + {n} viewer spec(s)", flush=True)
+            for i in range(n):
+                subprocess.run(
+                    ["scp", str(camera_specs[i]),
+                     f"{camera_host}:{_remote('camera', i, 'spec.json')}"],
+                    check=True)
+                subprocess.run(
+                    ["scp", str(viewer_specs[i]),
+                     f"{viewer_host}:{_remote('viewer', i, 'spec.json')}"],
+                    check=True)
 
-            # Viewer: spawn, then register kill + result fetch. Order
-            # matters — fetch is registered AFTER kill so it runs FIRST
-            # in LIFO unwind, but _kill_remote_worker waits for the SSH
-            # parent (and therefore the worker) to exit before returning,
-            # so by the time fetch runs, the worker has finalized its
-            # result file. Wait — that's the WRONG order if we want
-            # fetch to happen AFTER the worker exits. Re-stating: kill
-            # registered SECOND runs FIRST in LIFO (correct), fetch
-            # registered FIRST runs LAST (correct).
-            print(f"[controller] starting viewer worker on {viewer_host}", flush=True)
-            viewer_proc = _ssh_popen(
-                viewer_host,
-                _ssh_worker_cmd(remote_viewer_spec, remote_viewer_result, remote_viewer_pid,
-                                viewer_env_str, viewer_extra_args),
-            )
-            stack.callback(_fetch_and_cleanup_remote,
-                           viewer_host, run_id, remote_viewer_result, viewer_result)
-            stack.callback(_kill_remote_worker,
-                           viewer_host, remote_viewer_pid, viewer_proc, "viewer")
+            # Viewers first (viewer-before-camera startup invariant per
+            # stream): spawn all N, registering fetch then kill for each.
+            print(f"[controller] starting {n} viewer worker(s) on {viewer_host}",
+                  flush=True)
+            for i in range(n):
+                vp = _ssh_popen(viewer_host, _ssh_worker_cmd(
+                    _remote('viewer', i, 'spec.json'), _remote('viewer', i, 'json'),
+                    _remote('viewer', i, 'pid'), viewer_env_str, viewer_extra_args))
+                stack.callback(_fetch_and_cleanup_remote, viewer_host, run_id,
+                               _remote('viewer', i, 'json'), viewer_results[i])
+                stack.callback(_kill_remote_worker, viewer_host,
+                               _remote('viewer', i, 'pid'), vp, f"viewer[{i}]")
 
             time.sleep(setup_delay)
 
-            # Camera: same shape as viewer.
-            print(f"[controller] starting camera worker on {camera_host}", flush=True)
-            camera_proc = _ssh_popen(
-                camera_host,
-                _ssh_worker_cmd(remote_camera_spec, remote_camera_result, remote_camera_pid,
-                                camera_env_str, extra_args),
-            )
-            stack.callback(_fetch_and_cleanup_remote,
-                           camera_host, run_id, remote_camera_result, camera_result)
-            stack.callback(_kill_remote_worker,
-                           camera_host, remote_camera_pid, camera_proc, "camera")
+            # Cameras: spawn all N, same registration shape.
+            print(f"[controller] starting {n} camera worker(s) on {camera_host}",
+                  flush=True)
+            camera_procs = []
+            for i in range(n):
+                cp = _ssh_popen(camera_host, _ssh_worker_cmd(
+                    _remote('camera', i, 'spec.json'), _remote('camera', i, 'json'),
+                    _remote('camera', i, 'pid'), camera_env_str, extra_args))
+                camera_procs.append(cp)
+                stack.callback(_fetch_and_cleanup_remote, camera_host, run_id,
+                               _remote('camera', i, 'json'), camera_results[i])
+                stack.callback(_kill_remote_worker, camera_host,
+                               _remote('camera', i, 'pid'), cp, f"camera[{i}]")
 
-            # During hooks: registered LAST so they run FIRST in unwind —
-            # we want during's tc-transition ladder to stop affecting the
-            # workers before we kill them.
+            # During hooks registered LAST so they stop FIRST in unwind —
+            # the tc-transition ladder must stop touching the NIC before
+            # the workers are killed.
             during_procs = _spawn_hook_async(
                 "during_run", during_hooks,
                 camera_host=camera_host, viewer_host=viewer_host,
@@ -537,54 +524,52 @@ def run_distributed(
             )
             stack.callback(_stop_during_procs, during_procs)
 
-            # Bound the wait to catch wedged workers (we've seen
-            # vp8/scream pipelines reach EOS but fail to exit during
-            # `set_state(NULL)` in cleanup, leaving the worker
-            # forever-sleeping). The ExitStack registered above will
-            # SIGTERM/SIGKILL the worker via its PID file regardless,
-            # so timing out here is safe — it just abandons this rep
-            # and lets `experiment.py` advance to the next one.
-            timeout_s = _WORKER_WAIT_TIMEOUT_S
-            try:
-                camera_proc.wait(timeout=timeout_s)
-                print(f"[scenario] camera exited rc={camera_proc.returncode}",
-                      flush=True)
-                time.sleep(drain_delay)
-            except subprocess.TimeoutExpired:
-                print(f"[scenario] camera worker did not exit within "
-                      f"{timeout_s}s — aborting this run "
-                      f"(stack cleanup will kill the worker)",
-                      flush=True)
+            # Completion gate (sync.termination = all): wait on every camera
+            # proc to a single shared deadline. A wedged stream times out and
+            # is killed by the ExitStack — it fails ALONE, leaving the other
+            # streams' data intact, and lets experiment.py advance.
+            deadline = time.monotonic() + _WORKER_WAIT_TIMEOUT_S
+            for i, cp in enumerate(camera_procs):
+                remaining = max(0.0, deadline - time.monotonic())
+                try:
+                    cp.wait(timeout=remaining)
+                    print(f"[scenario] camera[{i}] exited rc={cp.returncode}",
+                          flush=True)
+                except subprocess.TimeoutExpired:
+                    print(f"[scenario] camera[{i}] did not exit within the "
+                          f"{_WORKER_WAIT_TIMEOUT_S}s deadline — abandoning it "
+                          f"(stack cleanup will kill the worker)", flush=True)
+            time.sleep(drain_delay)
         except KeyboardInterrupt:
-            # Cleanup will run on the way out of the with-block. Just
-            # log the interrupt; don't re-raise (preserves CLI semantic).
+            # Cleanup runs on the way out of the with-block.
             print("\n[scenario] interrupted", flush=True)
 
 
 def run_local(
     *, project_root: Path,
-    camera_cfg: Path, viewer_cfg: Path,
-    camera_result: Path, viewer_result: Path,
+    camera_specs: list, viewer_specs: list,
+    camera_results: list, viewer_results: list,
     base_cmd: list, child_env: dict,
     wrap_camera: list, wrap_viewer: list,
     setup_delay: float, drain_delay: float,
     pre_hooks: list, during_hooks: list, post_hooks: list,
     view_display=None, view_xauthority=None,
 ) -> None:
-    """Local runner: spawn workers as child processes on this host.
+    """Local runner: spawn 2N workers as child processes on this host —
+    N viewers, then (after setup_delay) N cameras. One single-stream spec
+    per process; `camera_specs[i]` / `viewer_specs[i]` are the two ends of
+    stream i, index-aligned with the result paths.
 
     `wrap_camera` / `wrap_viewer` let a configuration prepend a wrapper
     (e.g. `sudo ip netns exec ns1`); when that wrapper is `sudo`, the
     parent's GST_PLUGIN_PATH / DISPLAY are stripped by sudoers default
     policy, so we re-inject the relevant vars inside the wrapped command
-    via `env`.
-
-    When view_display is set (expo mode), DISPLAY (and optionally
-    XAUTHORITY) are added to the viewer's child environment and
-    `--view-display <value>` is passed to the viewer worker so it
-    knows to add the autovideosink branch. The camera is never affected.
+    via `env`. When view_display is set (expo mode), DISPLAY (and
+    optionally XAUTHORITY) are added to each viewer's environment and
+    `--view-display` is passed so it adds the autovideosink branch.
     """
     _PASSED_ENV_KEYS = ("GST_PLUGIN_PATH", "LD_LIBRARY_PATH", "DISPLAY", "XAUTHORITY")
+    n = len(camera_specs)
 
     viewer_env = dict(child_env)
     if view_display:
@@ -599,9 +584,8 @@ def run_local(
         return base_cmd + list(cmd_extra)
 
     # Cleanup discipline mirrors run_distributed: ExitStack with each
-    # allocation pushing its teardown. See run_distributed for the full
-    # rationale. Local mode differs only in the kill helpers (Popen on
-    # this host, no remote PID file or result fetch).
+    # allocation pushing its teardown. Local mode differs only in the kill
+    # helpers (Popen on this host, no remote PID file or result fetch).
     with contextlib.ExitStack() as stack:
         try:
             stack.callback(_run_post_run, post_hooks,
@@ -611,25 +595,31 @@ def run_local(
                            camera_host=None, viewer_host=None,
                            project_root=project_root, check=True)
 
-            print("[scenario] starting viewer", flush=True)
-            viewer_extras = [str(viewer_cfg), "--result-out", str(viewer_result)]
-            if view_display:
-                viewer_extras.extend(["--view-display", view_display])
-            viewer_proc = subprocess.Popen(
-                _build_cmd(wrap_viewer, viewer_env, *viewer_extras),
-                env=viewer_env,
-            )
-            stack.callback(_kill_local_worker, viewer_proc,
-                           wrap=wrap_viewer, spec_path=viewer_cfg, label="viewer")
+            print(f"[scenario] starting {n} viewer(s)", flush=True)
+            for i in range(n):
+                viewer_extras = [str(viewer_specs[i]),
+                                 "--result-out", str(viewer_results[i])]
+                if view_display:
+                    viewer_extras.extend(["--view-display", view_display])
+                vp = subprocess.Popen(
+                    _build_cmd(wrap_viewer, viewer_env, *viewer_extras),
+                    env=viewer_env,
+                )
+                stack.callback(_kill_local_worker, vp, wrap=wrap_viewer,
+                               spec_path=viewer_specs[i], label=f"viewer[{i}]")
 
             time.sleep(setup_delay)
-            print("[scenario] starting camera", flush=True)
-            camera_proc = subprocess.Popen(
-                _build_cmd(wrap_camera, child_env, str(camera_cfg), "--result-out", str(camera_result)),
-                env=child_env,
-            )
-            stack.callback(_kill_local_worker, camera_proc,
-                           wrap=wrap_camera, spec_path=camera_cfg, label="camera")
+            print(f"[scenario] starting {n} camera(s)", flush=True)
+            camera_procs = []
+            for i in range(n):
+                cp = subprocess.Popen(
+                    _build_cmd(wrap_camera, child_env, str(camera_specs[i]),
+                               "--result-out", str(camera_results[i])),
+                    env=child_env,
+                )
+                camera_procs.append(cp)
+                stack.callback(_kill_local_worker, cp, wrap=wrap_camera,
+                               spec_path=camera_specs[i], label=f"camera[{i}]")
 
             during_procs = _spawn_hook_async(
                 "during_run", during_hooks,
@@ -638,14 +628,17 @@ def run_local(
             )
             stack.callback(_stop_during_procs, during_procs)
 
-            # Bounded wait — same rationale as run_distributed.
-            try:
-                camera_proc.wait(timeout=_WORKER_WAIT_TIMEOUT_S)
-                # Let in-flight frames drain before teardown.
-                time.sleep(drain_delay)
-            except subprocess.TimeoutExpired:
-                print(f"[scenario] camera worker did not exit within "
-                      f"{_WORKER_WAIT_TIMEOUT_S}s — aborting this run",
-                      flush=True)
+            # Completion gate (sync.termination = all): wait on every camera
+            # to a shared deadline; a wedged stream is killed by the stack.
+            deadline = time.monotonic() + _WORKER_WAIT_TIMEOUT_S
+            for i, cp in enumerate(camera_procs):
+                remaining = max(0.0, deadline - time.monotonic())
+                try:
+                    cp.wait(timeout=remaining)
+                except subprocess.TimeoutExpired:
+                    print(f"[scenario] camera[{i}] did not exit within the "
+                          f"{_WORKER_WAIT_TIMEOUT_S}s deadline — abandoning it",
+                          flush=True)
+            time.sleep(drain_delay)
         except KeyboardInterrupt:
             print("\n[scenario] interrupted", flush=True)

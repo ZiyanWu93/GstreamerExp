@@ -1,11 +1,10 @@
 meta:
   name: distributed_scream_5g_rb_x0p33_snow_5mbps
-  description: Distributed (aum->veda) SCReAM at 720p30 over `mahimahi-5g-rb-100ms-x0p33` using a high-entropy snow workload targeting 5 Mbps.
+  description: Distributed (aum->veda) SCReAM at 720p30 over `mahimahi-5g-rb-100ms-x0p33`
+    using a high-entropy snow workload targeting 5 Mbps.
   flags:
   - sudo
   - scream
-video: snow-720p30-30s
-network: mahimahi-5g-rb-100ms-x0p33
 scenario:
   actors:
     camera: {}
@@ -20,20 +19,28 @@ scenario:
   - encoded_bitrate
   - decoder_errors
   - late_drops
-codec: vp8
-encoder:
-  bitrate_kbps: 5000
-  keyframe_interval_frames: 60
-congestion_control:
-  algorithm: scream
-  init_bitrate_kbps: 5000
-  min_bitrate_kbps: 200
-  max_bitrate_kbps: 8000
-sink:
-  backend: fake
-  sync: false
-recovery:
-  nack: false
-  pli: false
-  fec: false
-latency_budget_ms: 0
+sync:
+  mode: shared_epoch
+  termination: all
+streams:
+- name: main
+  priority: 0
+  video: snow-720p30-30s
+  codec: vp8
+  encoder:
+    bitrate_kbps: 5000
+    keyframe_interval_frames: 60
+  congestion_control:
+    algorithm: scream
+    init_bitrate_kbps: 5000
+    min_bitrate_kbps: 200
+    max_bitrate_kbps: 8000
+  sink:
+    backend: fake
+    sync: false
+  recovery:
+    nack: false
+    pli: false
+    fec: false
+  latency_budget_ms: 0
+  network: mahimahi-5g-rb-100ms-x0p33

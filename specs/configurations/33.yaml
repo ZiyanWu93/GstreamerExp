@@ -1,15 +1,20 @@
 meta:
   name: distributed_gcc_norecovery_budget0
-  description: "Distributed (aum\u2192veda) GCC at 720p30 over\n`clean-5mbps-50ms-3pct-uniform`.\
-    \ Recovery: none (no NACK, no PLI, no FEC).\nLatency budget: 0 ms (no enforcement;\
-    \ all frames delivered regardless of age). One arm of the H4 experiment\n`nack-latency-budget`\
-    \ \u2014 8-arm 2\xD72\xD72 over (CC algorithm) \xD7\n(NACK on/off) \xD7 (budget\
-    \ 0 / 100 ms).\n"
+  description: 'Distributed (aum→veda) GCC at 720p30 over
+
+    `clean-5mbps-50ms-3pct-uniform`. Recovery: none (no NACK, no PLI, no FEC).
+
+    Latency budget: 0 ms (no enforcement; all frames delivered regardless of age).
+    One arm of the H4 experiment
+
+    `nack-latency-budget` — 8-arm 2×2×2 over (CC algorithm) ×
+
+    (NACK on/off) × (budget 0 / 100 ms).
+
+    '
   flags:
   - sudo
   - gcc
-video: ball-720p30
-network: clean-5mbps-50ms-3pct-uniform
 scenario:
   actors:
     camera: {}
@@ -24,20 +29,28 @@ scenario:
   - encoded_bitrate
   - decoder_errors
   - late_drops
-codec: vp8
-encoder:
-  bitrate_kbps: 1500
-  keyframe_interval_frames: 60
-congestion_control:
-  algorithm: gcc
-  init_bitrate_kbps: 1500
-  min_bitrate_kbps: 200
-  max_bitrate_kbps: 4000
-sink:
-  backend: fake
-  sync: false
-recovery:
-  nack: false
-  pli: false
-  fec: false
-latency_budget_ms: 0
+sync:
+  mode: shared_epoch
+  termination: all
+streams:
+- name: main
+  priority: 0
+  video: ball-720p30
+  codec: vp8
+  encoder:
+    bitrate_kbps: 1500
+    keyframe_interval_frames: 60
+  congestion_control:
+    algorithm: gcc
+    init_bitrate_kbps: 1500
+    min_bitrate_kbps: 200
+    max_bitrate_kbps: 4000
+  sink:
+    backend: fake
+    sync: false
+  recovery:
+    nack: false
+    pli: false
+    fec: false
+  latency_budget_ms: 0
+  network: clean-5mbps-50ms-3pct-uniform

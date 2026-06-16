@@ -96,10 +96,37 @@ _SOURCE_OPTIONAL_BLOCKS = {"synthetic", "file"}     # one entry per real backend
 # AND in pipeline_config (new dataclass) AND in worker.py (loader).
 _SYNTHETIC_KNOBS = {"pattern"}
 _FILE_KNOBS = {"path", "loop"}
-_TOP_LEVEL_REQUIRED = {"meta", "scenario", "source", "codec", "encoder",
-                       "sink", "recovery", "latency_budget_ms"}
-_TOP_LEVEL_OPTIONAL = {"congestion_control", "hooks"}
+_TOP_LEVEL_REQUIRED = {"meta", "scenario", "streams", "sync"}
+_TOP_LEVEL_OPTIONAL = {"hooks"}
 _TOP_LEVEL_KEYS = _TOP_LEVEL_REQUIRED | _TOP_LEVEL_OPTIONAL
+
+# Each entry of the top-level `streams:` list is one stream's full
+# payload. The single-stream fields that used to live at top level
+# (source/codec/encoder/sink/recovery/latency_budget_ms + optional
+# congestion_control) re-home under each stream, joined by a `name` and a
+# `priority` — the teleop degradation order, a non-negative int where 0 is
+# most important (shed last) and larger sheds first. `video:` and
+# `network:` are per-stream *references* (a video stem; a network profile
+# for this stream's own shaped lane on the shared NIC); resolve_includes
+# pops them — `video:` inlines `source`, `network:` folds into the
+# combined top-level `hooks` — so neither survives to validate_doc, which
+# sees the inlined `source` instead.
+_STREAM_REQUIRED = {"name", "source", "codec", "encoder", "sink",
+                    "recovery", "latency_budget_ms", "priority"}
+_STREAM_OPTIONAL = {"congestion_control"}
+_STREAM_KEYS = _STREAM_REQUIRED | _STREAM_OPTIONAL
+_STREAM_REFS = {"video", "network"}   # resolve-time, popped before validate
+_MAX_STREAMS = 16                     # hard cap; gates the port stride
+
+# `sync:` declares how the N streams are cross-synchronized. Discriminated
+# by `mode`: shared_epoch (controller-issued T0 + a software start-barrier;
+# the implemented default), ptp (a deferred seam for true multi-host
+# capture timestamps), none (legacy independent start). `termination`
+# decides when a run ends relative to the N source frame-caps: `all` waits
+# for every stream, `first` ends when the first stream finishes.
+_SYNC_REQUIRED = {"mode", "termination"}
+_SYNC_MODES = {"shared_epoch", "ptp", "none"}
+_SYNC_TERMINATIONS = {"all", "first"}
 
 # `scenario` carries run orchestration. The `remote:` block is optional —
 # its presence triggers distributed mode. `wrap_sender`/`wrap_receiver`
@@ -223,178 +250,196 @@ def _validate_steps_block(steps, label: str, where: str) -> None:
                             lambda m: sys.exit(m))
 
 
-def _compile_role_steps(role: str, steps: list) -> dict | None:
-    """Compile one direction's step list into pre_run / during_run /
-    post_run hooks tagged with `host: <role>`. Returns None when steps
-    is empty (no impairment on that direction → no hooks needed).
+# ---- per-step netem/tbf clause builders (shared across all lanes) -------
 
-    The pre_run hook installs the qdiscs for step 1. The during_run hook
-    (only generated when there is more than one step) sleeps for the
-    previous step's duration, then transitions into the next. Transitions
-    that touch a `bursty` (Gilbert-Elliott) step on either side use
-    `tc qdisc del`+`add` — netem doesn't document whether GE Markov state
-    survives a `tc qdisc change`, so a hard reset guarantees the bursty
-    regime starts from a known initial state on every entry. State-free
-    transitions (no bursty on either side) use the atomic `change` form.
-    The post_run hook tears down the qdisc tree.
-
-    Each generated script references "$NIC" — the configuration must set
-    the interface name via the actor's network_env (resolve_includes
-    pairs each hook with its actor's env).
-    """
-    if not steps:
+def _loss_clause(s):
+    loss = s["loss"]
+    model = loss["model"]
+    if model == "none":
         return None
+    if model == "uniform":
+        return f"loss {loss['pct']}%"
+    # bursty
+    p, r = _gemodel_p_r(loss["pct"], loss["burst"])
+    return f"loss gemodel {p:.4f} {r:.4f}"
 
-    def _loss_clause(s):
-        loss = s["loss"]
-        model = loss["model"]
-        if model == "none":
-            return None
-        if model == "uniform":
-            return f"loss {loss['pct']}%"
-        # bursty
-        p, r = _gemodel_p_r(loss["pct"], loss["burst"])
-        return f"loss gemodel {p:.4f} {r:.4f}"
 
-    def _netem_clause(s):
-        delay = f"delay {s['delay_ms']}ms"
-        if s.get("jitter_ms"):
-            delay += f" {s['jitter_ms']}ms"   # netem: delay <mean> <jitter>
-        clauses = [delay]
-        loss = _loss_clause(s)
-        if loss is not None:
-            clauses.append(loss)
-        return " ".join(clauses)
+def _netem_clause(s):
+    delay = f"delay {s['delay_ms']}ms"
+    if s.get("jitter_ms"):
+        delay += f" {s['jitter_ms']}ms"   # netem: delay <mean> <jitter>
+    clauses = [delay]
+    loss = _loss_clause(s)
+    if loss is not None:
+        clauses.append(loss)
+    return " ".join(clauses)
 
-    def _burst_kbit(s):
-        # ~10 ms of headroom at the configured rate; floor at 8 kbit so
-        # even sub-Mbps rates can dequeue a single MTU.
-        return max(8, s["rate_kbps"] // 100)
 
-    # Shaping is scoped to peer-bound traffic only — the prio root is a
-    # passthrough for everything else. Without this scope, `tc ... root`
-    # shapes every packet leaving $NIC, including SSH, DNS, and internet
-    # traffic when $NIC is the host's default-route interface (which it
-    # is on aum/veda — the USB ethernet is the only active link). Band
-    # 1:1 carries traffic the filter classifies in (peer-bound IPv4);
-    # band 1:2 is the priomap default and stays at prio's implicit pfifo.
-    # IPv6 traffic falls through to band 1:2 unshaped — all our test
-    # flows are IPv4 (see resolve_includes for the PEER_IP injection).
-    def _install_shaper(s, action):
-        return [
-            f"tc qdisc {action} dev \"$NIC\" parent 1:1 handle 10: "
-            f"netem {_netem_clause(s)}",
-            f"tc qdisc {action} dev \"$NIC\" parent 10:1 handle 20: "
-            f"tbf rate {s['rate_kbps']}kbit burst {_burst_kbit(s)}kbit latency 50ms",
-        ]
+def _burst_kbit(s):
+    # ~10 ms of headroom at the configured rate; floor at 8 kbit so even
+    # sub-Mbps rates can dequeue a single MTU.
+    return max(8, s["rate_kbps"] // 100)
 
-    def _install_root():
-        # Idempotent: del any prior root, then install prio + filter.
-        return [
-            'PEER_IP_RESOLVED="$(getent ahostsv4 "$PEER_IP" | awk \'NR==1 {print $1}\')"',
-            '[ -n "$PEER_IP_RESOLVED" ] || { echo "could not resolve PEER_IP=$PEER_IP" >&2; exit 1; }',
-            'tc qdisc del dev "$NIC" root 2>/dev/null || true',
-            'tc qdisc add dev "$NIC" root handle 1: prio bands 2 '
-            'priomap 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1',
-            'tc filter add dev "$NIC" parent 1:0 protocol ip prio 1 u32 '
-            'match ip dst "$PEER_IP_RESOLVED"/32 flowid 1:1',
-        ]
 
-    def _reinstall(s):
-        # Hard reset: del+add the shaper subtree (netem+tbf). Used at any
-        # transition involving bursty loss to guarantee GE Markov state
-        # starts fresh. The prio root + filter are preserved.
-        return [
-            'tc qdisc del dev "$NIC" parent 1:1 handle 10: 2>/dev/null || true',
-            *_install_shaper(s, "add"),
-        ]
+def _loss_descr(s):
+    loss = s["loss"]
+    if loss["model"] == "none":
+        return "loss=none"
+    if loss["model"] == "uniform":
+        return f"loss={loss['pct']}% uniform"
+    p, r = _gemodel_p_r(loss["pct"], loss["burst"])
+    return (f"loss={loss['pct']}% bursty "
+            f"(B={loss['burst']}, p={p:.2f}%, r={r:.1f}%)")
 
-    def _loss_descr(s):
-        loss = s["loss"]
-        if loss["model"] == "none":
-            return "loss=none"
-        if loss["model"] == "uniform":
-            return f"loss={loss['pct']}% uniform"
-        p, r = _gemodel_p_r(loss["pct"], loss["burst"])
-        return (f"loss={loss['pct']}% bursty "
-                f"(B={loss['burst']}, p={p:.2f}%, r={r:.1f}%)")
 
-    def _step_log(idx: int, s: dict) -> str:
-        jit = f" jitter={s['jitter_ms']}ms" if s.get("jitter_ms") else ""
-        return (f"{role} step {idx+1}: rate={s['rate_kbps']}kbit "
-                f"delay={s['delay_ms']}ms{jit} {_loss_descr(s)} — {s['label']}")
+def _step_log(role: str, name: str, idx: int, s: dict) -> str:
+    jit = f" jitter={s['jitter_ms']}ms" if s.get("jitter_ms") else ""
+    return (f"{role}[{name}] step {idx+1}: rate={s['rate_kbps']}kbit "
+            f"delay={s['delay_ms']}ms{jit} {_loss_descr(s)} — {s['label']}")
 
-    s0 = steps[0]
-    pre_lines = [
-        "set -e",
-        *_install_root(),
-        *_install_shaper(s0, "add"),
-        f'echo "[net/{role}] $NIC initial — {_step_log(0, s0)}"',
+
+# ---- per-stream tc lanes ------------------------------------------------
+#
+# Multi-stream impairment shapes N flows independently on one NIC. The
+# root is an `htb` qdisc; each stream rides its own leaf class (filtered
+# by destination port) carrying a netem (delay/loss) -> tbf (rate)
+# subtree. Everything the per-port filters don't match — SSH, DNS, the
+# host's internet traffic on the default-route NIC — falls to the htb
+# default class (1:ffff), unshaped, exactly as the old single-lane `prio`
+# root left band 1:2 untouched. The handles below are derived from the
+# 0-based stream index so up to _MAX_STREAMS lanes coexist without
+# colliding. (The old single-stream scheme was this with one lane on a
+# `prio` root; htb is needed because `prio` caps at 16 bands < N+passthrough.)
+
+def _lane_classid(i: int) -> str:
+    return f"1:{i + 1}"            # htb leaf class for stream i
+
+
+def _lane_netem(i: int) -> str:
+    return f"{(i + 1) * 10}:"      # netem qdisc handle (10:, 20:, ...)
+
+
+def _lane_tbf(i: int) -> str:
+    return f"{(i + 1) * 10 + 1}:"  # tbf qdisc handle (11:, 21:, ...)
+
+
+def _install_lane_shaper(i, s, action):
+    # netem (delay/loss) then tbf (rate) under stream i's htb leaf class.
+    return [
+        f"tc qdisc {action} dev \"$NIC\" parent {_lane_classid(i)} "
+        f"handle {_lane_netem(i)} netem {_netem_clause(s)}",
+        f"tc qdisc {action} dev \"$NIC\" parent {_lane_netem(i)}1 "
+        f"handle {_lane_tbf(i)} tbf rate {s['rate_kbps']}kbit "
+        f"burst {_burst_kbit(s)}kbit latency 50ms",
     ]
-    hooks = {
-        "pre_run": {
-            "host": role, "sudo": True,
-            "script": "\n".join(pre_lines) + "\n",
-        },
-    }
 
-    if len(steps) > 1:
-        during_lines = ["set -e"]
-        for i, s in enumerate(steps[1:], start=1):
-            during_lines.append(f"sleep {steps[i-1]['duration']}")
-            prev_bursty = steps[i-1]["loss"]["model"] == "bursty"
+
+def _install_lane(i, rtp_port, s0):
+    # Build stream i's lane: leaf class, shaper subtree (step 0), and the
+    # destination-port filter that routes the flow into it. The 0xfffe
+    # mask catches both rtp_port (even, RFC 3550) and rtcp = rtp_port + 1.
+    return [
+        f"tc class add dev \"$NIC\" parent 1: classid {_lane_classid(i)} "
+        f"htb rate 10gbit ceil 10gbit",
+        *_install_lane_shaper(i, s0, "add"),
+        f"tc filter add dev \"$NIC\" parent 1:0 protocol ip prio 1 u32 "
+        f"match ip dst \"$PEER_IP_RESOLVED\"/32 "
+        f"match ip dport {rtp_port} 0xfffe flowid {_lane_classid(i)}",
+    ]
+
+
+def _install_htb_root():
+    # Idempotent: del any prior root, then install the htb root + a
+    # non-limiting passthrough class for unmatched traffic.
+    return [
+        'PEER_IP_RESOLVED="$(getent ahostsv4 "$PEER_IP" | awk \'NR==1 {print $1}\')"',
+        '[ -n "$PEER_IP_RESOLVED" ] || { echo "could not resolve PEER_IP=$PEER_IP" >&2; exit 1; }',
+        'tc qdisc del dev "$NIC" root 2>/dev/null || true',
+        'tc qdisc add dev "$NIC" root handle 1: htb default ffff',
+        'tc class add dev "$NIC" parent 1: classid 1:ffff htb rate 10gbit ceil 10gbit',
+    ]
+
+
+def _reinstall_lane(i, s):
+    # Hard reset stream i's shaper subtree (bursty GE state starts fresh);
+    # the htb class + filter are preserved.
+    return [
+        f"tc qdisc del dev \"$NIC\" parent {_lane_classid(i)} "
+        f"handle {_lane_netem(i)} 2>/dev/null || true",
+        *_install_lane_shaper(i, s, "add"),
+    ]
+
+
+def _compile_role_lanes(role: str, lanes: list) -> dict:
+    """Compile one actor role's lanes into pre/during/post hooks.
+
+    lanes: list of (stream_idx, name, rtp_port, steps) — one entry per
+    stream that shapes THIS direction. Returns
+    {pre_run: hook, during_run: [hook,...], post_run: hook}: a single
+    pre_run that installs the htb root + every lane (step 0), one
+    independent during_run hook per multi-step lane (each walks its own
+    trace, touching only its own subtree), and a single post_run that
+    tears the root down.
+    """
+    pre_lines = ["set -e", *_install_htb_root()]
+    for i, name, rtp_port, steps in lanes:
+        pre_lines += _install_lane(i, rtp_port, steps[0])
+        pre_lines.append(
+            f'echo "[net/{role}] $NIC lane — {_step_log(role, name, 0, steps[0])}"')
+    pre_hook = {"host": role, "sudo": True, "script": "\n".join(pre_lines) + "\n"}
+
+    during = []
+    for i, name, rtp_port, steps in lanes:
+        if len(steps) <= 1:
+            continue
+        lines = ["set -e"]
+        for k, s in enumerate(steps[1:], start=1):
+            lines.append(f"sleep {steps[k-1]['duration']}")
+            prev_bursty = steps[k-1]["loss"]["model"] == "bursty"
             this_bursty = s["loss"]["model"] == "bursty"
             if prev_bursty or this_bursty:
-                during_lines.extend(_reinstall(s))
+                lines += _reinstall_lane(i, s)
             else:
-                during_lines.extend(_install_shaper(s, "change"))
-            during_lines.append(
-                f'echo "[net/{role}] $(date +%H:%M:%S) — {_step_log(i, s)}"'
-            )
-        hooks["during_run"] = {
-            "host": role, "sudo": True,
-            "script": "\n".join(during_lines) + "\n",
-        }
+                lines += _install_lane_shaper(i, s, "change")
+            lines.append(
+                f'echo "[net/{role}] $(date +%H:%M:%S) — {_step_log(role, name, k, s)}"')
+        during.append({"host": role, "sudo": True,
+                       "script": "\n".join(lines) + "\n"})
 
-    hooks["post_run"] = {
-        "host": role, "sudo": True,
-        "script": (
-            'tc qdisc del dev "$NIC" root 2>/dev/null || true\n'
-            f'echo "[net/{role}] $NIC qdiscs removed"\n'
-        ),
-    }
-    return hooks
+    post_hook = {"host": role, "sudo": True,
+                 "script": ('tc qdisc del dev "$NIC" root 2>/dev/null || true\n'
+                            f'echo "[net/{role}] $NIC qdiscs removed"\n')}
+    return {"pre_run": pre_hook, "during_run": during, "post_run": post_hook}
 
 
-def _compile_network_steps(spec_path: Path, spec: dict) -> dict:
-    """Compile a network spec's per-direction step lists into hook lists.
+def _compile_streams_network(stream_nets: list, where: str) -> dict:
+    """Compile every stream's network profile into one combined hook set.
 
-    Each network spec declares two step sequences:
-      camera_steps:  shaping on the camera actor's egress (forward path)
-      viewer_steps:  shaping on the viewer actor's egress (return path)
-
-    Both required, both may be empty. The two compile independently — they
-    can have different step counts and different step durations; the
-    runner spawns each phase's hook list per actor and waits for all.
-
-    Returns a dict where each phase value is a LIST of hooks (possibly
-    empty). The runner iterates the list per phase.
+    stream_nets: list of {idx, name, rtp_port, spec} where `spec` is the
+    parsed network YAML (camera_steps / viewer_steps) for that stream, or
+    None when the stream declares no `network:` (it rides the unshaped
+    passthrough lane). For each actor role, the streams that shape that
+    direction become htb lanes on one root; the hook lists are the union
+    across roles. Each phase value is a LIST of hooks (possibly empty);
+    the runner iterates per phase.
     """
-    where = spec_path.name
-    camera_steps = spec.get("camera_steps", [])
-    viewer_steps = spec.get("viewer_steps", [])
-    _validate_steps_block(camera_steps, "camera_steps", where)
-    _validate_steps_block(viewer_steps, "viewer_steps", where)
-
-    camera_hooks = _compile_role_steps("camera", camera_steps)
-    viewer_hooks = _compile_role_steps("viewer", viewer_steps)
-
     out: dict = {"pre_run": [], "during_run": [], "post_run": []}
-    for role_hooks in (camera_hooks, viewer_hooks):
-        if role_hooks is None:
+    for role, steps_key in (("camera", "camera_steps"), ("viewer", "viewer_steps")):
+        lanes = []
+        for sn in stream_nets:
+            spec = sn["spec"]
+            if spec is None:
+                continue
+            steps = spec.get(steps_key, [])
+            _validate_steps_block(steps, steps_key, where)
+            if steps:
+                lanes.append((sn["idx"], sn["name"], sn["rtp_port"], steps))
+        if not lanes:
             continue
-        for phase, hook in role_hooks.items():
-            out[phase].append(hook)
+        role_hooks = _compile_role_lanes(role, lanes)
+        out["pre_run"].append(role_hooks["pre_run"])
+        out["during_run"].extend(role_hooks["during_run"])
+        out["post_run"].append(role_hooks["post_run"])
     return out
 
 
@@ -462,46 +507,67 @@ def resolve_includes(doc: dict, project_root: Path, config_path: Path,
                             if existing[k].get(ek) in (None, ""):
                                 existing[k][ek] = ev
 
-    video_ref = doc.pop("video", None)
-    if video_ref is not None:
-        if doc.get("source") is not None:
-            sys.exit(f"{where}: cannot set both `video: {video_ref}` "
-                     f"and inline `source`")
-        spec_path = project_root / "specs" / "videos" / f"{video_ref}.yaml"
-        if not spec_path.is_file():
-            sys.exit(f"{where}: video spec not found at {spec_path}")
-        spec = yaml.safe_load(spec_path.read_text()) or {}
-        if "source" not in spec:
-            sys.exit(f"{spec_path.name}: missing `source` block")
-        doc["source"] = spec["source"]
+    streams = doc.get("streams")
+    config_id = config_path.stem
 
-    network_ref = doc.pop("network", None)
-    if network_ref is not None:
+    # Per-stream references: each stream's `video:` inlines its own
+    # `source`; each stream's `network:` names the profile for its own
+    # shaped lane. Both are resolve-time refs popped before validate_doc.
+    # The network refs are gathered with each stream's derived rtp_port
+    # (so the tc filters can classify by destination port) and compiled
+    # together into one combined hook set per actor NIC.
+    stream_nets = []
+    if isinstance(streams, list):
+        for idx, st in enumerate(streams):
+            if not isinstance(st, dict):
+                continue   # validate_doc rejects the malformed entry
+            video_ref = st.pop("video", None)
+            if video_ref is not None:
+                if st.get("source") is not None:
+                    sys.exit(f"{where}: streams[{idx}] sets both "
+                             f"`video: {video_ref}` and inline `source` — "
+                             f"pick one")
+                spec_path = project_root / "specs" / "videos" / f"{video_ref}.yaml"
+                if not spec_path.is_file():
+                    sys.exit(f"{where}: streams[{idx}] video spec not found "
+                             f"at {spec_path}")
+                spec = yaml.safe_load(spec_path.read_text()) or {}
+                if "source" not in spec:
+                    sys.exit(f"{spec_path.name}: missing `source` block")
+                st["source"] = spec["source"]
+
+            network_ref = st.pop("network", None)
+            net_spec = None
+            if network_ref is not None:
+                spec_path = project_root / "specs" / "networks" / f"{network_ref}.yaml"
+                if not spec_path.is_file():
+                    sys.exit(f"{where}: streams[{idx}] network spec not found "
+                             f"at {spec_path}")
+                net_spec = yaml.safe_load(spec_path.read_text()) or {}
+                unknown_spec_keys = set(net_spec) - _NETWORK_SPEC_KEYS
+                if unknown_spec_keys:
+                    sys.exit(f"{spec_path.name}: unknown key(s) "
+                             f"{sorted(unknown_spec_keys)}; expected "
+                             f"{sorted(_NETWORK_SPEC_KEYS)}")
+            stream_nets.append({
+                "idx": idx,
+                "name": st.get("name", f"stream{idx}"),
+                "rtp_port": _port_for_stream(config_id, idx),
+                "spec": net_spec,
+            })
+
+    if any(sn["spec"] is not None for sn in stream_nets):
         if doc.get("hooks"):
-            sys.exit(f"{where}: cannot set both `network: {network_ref}` "
-                     f"and inline `hooks`")
-        spec_path = project_root / "specs" / "networks" / f"{network_ref}.yaml"
-        if not spec_path.is_file():
-            sys.exit(f"{where}: network spec not found at {spec_path}")
-        spec = yaml.safe_load(spec_path.read_text()) or {}
-        unknown_spec_keys = set(spec) - _NETWORK_SPEC_KEYS
-        if unknown_spec_keys:
-            sys.exit(f"{spec_path.name}: unknown key(s) "
-                     f"{sorted(unknown_spec_keys)}; expected "
-                     f"{sorted(_NETWORK_SPEC_KEYS)}")
-        hooks = _compile_network_steps(spec_path, spec)
-        # Pull the per-actor network_env from the scenario block. Each
-        # hook's `host` field names the actor whose env should prefix
-        # the script. Hooks are list-valued per phase, so iterate one
-        # level deeper. We do basic shape checks here (validate_doc runs
-        # later for the deep checks) — just enough to hand the right
-        # dict to the right hook.
+            sys.exit(f"{where}: cannot set both per-stream `network:` refs "
+                     f"and inline top-level `hooks` — pick one")
+        hooks = _compile_streams_network(stream_nets, where)
+        # Prefix each hook script with its actor's network_env (NIC) and
+        # the auto-injected PEER_IP, scoped by the hook's `host` role.
+        # PEER_IP is read from actor topology (the camera's peer is the
+        # viewer's media endpoint and vice versa) so the `tc filter ...
+        # match ip dst $PEER_IP_RESOLVED` clauses only impair peer-bound
+        # traffic, not SSH / DNS / internet on the default-route NIC.
         actors = (doc.get("scenario") or {}).get("actors") or {}
-        # PEER_IP is auto-injected from actor topology: the camera's peer
-        # is the viewer's media endpoint and vice versa. The shaping scripts use it
-        # in a `tc filter ... match ip dst $PEER_IP_RESOLVED` clause so only
-        # peer-bound traffic gets impaired (not SSH / DNS / internet on
-        # the host's default-route NIC).
         peer_role = {"camera": "viewer", "viewer": "camera"}
         for hook_list in hooks.values():
             for hook in hook_list:
@@ -516,10 +582,10 @@ def resolve_includes(doc: dict, project_root: Path, config_path: Path,
                     if peer_host:
                         env.setdefault("PEER_IP", peer_host)
                 if hook["script"] and not env:
-                    sys.exit(f"{where}: network `{network_ref}` runs `tc` "
-                             f"against $NIC for the {role} actor, but "
-                             f"`scenario.actors.{role}.network_env` is "
-                             f"unset — set NIC there.")
+                    sys.exit(f"{where}: per-stream networks run `tc` against "
+                             f"$NIC for the {role} actor, but "
+                             f"`scenario.actors.{role}.network_env` is unset "
+                             f"— set NIC there.")
                 if env:
                     prefix = "".join(f"export {k}={shlex.quote(str(v))}\n"
                                      for k, v in env.items())
@@ -550,94 +616,146 @@ def validate_doc(doc: dict, config_path: Path) -> None:
 
     missing_top = _TOP_LEVEL_REQUIRED - set(doc)
     if missing_top:
-        if "source" in missing_top:
-            fail("`source` not set — declare inline or pull in via `video: <name>`")
         fail(f"missing required block(s): {sorted(missing_top)}")
 
-    if not isinstance(doc.get("codec"), str):
-        fail("`codec` must be a string (e.g. 'vp8')")
-    if doc["codec"] not in _IMPLEMENTED_CODECS:
-        fail(f"`codec` must be one of {sorted(_IMPLEMENTED_CODECS)}, "
-             f"got {doc['codec']!r}. Adding a new codec means defining a "
-             f"new dataclass in pipeline_config.py mirroring Vp8Codec "
-             f"and registering it here + in worker.py's loader.")
+    _validate_scenario(doc["scenario"], fail)
+    _validate_sync(doc["sync"], fail)
+
+    metrics = doc["scenario"].get("metrics", [])
+
+    streams = doc["streams"]
+    if not isinstance(streams, list) or not streams:
+        fail("`streams` must be a non-empty list of per-stream blocks")
+    if len(streams) > _MAX_STREAMS:
+        fail(f"too many streams: {len(streams)} > _MAX_STREAMS "
+             f"({_MAX_STREAMS}); raise _MAX_STREAMS (and the port stride) "
+             f"to allow more.")
+
+    names: list = []
+    for idx, st in enumerate(streams):
+        if not isinstance(st, dict):
+            fail(f"streams[{idx}] must be a mapping")
+        _validate_stream(idx, st, metrics, fail)
+        names.append(st["name"])
+    dupes = sorted({n for n in names if names.count(n) > 1})
+    if dupes:
+        fail(f"streams: duplicate name(s) {dupes}; each stream needs a "
+             f"unique name")
+
+
+def _validate_sync(sync, fail) -> None:
+    """Validate the `sync:` block — the cross-stream synchronization
+    contract, discriminated by mode."""
+    if not isinstance(sync, dict):
+        fail("`sync` must be a mapping")
+    missing = _SYNC_REQUIRED - set(sync)
+    if missing:
+        fail(f"sync: missing key(s) {sorted(missing)}")
+    unknown = set(sync) - _SYNC_REQUIRED
+    if unknown:
+        fail(f"sync: unknown key(s) {sorted(unknown)}; expected "
+             f"{sorted(_SYNC_REQUIRED)}")
+    if sync["mode"] not in _SYNC_MODES:
+        fail(f"sync.mode must be one of {sorted(_SYNC_MODES)}, got "
+             f"{sync['mode']!r}. shared_epoch is implemented; ptp is a "
+             f"deferred seam; none disables cross-stream start alignment.")
+    if sync["termination"] not in _SYNC_TERMINATIONS:
+        fail(f"sync.termination must be one of {sorted(_SYNC_TERMINATIONS)}, "
+             f"got {sync['termination']!r}")
+
+
+def _validate_stream(idx: int, st: dict, metrics: list, fail) -> None:
+    """Validate one streams[idx] block — the per-stream payload that used
+    to be the whole configuration top level. Every error is index-tagged
+    with `streams[idx].` so a typo in one camera's spec points at it."""
+    def sfail(msg: str):
+        fail(f"streams[{idx}].{msg}")
+
+    unknown = set(st) - _STREAM_KEYS
+    if unknown:
+        sfail(f" unknown key(s) {sorted(unknown)}; expected "
+              f"{sorted(_STREAM_KEYS)}")
+    missing = _STREAM_REQUIRED - set(st)
+    if missing:
+        if "source" in missing:
+            sfail("source not set — declare inline or pull in via "
+                  "`video: <name>`")
+        sfail(f" missing key(s) {sorted(missing)}")
+
+    if not isinstance(st["name"], str) or not st["name"]:
+        sfail("name must be a non-empty string")
+    pr = st["priority"]
+    if isinstance(pr, bool) or not isinstance(pr, int) or pr < 0:
+        sfail("priority must be a non-negative integer (0 = most important, "
+              "shed last; larger sheds first)")
+
+    if not isinstance(st.get("codec"), str):
+        sfail("codec must be a string (e.g. 'vp8')")
+    if st["codec"] not in _IMPLEMENTED_CODECS:
+        sfail(f"codec must be one of {sorted(_IMPLEMENTED_CODECS)}, "
+              f"got {st['codec']!r}. Adding a new codec means defining a new "
+              f"dataclass in pipeline_config.py mirroring Vp8Codec and "
+              f"registering it here + in worker.py's loader.")
 
     for key, (required, optional) in _BLOCK_SCHEMAS.items():
-        block = doc.get(key)
+        block = st.get(key)
         if block is None:
-            continue   # presence/absence already checked at the top level
+            continue   # presence already checked above
         if not isinstance(block, dict):
-            fail(f"`{key}` must be a mapping")
-        missing = required - set(block)
-        if missing:
-            fail(f"{key}: missing key(s) {sorted(missing)}")
-        unknown = set(block) - required - optional
-        if unknown:
-            fail(f"{key}: unknown key(s) {sorted(unknown)}; "
-                 f"expected {sorted(required | optional)}")
+            sfail(f"{key} must be a mapping")
+        bmissing = required - set(block)
+        if bmissing:
+            sfail(f"{key}: missing key(s) {sorted(bmissing)}")
+        bunknown = set(block) - required - optional
+        if bunknown:
+            sfail(f"{key}: unknown key(s) {sorted(bunknown)}; expected "
+                  f"{sorted(required | optional)}")
 
-    sink = doc["sink"]
+    sink = st["sink"]
     if sink["backend"] not in _VALID_SINK_BACKENDS:
-        fail(f"sink.backend must be one of {sorted(_VALID_SINK_BACKENDS)}, "
-             f"got {sink['backend']!r}. Visual rendering moved to expo specs "
-             f"(see expo.py); configurations carry only measurement sinks.")
-    # sink.path is required iff sink.backend == "file"; for any other
-    # backend it must be absent so the spec doesn't carry a dead field.
+        sfail(f"sink.backend must be one of {sorted(_VALID_SINK_BACKENDS)}, "
+              f"got {sink['backend']!r}. Visual rendering moved to expo specs "
+              f"(see expo.py); configurations carry only measurement sinks.")
+    # sink.path is required iff sink.backend == "file"; absent otherwise.
     if sink["backend"] == "file" and "path" not in sink:
-        fail("sink: `path` is required when backend=='file'")
+        sfail("sink: `path` is required when backend=='file'")
     if sink["backend"] != "file" and "path" in sink:
-        fail(f"sink: `path` only applies when backend=='file' "
-             f"(got backend={sink['backend']!r})")
+        sfail(f"sink: `path` only applies when backend=='file' "
+              f"(got backend={sink['backend']!r})")
 
-    if "congestion_control" in doc:
-        _validate_cc(doc["congestion_control"], fail)
+    if "congestion_control" in st:
+        _validate_cc(st["congestion_control"], sfail)
+    _validate_source(st["source"], sfail)
+    _validate_recovery(st["recovery"], sfail)
 
-    _validate_source(doc["source"], fail)
-    _validate_recovery(doc["recovery"], fail)
-    _validate_scenario(doc["scenario"], fail)
+    # latency_budget_ms — viewer-side per-frame freshness budget. 0
+    # disables enforcement; a positive int caps frame age in ms (frames
+    # older than the budget at convert.src are dropped and counted by the
+    # late_drops metric). Required per the no-silent-defaults rule.
+    budget = st["latency_budget_ms"]
+    if isinstance(budget, bool) or not isinstance(budget, int) or budget < 0:
+        sfail("latency_budget_ms must be a non-negative integer (0 disables "
+              "enforcement; any positive int caps frame age in milliseconds)")
 
-    # latency_budget_ms — viewer-side enforcement budget for frames'
-    # operational freshness. 0 disables enforcement (frames are
-    # delivered regardless of age); any positive int is a hard cap in
-    # milliseconds: any frame older than the budget at convert.src is
-    # dropped and counted by the late_drops metric. Required because
-    # operational policy must be set explicitly per the project's
-    # no-silent-defaults rule.
-    budget = doc["latency_budget_ms"]
-    if not isinstance(budget, int) or budget < 0:
-        fail("latency_budget_ms must be a non-negative integer "
-             "(0 disables enforcement; any positive int caps frame age "
-             "in milliseconds)")
-
-    # Cross-block constraints for the decoded_psnr metric. The metric
-    # reproduces the source on the viewer side to pair each received
-    # frame with its ground-truth counterpart, so the source must be:
-    #   1. Reproducible at the viewer — synthetic patterns (deterministic
-    #      from backend+dims+fps) or file-backed (the same file staged
-    #      at the same path on the viewer host).
-    #   2. Without clock_overlay — the overlay burns wall-clock text
-    #      into the Y plane, and the viewer's reproduced source can't
-    #      match the camera's clock exactly. Pixel-exact comparison
-    #      would attribute overlay drift to network corruption.
-    #   3. For file backend: loop=false. Looping makes frame N (N >
-    #      file_frame_count) refer to the (N mod file_frame_count)-th
-    #      frame of the next iteration, but the camera-side seek and
-    #      the viewer-side seek aren't synchronized, so the two streams
-    #      drift out of phase. Require single-pass playback for now.
-    if "decoded_psnr" in doc["scenario"].get("metrics", []):
-        backend = doc["source"].get("backend")
+    # Cross-block constraints for decoded_psnr. The metric reproduces this
+    # stream's source on the viewer to pair each received frame with its
+    # ground truth, so the source must be reproducible (synthetic or file),
+    # carry no clock_overlay (wall-clock text the viewer can't reproduce
+    # pixel-exactly), and — for the file backend — not loop (camera/viewer
+    # seek-on-EOS aren't synchronized).
+    if "decoded_psnr" in metrics:
+        backend = st["source"].get("backend")
         if backend not in ("synthetic", "file"):
-            fail(f"scenario.metrics: decoded_psnr requires "
-                 f"source.backend in {{synthetic, file}}, got {backend!r}")
-        if doc["source"].get("clock_overlay"):
-            fail("scenario.metrics: decoded_psnr requires "
-                 "source.clock_overlay == false (overlay burns wall-clock "
-                 "text that the viewer can't reproduce pixel-exactly)")
-        if backend == "file":
-            if (doc["source"].get("file") or {}).get("loop"):
-                fail("scenario.metrics: decoded_psnr with source.backend "
-                     "== 'file' requires source.file.loop == false "
-                     "(camera and viewer seek-on-EOS aren't synchronized)")
+            sfail(f"source: decoded_psnr metric requires source.backend in "
+                  f"{{synthetic, file}}, got {backend!r}")
+        if st["source"].get("clock_overlay"):
+            sfail("source: decoded_psnr metric requires clock_overlay == "
+                  "false (overlay burns wall-clock text the viewer can't "
+                  "reproduce pixel-exactly)")
+        if backend == "file" and (st["source"].get("file") or {}).get("loop"):
+            sfail("source: decoded_psnr with backend=='file' requires "
+                  "file.loop == false (camera/viewer seek-on-EOS aren't "
+                  "synchronized)")
 
 
 def _validate_source(source, fail) -> None:
@@ -860,59 +978,82 @@ def _validate_actors(actors, fail) -> None:
 
 
 _PORT_BASE = 30000
+_PORT_STRIDE = 2 * _MAX_STREAMS    # ports reserved per config (32) — one
+                                   # (rtp, rtcp) pair per possible stream
 
 
-def _port_for_config_id(config_id: str) -> int:
-    """Derive the RTP port for a configuration from its id.
+def _port_for_stream(config_id: str, stream_idx: int) -> int:
+    """Derive the RTP port for stream `stream_idx` of a configuration.
 
-    Convention: port = _PORT_BASE + 2 * int(config_id), so config 7's
-    port pair is (30014, 30015) and config 11's is (30022, 30023).
-    Each configuration gets a unique pair by construction; concurrent
-    runs can't collide on bind. Configurations don't carry a `transport:`
-    block — the port choice was the only field there, and it's mechanical.
+    Each config owns a contiguous block of _PORT_STRIDE ports starting at
+    _PORT_BASE + _PORT_STRIDE * int(config_id); stream i takes the pair
+    (base + 2*i, base + 2*i + 1) (rtp, rtcp — RFC 3550 adjacency). So
+    config 11's stream 0 is (30352, 30353), stream 1 (30354, 30355), and
+    config 12 starts cleanly at 30384. Every pair is unique by
+    construction across the whole (config, stream) map, so concurrent
+    runs and co-located streams never collide on bind. Configurations
+    don't carry a `transport:` block — the port choice is mechanical.
 
-    Numeric config ids only today. A name like 'scream-baseline' would
-    need a hashing scheme + load-time uniqueness check, added here when
-    the first non-numeric configuration appears.
+    Numeric config ids only today; a named config would need a hashing
+    scheme + load-time uniqueness check, added here when the first
+    non-numeric configuration appears.
     """
     if not config_id.isdigit():
         sys.exit(f"non-numeric config id {config_id!r}: port derivation "
                  f"expects numeric ids. Either rename the configuration or "
-                 f"extend validation._port_for_config_id with a hashing scheme.")
-    return _PORT_BASE + 2 * int(config_id)
+                 f"extend validation._port_for_stream with a hashing scheme.")
+    if not 0 <= stream_idx < _MAX_STREAMS:
+        sys.exit(f"stream index {stream_idx} out of range "
+                 f"[0, {_MAX_STREAMS}); raise _MAX_STREAMS to widen the "
+                 f"per-config port block.")
+    return _PORT_BASE + _PORT_STRIDE * int(config_id) + 2 * stream_idx
 
 
-def project_to_roles(doc: dict, config_id: str) -> tuple[dict, dict]:
-    """Project the unified configuration into per-role specs.
+def project_to_roles(doc: dict, config_id: str) -> tuple[list, list]:
+    """Project a multi-stream configuration into per-role, per-stream specs.
 
-    Returns (camera_dict, viewer_dict) shaped to the Camera / Viewer
-    dataclasses in pipeline_config — fully formed and ready for the
-    worker's loaders. The mirror fields (port, codec, transport
-    protocol, CC algorithm) are derived once here, eliminating the
-    silent-bug surface where a config could disagree with itself.
-
-    Topology fields (egress.host / egress.bind_host / ingress.host /
-    ingress.peer_host) are read from `scenario.actors.{camera,viewer}.host`
-    and injected here. Earlier, this injection lived in cli.main() —
-    that left project_to_roles producing incomplete dicts, so any caller
-    outside cli.py would hit a TypeError when constructing the Egress /
-    Ingress dataclasses. Owning the injection here makes the function's
-    contract honest: its output is consumable as-is.
+    Returns (camera_dicts, viewer_dicts): one Camera dict and one Viewer
+    dict per entry in doc["streams"], index-aligned (camera_dicts[i] and
+    viewer_dicts[i] are the two ends of stream i). Each dict is shaped to
+    the Camera / Viewer dataclasses in pipeline_config and is fully formed
+    — host topology and the per-stream (rtp, rtcp) port pair are injected
+    here so each of the N flows binds a unique socket on the shared NIC and
+    the worker loaders can consume the dict as-is. Multiplicity lives only
+    here and in orchestration; each worker still receives one single-stream
+    spec and never knows N > 1 exists.
     """
-    codec = doc["codec"]
-    enc = doc["encoder"]
-    cc = doc.get("congestion_control")
-    sink = doc["sink"]
-    source = doc["source"]
     actors = doc["scenario"]["actors"]
     camera_host = actors["camera"].get("media_host") or actors["camera"]["host"]
     viewer_host = actors["viewer"].get("media_host") or actors["viewer"]["host"]
+    metrics = doc["scenario"].get("metrics", [])
 
-    # Port and rtcp_port are mechanical — derived from the config id with
-    # the rtp/rtcp pair following RFC 3550 convention (rtcp = rtp + 1).
-    # Configurations don't carry a transport block; the user's job is to
-    # pick the experimental dimensions, not coordinate sockets.
-    port = _port_for_config_id(config_id)
+    camera_dicts: list = []
+    viewer_dicts: list = []
+    for idx, st in enumerate(doc["streams"]):
+        camera, viewer = _project_stream(
+            idx, st, config_id, camera_host, viewer_host, metrics)
+        camera_dicts.append(camera)
+        viewer_dicts.append(viewer)
+    return camera_dicts, viewer_dicts
+
+
+def _project_stream(idx: int, st: dict, config_id: str,
+                    camera_host: str, viewer_host: str,
+                    metrics: list) -> tuple[dict, dict]:
+    """Project one streams[idx] entry into (camera_dict, viewer_dict).
+
+    The mirror fields (port, codec, CC algorithm) are derived once here so
+    a stream can't disagree with itself; the (rtp, rtcp) pair follows
+    RFC 3550 (rtcp = rtp + 1) and is unique per (config, stream) by
+    construction via _port_for_stream.
+    """
+    codec = st["codec"]
+    enc = st["encoder"]
+    cc = st.get("congestion_control")
+    sink = st["sink"]
+    source = st["source"]
+
+    port = _port_for_stream(config_id, idx)
     rtcp_port = port + 1
 
     camera = {
@@ -929,6 +1070,7 @@ def project_to_roles(doc: dict, config_id: str) -> tuple[dict, dict]:
             "rtcp_port": rtcp_port,
             "host": viewer_host,           # destination = the other actor
             "bind_host": camera_host,      # local bind for RTCP listener
+            "stream_id": idx,
         },
     }
 
@@ -939,6 +1081,7 @@ def project_to_roles(doc: dict, config_id: str) -> tuple[dict, dict]:
             "rtcp_port": rtcp_port,
             "host": viewer_host,           # local bind
             "peer_host": camera_host,      # where RTCP feedback goes
+            "stream_id": idx,
         },
         "depacketizer": {"protocol": "rtp"},
         "decoder": {"codec": codec},
@@ -952,10 +1095,8 @@ def project_to_roles(doc: dict, config_id: str) -> tuple[dict, dict]:
 
     # Recovery: both roles need nack/pli/fec flags. The camera additionally
     # gets rtx_buffer_ms (rtprtxsend ring depth) when nack is on, and
-    # fec_percentage (rtpulpfecenc overhead) when fec is on. RTX and FEC
-    # PT mappings are hardcoded in the pipeline — implementation detail,
-    # not user knobs.
-    rec = doc["recovery"]
+    # fec_percentage (rtpulpfecenc overhead) when fec is on.
+    rec = st["recovery"]
     camera["recovery"] = {"nack": rec["nack"], "pli": rec["pli"], "fec": rec["fec"]}
     if rec["nack"]:
         camera["recovery"]["rtx_buffer_ms"] = rec["rtx_buffer_ms"]
@@ -963,18 +1104,13 @@ def project_to_roles(doc: dict, config_id: str) -> tuple[dict, dict]:
         camera["recovery"]["fec_percentage"] = rec["fec_percentage"]
     viewer["recovery"] = {"nack": rec["nack"], "pli": rec["pli"], "fec": rec["fec"]}
 
-    # The decoded_psnr metric on the viewer needs the camera's source
-    # to reproduce ground-truth frames. Only attach when the metric is
-    # enabled — otherwise the viewer spec stays minimal. Cross-block
-    # validation in validate_doc has already confirmed source.backend
-    # is synthetic when this branch fires.
-    if "decoded_psnr" in doc["scenario"].get("metrics", []):
+    # decoded_psnr reproduces this stream's source on the viewer to score
+    # delivered frames against ground truth; attach it only when enabled.
+    if "decoded_psnr" in metrics:
         viewer["ground_truth"] = dict(source)
 
-    # The viewer enforces the latency budget — a hard cap on per-frame
-    # operational age, applied at convert.src by the late_drops metric.
-    # Camera doesn't see it.
-    viewer["latency_budget_ms"] = doc["latency_budget_ms"]
+    # The viewer enforces this stream's latency budget at convert.src.
+    viewer["latency_budget_ms"] = st["latency_budget_ms"]
 
     return camera, viewer
 

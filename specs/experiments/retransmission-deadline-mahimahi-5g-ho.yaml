@@ -4,10 +4,10 @@ description: H4-style retransmission deadline experiment on the 5G Mahimahi hand
   trace via ball-720p30-30s.
 reps: 5
 varies:
-- congestion_control.algorithm
-- recovery.nack
-- recovery.rtx_buffer_ms
-- latency_budget_ms
+- streams[0].congestion_control.algorithm
+- streams[0].recovery.nack
+- streams[0].recovery.rtx_buffer_ms
+- streams[0].latency_budget_ms
 configurations:
 - id: 61
   label: SCReAM no-NACK budget=0

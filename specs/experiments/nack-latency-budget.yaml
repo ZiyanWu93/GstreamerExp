@@ -23,10 +23,10 @@ description: |
   (SCReAM vs GCC).
 reps: 10
 varies:
-  - congestion_control.algorithm
-  - recovery.nack
-  - recovery.rtx_buffer_ms
-  - latency_budget_ms
+  - streams[0].congestion_control.algorithm
+  - streams[0].recovery.nack
+  - streams[0].recovery.rtx_buffer_ms
+  - streams[0].latency_budget_ms
 configurations:
   - id: 29
     label: SCReAM no-NACK budget=0

@@ -46,30 +46,35 @@ def build(loss_pct: float, network: str) -> dict:
             ),
             "flags": ["scream"],
         },
-        "video": "realmotion-avi",
-        "network": network,
         "scenario": {
             "actors": {"camera": {}, "viewer": {}},
             "setup_delay_seconds": 3.0,
             "drain_delay_seconds": 1.0,
             "metrics": METRICS,
         },
-        "codec": "vp8",
-        "encoder": {"bitrate_kbps": CEILING["init"], "keyframe_interval_frames": 60},
-        "congestion_control": {
-            "algorithm": "scream",
-            "init_bitrate_kbps": CEILING["init"],
-            "min_bitrate_kbps": CEILING["min"],
-            "max_bitrate_kbps": CEILING["max"],
-        },
-        "sink": {"backend": "fake", "sync": False},
-        "recovery": dict(RECOVERY),
-        # NACK needs a receiver budget to wait for retransmissions; 0 neuters
-        # it (the buffer outputs frames before RTX can deliver). 100 ms matches
-        # the proven nack-latency-budget config (config 32). Part of "recovery
-        # on": a budget without NACK has nothing to wait for, so the H10
-        # (recovery off, budget 0) contrast stays fair.
-        "latency_budget_ms": 100,
+        "sync": {"mode": "shared_epoch", "termination": "all"},
+        "streams": [{
+            "name": "main",
+            "priority": 0,
+            "video": "realmotion-avi",
+            "codec": "vp8",
+            "encoder": {"bitrate_kbps": CEILING["init"], "keyframe_interval_frames": 60},
+            "congestion_control": {
+                "algorithm": "scream",
+                "init_bitrate_kbps": CEILING["init"],
+                "min_bitrate_kbps": CEILING["min"],
+                "max_bitrate_kbps": CEILING["max"],
+            },
+            "sink": {"backend": "fake", "sync": False},
+            "recovery": dict(RECOVERY),
+            # NACK needs a receiver budget to wait for retransmissions; 0 neuters
+            # it (the buffer outputs frames before RTX can deliver). 100 ms matches
+            # the proven nack-latency-budget config (config 32). Part of "recovery
+            # on": a budget without NACK has nothing to wait for, so the H10
+            # (recovery off, budget 0) contrast stays fair.
+            "latency_budget_ms": 100,
+            "network": network,
+        }],
     }
 
 

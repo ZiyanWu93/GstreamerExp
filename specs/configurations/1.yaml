@@ -13,24 +13,30 @@ scenario:
   metrics:
   - frame_count
   - encoder_target_kbps
-codec: vp8
-source:
-  backend: synthetic
-  width: 640
-  height: 480
-  fps: 15
-  num_frames: 150
-  clock_overlay: false
-  synthetic:
-    pattern: smpte
-encoder:
-  bitrate_kbps: 1000
-  keyframe_interval_frames: 150
-sink:
-  backend: fake
-  sync: false
-recovery:
-  nack: false
-  pli: false
-  fec: false
-latency_budget_ms: 0
+sync:
+  mode: shared_epoch
+  termination: all
+streams:
+- name: main
+  priority: 0
+  source:
+    backend: synthetic
+    width: 640
+    height: 480
+    fps: 15
+    num_frames: 150
+    clock_overlay: false
+    synthetic:
+      pattern: smpte
+  codec: vp8
+  encoder:
+    bitrate_kbps: 1000
+    keyframe_interval_frames: 150
+  sink:
+    backend: fake
+    sync: false
+  recovery:
+    nack: false
+    pli: false
+    fec: false
+  latency_budget_ms: 0

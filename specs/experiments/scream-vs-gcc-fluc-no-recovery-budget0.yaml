@@ -7,7 +7,7 @@ description: >
   budget at 0 ms so only congestion_control.algorithm varies.
 reps: 5
 varies:
-- congestion_control.algorithm
+- streams[0].congestion_control.algorithm
 configurations:
 - id: 41
   label: SCReAM no-rec budget=0

@@ -15,8 +15,16 @@ from analysis.hypotheses import build_reports
 
 class TestHypothesisFramework(unittest.TestCase):
     def test_every_hypothesis_spec_validates(self):
+        # Every hN.yaml on disk loads and validates; assert the loaded set
+        # matches the spec files rather than a hardcoded count (which drifts
+        # as hypotheses are added).
         specs = framework.load_hypothesis_specs(PROJECT_ROOT)
-        self.assertEqual([s["id"] for s in specs], [f"H{i}" for i in range(1, 5)])
+        loaded = {s["id"] for s in specs}
+        on_disk = {f"H{p.stem[1:]}" for p in
+                   (PROJECT_ROOT / "specs" / "hypotheses").glob("h*.yaml")
+                   if p.stem[1:].isdigit()}
+        self.assertTrue(on_disk, "no hypothesis specs found")
+        self.assertEqual(loaded, on_disk)
 
     def test_registry_reports_workload_calibration_analyzable(self):
         registry = framework.build_registry(PROJECT_ROOT)
@@ -99,7 +107,7 @@ class TestHypothesisFramework(unittest.TestCase):
         self.assertNotIn("Conclusion Boundaries", h3_page)
         self.assertNotIn("Conclusion Boundaries", h4_page)
         for experiment in h4["experiments"]:
-            self.assertEqual(experiment["varies"], ["congestion_control.algorithm"])
+            self.assertEqual(experiment["varies"], ["streams[0].congestion_control.algorithm"])
             self.assertEqual(experiment["arms"][0]["network"], experiment["arms"][1]["network"])
         self.assertTrue(frame_svg_path.is_file())
         self.assertTrue(egress_svg_path.is_file())

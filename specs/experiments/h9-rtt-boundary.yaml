@@ -5,7 +5,7 @@ description: "H9 \u2014 SCReAM RTT-boundary sweep on a fixed 5 Mbps link, stream
   \ cliffs).\n"
 reps: 3
 varies:
-- network
+- streams[0].network
 - hooks.pre_run
 configurations:
 - id: 301

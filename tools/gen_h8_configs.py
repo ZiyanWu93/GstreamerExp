@@ -58,32 +58,37 @@ def build(mul: float, regime_key: str, network_name: str) -> dict:
             ),
             "flags": ["scream"],
         },
-        "video": "realmotion-avi",
-        "network": network_name,
         "scenario": {
             "actors": {"camera": {}, "viewer": {}},
             "setup_delay_seconds": 3.0,
             "drain_delay_seconds": 1.0,
             "metrics": METRICS,
         },
-        "codec": "vp8",
-        "encoder": {
-            "bitrate_kbps": CEILING["init"],
-            "keyframe_interval_frames": 60,
-        },
-        "congestion_control": {
-            "algorithm": "scream",
-            "init_bitrate_kbps": CEILING["init"],
-            "min_bitrate_kbps": CEILING["min"],
-            "max_bitrate_kbps": CEILING["max"],
-            "scream": {
-                "delay_target_seconds": DELAY_TARGET_S,
-                "mul_increase": mul,
+        "sync": {"mode": "shared_epoch", "termination": "all"},
+        "streams": [{
+            "name": "main",
+            "priority": 0,
+            "video": "realmotion-avi",
+            "codec": "vp8",
+            "encoder": {
+                "bitrate_kbps": CEILING["init"],
+                "keyframe_interval_frames": 60,
             },
-        },
-        "sink": {"backend": "fake", "sync": False},
-        "recovery": {"nack": False, "pli": False, "fec": False},
-        "latency_budget_ms": 0,
+            "congestion_control": {
+                "algorithm": "scream",
+                "init_bitrate_kbps": CEILING["init"],
+                "min_bitrate_kbps": CEILING["min"],
+                "max_bitrate_kbps": CEILING["max"],
+                "scream": {
+                    "delay_target_seconds": DELAY_TARGET_S,
+                    "mul_increase": mul,
+                },
+            },
+            "sink": {"backend": "fake", "sync": False},
+            "recovery": {"nack": False, "pli": False, "fec": False},
+            "latency_budget_ms": 0,
+            "network": network_name,
+        }],
     }
 
 

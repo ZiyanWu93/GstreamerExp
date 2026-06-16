@@ -5,7 +5,7 @@ description: "H8 \u2014 SCReAM multiplicative-increase (ramp) sweep on mahimahi-
   \ trace.\n"
 reps: 3
 varies:
-- congestion_control.scream.mul_increase
+- streams[0].congestion_control.scream.mul_increase
 configurations:
 - id: 213
   label: mul 0.02

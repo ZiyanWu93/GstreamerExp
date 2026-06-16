@@ -142,12 +142,13 @@ def _capacity_stats(network_name: str, media_kbps: float) -> dict[str, float]:
 
 def _config_network(config_id: str) -> str:
     cfg = _load_yaml(PROJECT_ROOT / "specs" / "configurations" / f"{config_id}.yaml")
-    return str(cfg["network"])
+    return str(cfg["streams"][0]["network"])
 
 
 def _config_algorithm(config_id: str) -> str:
     cfg = _load_yaml(PROJECT_ROOT / "specs" / "configurations" / f"{config_id}.yaml")
-    return str((cfg.get("congestion_control") or {}).get("algorithm") or "unknown")
+    stream = cfg["streams"][0]
+    return str((stream.get("congestion_control") or {}).get("algorithm") or "unknown")
 
 
 def _camera_wire_mean(config_id: str, run_id: str) -> float | None:

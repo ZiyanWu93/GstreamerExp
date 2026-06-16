@@ -4,7 +4,7 @@ description: "H11 \u2014 SCReAM jitter-boundary sweep on a fixed 5 Mbps / 20 ms 
   \ reps each. Single arm: finds the jitter\nat which delivered video degrades.\n"
 reps: 3
 varies:
-- network
+- streams[0].network
 - hooks.pre_run
 configurations:
 - id: 313

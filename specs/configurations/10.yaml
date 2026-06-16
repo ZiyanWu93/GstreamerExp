@@ -1,12 +1,10 @@
 meta:
   name: distributed_gcc_fluctuation
-  description: "Distributed (aum\u2192veda) GCC under fluctuating-5mbps-300kbps. Pair\
-    \ with config 8 for a head-to-head SCReAM-vs-GCC adaptation comparison under identical\
-    \ workload and network conditions."
+  description: Distributed (aum→veda) GCC under fluctuating-5mbps-300kbps. Pair with
+    config 8 for a head-to-head SCReAM-vs-GCC adaptation comparison under identical
+    workload and network conditions.
   flags:
   - sudo
-video: ball-480p15
-network: fluctuating-5mbps-300kbps
 scenario:
   actors:
     camera: {}
@@ -20,20 +18,28 @@ scenario:
   - wire_bytes
   - encoded_bitrate
   - decoder_errors
-codec: vp8
-encoder:
-  bitrate_kbps: 500
-  keyframe_interval_frames: 60
-congestion_control:
-  algorithm: gcc
-  init_bitrate_kbps: 500
-  min_bitrate_kbps: 200
-  max_bitrate_kbps: 4000
-sink:
-  backend: fake
-  sync: false
-recovery:
-  nack: false
-  pli: false
-  fec: false
-latency_budget_ms: 0
+sync:
+  mode: shared_epoch
+  termination: all
+streams:
+- name: main
+  priority: 0
+  video: ball-480p15
+  codec: vp8
+  encoder:
+    bitrate_kbps: 500
+    keyframe_interval_frames: 60
+  congestion_control:
+    algorithm: gcc
+    init_bitrate_kbps: 500
+    min_bitrate_kbps: 200
+    max_bitrate_kbps: 4000
+  sink:
+    backend: fake
+    sync: false
+  recovery:
+    nack: false
+    pli: false
+    fec: false
+  latency_budget_ms: 0
+  network: fluctuating-5mbps-300kbps

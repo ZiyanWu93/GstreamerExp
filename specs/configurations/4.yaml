@@ -5,7 +5,6 @@ meta:
   flags:
   - sudo
   - scream
-video: smpte-480p15
 scenario:
   actors:
     camera:
@@ -29,66 +28,105 @@ scenario:
   metrics:
   - frame_count
   - encoder_target_kbps
-codec: vp8
-encoder:
-  bitrate_kbps: 500
-  keyframe_interval_frames: 150
-congestion_control:
-  algorithm: scream
-  init_bitrate_kbps: 500
-  min_bitrate_kbps: 200
-  max_bitrate_kbps: 8000
-sink:
-  backend: fake
-  sync: false
+sync:
+  mode: shared_epoch
+  termination: all
+streams:
+- name: main
+  priority: 0
+  video: smpte-480p15
+  codec: vp8
+  encoder:
+    bitrate_kbps: 500
+    keyframe_interval_frames: 150
+  congestion_control:
+    algorithm: scream
+    init_bitrate_kbps: 500
+    min_bitrate_kbps: 200
+    max_bitrate_kbps: 8000
+  sink:
+    backend: fake
+    sync: false
+  recovery:
+    nack: false
+    pli: false
+    fec: false
+  latency_budget_ms: 0
 hooks:
   pre_run:
     host: local
     sudo: true
-    script: |
-      # Create two network namespaces (ns_tx, ns_rx) connected by a veth pair,
+    script: '# Create two network namespaces (ns_tx, ns_rx) connected by a veth pair,
+
       # then apply tc impairment: 5 Mbps bandwidth cap, 20 ms one-way delay.
+
       set -e
 
+
       NS_TX=ns_tx
+
       NS_RX=ns_rx
+
       TX_IP=10.0.0.1
+
       RX_IP=10.0.0.2
 
+
       # Idempotent setup: clean up any leftover state first.
+
       ip netns del $NS_TX 2>/dev/null || true
+
       ip netns del $NS_RX 2>/dev/null || true
 
+
       ip netns add $NS_TX
+
       ip netns add $NS_RX
 
+
       ip link add veth_tx type veth peer name veth_rx
+
       ip link set veth_tx netns $NS_TX
+
       ip link set veth_rx netns $NS_RX
 
+
       ip netns exec $NS_TX ip addr add $TX_IP/24 dev veth_tx
+
       ip netns exec $NS_RX ip addr add $RX_IP/24 dev veth_rx
+
       ip netns exec $NS_TX ip link set veth_tx up
+
       ip netns exec $NS_RX ip link set veth_rx up
+
       ip netns exec $NS_TX ip link set lo up
+
       ip netns exec $NS_RX ip link set lo up
 
+
       # tc: 20 ms delay, then 5 Mbps tbf cap on the egress side of each veth.
+
       ip netns exec $NS_TX tc qdisc add dev veth_tx root handle 1: netem delay 20ms
-      ip netns exec $NS_TX tc qdisc add dev veth_tx parent 1:1 handle 2: tbf rate 5mbit burst 32kbit latency 50ms
+
+      ip netns exec $NS_TX tc qdisc add dev veth_tx parent 1:1 handle 2: tbf rate
+      5mbit burst 32kbit latency 50ms
+
       ip netns exec $NS_RX tc qdisc add dev veth_rx root handle 1: netem delay 20ms
-      ip netns exec $NS_RX tc qdisc add dev veth_rx parent 1:1 handle 2: tbf rate 5mbit burst 32kbit latency 50ms
+
+      ip netns exec $NS_RX tc qdisc add dev veth_rx parent 1:1 handle 2: tbf rate
+      5mbit burst 32kbit latency 50ms
+
 
       echo "namespaces ready: $NS_TX ($TX_IP) <-> $NS_RX ($RX_IP), bw=5mbit, delay=20ms"
+
+      '
   post_run:
     host: local
     sudo: true
-    script: |
-      ip netns del ns_tx 2>/dev/null || true
+    script: 'ip netns del ns_tx 2>/dev/null || true
+
       ip netns del ns_rx 2>/dev/null || true
+
       echo "namespaces removed"
-recovery:
-  nack: false
-  pli: false
-  fec: false
-latency_budget_ms: 0
+
+      '

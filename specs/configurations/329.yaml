@@ -1,12 +1,10 @@
 meta:
   name: h13_keyframe_4
-  description: "H13 cell \u2014 keyframe interval 4 frames at 1% loss on fixed 5 Mbps\
-    \ / 20 ms, VP8 + SCReAM loose 4000 kbps, realmotion-avi, recovery off. Tests whether\
-    \ a shorter GOP softens the loss cliff."
+  description: H13 cell — keyframe interval 4 frames at 1% loss on fixed 5 Mbps /
+    20 ms, VP8 + SCReAM loose 4000 kbps, realmotion-avi, recovery off. Tests whether
+    a shorter GOP softens the loss cliff.
   flags:
   - scream
-video: realmotion-avi
-network: fixed-5mbps-20ms-loss1pct
 scenario:
   actors:
     camera: {}
@@ -21,20 +19,28 @@ scenario:
   - frame_latency
   - decoder_errors
   - decoded_psnr
-codec: vp8
-encoder:
-  bitrate_kbps: 1500
-  keyframe_interval_frames: 4
-congestion_control:
-  algorithm: scream
-  init_bitrate_kbps: 1500
-  min_bitrate_kbps: 200
-  max_bitrate_kbps: 4000
-sink:
-  backend: fake
-  sync: false
-recovery:
-  nack: false
-  pli: false
-  fec: false
-latency_budget_ms: 0
+sync:
+  mode: shared_epoch
+  termination: all
+streams:
+- name: main
+  priority: 0
+  video: realmotion-avi
+  codec: vp8
+  encoder:
+    bitrate_kbps: 1500
+    keyframe_interval_frames: 4
+  congestion_control:
+    algorithm: scream
+    init_bitrate_kbps: 1500
+    min_bitrate_kbps: 200
+    max_bitrate_kbps: 4000
+  sink:
+    backend: fake
+    sync: false
+  recovery:
+    nack: false
+    pli: false
+    fec: false
+  latency_budget_ms: 0
+  network: fixed-5mbps-20ms-loss1pct

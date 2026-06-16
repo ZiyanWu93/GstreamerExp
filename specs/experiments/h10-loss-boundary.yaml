@@ -4,7 +4,7 @@ description: "H10 \u2014 SCReAM loss-boundary sweep on a fixed 5 Mbps / 20 ms li
   \ %, three reps each. Single arm: finds\nthe loss rate at which frame delivery collapses.\n"
 reps: 3
 varies:
-- network
+- streams[0].network
 - hooks.pre_run
 configurations:
 - id: 307

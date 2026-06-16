@@ -8,7 +8,7 @@ description: |
   from adaptation responsiveness (frequent impairment regime).
 reps: 10
 varies:
-  - congestion_control.algorithm
+  - streams[0].congestion_control.algorithm
 configurations:
   - id: 27
     label: SCReAM

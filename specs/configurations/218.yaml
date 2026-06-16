@@ -1,11 +1,9 @@
 meta:
   name: h8_mulinc_0.5_5g
-  description: "H8 cell \u2014 mul_increase 0.5 on mahimahi-5g-cqi-100ms-x0p33, VP8\
-    \ + SCReAM loose 4000 kbps ceiling, queue-delay-target 0.06s, streaming realmotion-avi."
+  description: H8 cell — mul_increase 0.5 on mahimahi-5g-cqi-100ms-x0p33, VP8 + SCReAM
+    loose 4000 kbps ceiling, queue-delay-target 0.06s, streaming realmotion-avi.
   flags:
   - scream
-video: realmotion-avi
-network: mahimahi-5g-cqi-100ms-x0p33
 scenario:
   actors:
     camera: {}
@@ -20,23 +18,31 @@ scenario:
   - frame_latency
   - decoder_errors
   - decoded_psnr
-codec: vp8
-encoder:
-  bitrate_kbps: 1500
-  keyframe_interval_frames: 60
-congestion_control:
-  algorithm: scream
-  init_bitrate_kbps: 1500
-  min_bitrate_kbps: 200
-  max_bitrate_kbps: 4000
-  scream:
-    delay_target_seconds: 0.06
-    mul_increase: 0.5
-sink:
-  backend: fake
-  sync: false
-recovery:
-  nack: false
-  pli: false
-  fec: false
-latency_budget_ms: 0
+sync:
+  mode: shared_epoch
+  termination: all
+streams:
+- name: main
+  priority: 0
+  video: realmotion-avi
+  codec: vp8
+  encoder:
+    bitrate_kbps: 1500
+    keyframe_interval_frames: 60
+  congestion_control:
+    algorithm: scream
+    init_bitrate_kbps: 1500
+    min_bitrate_kbps: 200
+    max_bitrate_kbps: 4000
+    scream:
+      delay_target_seconds: 0.06
+      mul_increase: 0.5
+  sink:
+    backend: fake
+    sync: false
+  recovery:
+    nack: false
+    pli: false
+    fec: false
+  latency_budget_ms: 0
+  network: mahimahi-5g-cqi-100ms-x0p33

@@ -40,25 +40,30 @@ def build(delay_ms: int) -> dict:
             ),
             "flags": ["scream"],
         },
-        "video": "realmotion-avi",
-        "network": f"fixed-5mbps-{delay_ms}ms",
         "scenario": {
             "actors": {"camera": {}, "viewer": {}},
             "setup_delay_seconds": 3.0,
             "drain_delay_seconds": 1.0,
             "metrics": METRICS,
         },
-        "codec": "vp8",
-        "encoder": {"bitrate_kbps": CEILING["init"], "keyframe_interval_frames": 60},
-        "congestion_control": {
-            "algorithm": "scream",
-            "init_bitrate_kbps": CEILING["init"],
-            "min_bitrate_kbps": CEILING["min"],
-            "max_bitrate_kbps": CEILING["max"],
-        },
-        "sink": {"backend": "fake", "sync": False},
-        "recovery": {"nack": False, "pli": False, "fec": False},
-        "latency_budget_ms": 0,
+        "sync": {"mode": "shared_epoch", "termination": "all"},
+        "streams": [{
+            "name": "main",
+            "priority": 0,
+            "video": "realmotion-avi",
+            "codec": "vp8",
+            "encoder": {"bitrate_kbps": CEILING["init"], "keyframe_interval_frames": 60},
+            "congestion_control": {
+                "algorithm": "scream",
+                "init_bitrate_kbps": CEILING["init"],
+                "min_bitrate_kbps": CEILING["min"],
+                "max_bitrate_kbps": CEILING["max"],
+            },
+            "sink": {"backend": "fake", "sync": False},
+            "recovery": {"nack": False, "pli": False, "fec": False},
+            "latency_budget_ms": 0,
+            "network": f"fixed-5mbps-{delay_ms}ms",
+        }],
     }
 
 

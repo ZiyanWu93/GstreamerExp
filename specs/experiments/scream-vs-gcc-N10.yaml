@@ -8,7 +8,7 @@ description: |
   for the heavier-workload comparison that actually binds.
 reps: 10
 varies:
-  - congestion_control.algorithm
+  - streams[0].congestion_control.algorithm
 configurations:
   - id: 8
     label: SCReAM

@@ -58,8 +58,6 @@ def build(tier: str, qdt_ms: int, regime_key: str, network_name: str) -> dict:
             ),
             "flags": ["scream"],
         },
-        "video": "realmotion-avi",
-        "network": network_name,
         "scenario": {
             # Empty actor blocks defer to hosts.yaml (aum=camera, veda=viewer
             # over the wired LAN). tc shaping applies on the NIC named in
@@ -69,21 +67,28 @@ def build(tier: str, qdt_ms: int, regime_key: str, network_name: str) -> dict:
             "drain_delay_seconds": 1.0,
             "metrics": METRICS,
         },
-        "codec": "vp8",
-        "encoder": {
-            "bitrate_kbps": cfg["init"],
-            "keyframe_interval_frames": 60,
-        },
-        "congestion_control": {
-            "algorithm": "scream",
-            "init_bitrate_kbps": cfg["init"],
-            "min_bitrate_kbps": cfg["min"],
-            "max_bitrate_kbps": cfg["max"],
-            "scream": {"delay_target_seconds": qdt_ms / 1000.0},
-        },
-        "sink": {"backend": "fake", "sync": False},
-        "recovery": {"nack": False, "pli": False, "fec": False},
-        "latency_budget_ms": 0,
+        "sync": {"mode": "shared_epoch", "termination": "all"},
+        "streams": [{
+            "name": "main",
+            "priority": 0,
+            "video": "realmotion-avi",
+            "codec": "vp8",
+            "encoder": {
+                "bitrate_kbps": cfg["init"],
+                "keyframe_interval_frames": 60,
+            },
+            "congestion_control": {
+                "algorithm": "scream",
+                "init_bitrate_kbps": cfg["init"],
+                "min_bitrate_kbps": cfg["min"],
+                "max_bitrate_kbps": cfg["max"],
+                "scream": {"delay_target_seconds": qdt_ms / 1000.0},
+            },
+            "sink": {"backend": "fake", "sync": False},
+            "recovery": {"nack": False, "pli": False, "fec": False},
+            "latency_budget_ms": 0,
+            "network": network_name,
+        }],
     }
 
 

@@ -1,13 +1,11 @@
 meta:
   name: distributed_scream_720p_realmotion_nack_pli
-  description: "Distributed (aum\u2192veda) SCReAM at 720p30 under fluctuating-5mbps-300kbps,\
-    \ with both NACK + RTX and PLI. Pair with configs 13/14/15 for the 2x2 study isolating\
-    \ per-packet retransmission versus full-frame recovery."
+  description: Distributed (aum→veda) SCReAM at 720p30 under fluctuating-5mbps-300kbps,
+    with both NACK + RTX and PLI. Pair with configs 13/14/15 for the 2x2 study isolating
+    per-packet retransmission versus full-frame recovery.
   flags:
   - sudo
   - scream
-video: teleop-realmotion
-network: fluctuating-5mbps-300kbps
 scenario:
   actors:
     camera: {}
@@ -21,21 +19,29 @@ scenario:
   - wire_bytes
   - encoded_bitrate
   - decoder_errors
-codec: vp8
-encoder:
-  bitrate_kbps: 1500
-  keyframe_interval_frames: 60
-congestion_control:
-  algorithm: scream
-  init_bitrate_kbps: 1500
-  min_bitrate_kbps: 200
-  max_bitrate_kbps: 4000
-sink:
-  backend: fake
-  sync: false
-recovery:
-  nack: true
-  pli: true
-  fec: false
-  rtx_buffer_ms: 500
-latency_budget_ms: 0
+sync:
+  mode: shared_epoch
+  termination: all
+streams:
+- name: main
+  priority: 0
+  video: teleop-realmotion
+  codec: vp8
+  encoder:
+    bitrate_kbps: 1500
+    keyframe_interval_frames: 60
+  congestion_control:
+    algorithm: scream
+    init_bitrate_kbps: 1500
+    min_bitrate_kbps: 200
+    max_bitrate_kbps: 4000
+  sink:
+    backend: fake
+    sync: false
+  recovery:
+    nack: true
+    pli: true
+    fec: false
+    rtx_buffer_ms: 500
+  latency_budget_ms: 0
+  network: fluctuating-5mbps-300kbps

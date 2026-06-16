@@ -5,7 +5,7 @@ description: "H8 \u2014 SCReAM multiplicative-increase (ramp) sweep on fluctuati
   \ link (5 Mbps drops to 300 kbps and recovers) where a faster ramp should recover quality sooner.\n"
 reps: 3
 varies:
-- congestion_control.scream.mul_increase
+- streams[0].congestion_control.scream.mul_increase
 configurations:
 - id: 207
   label: mul 0.02

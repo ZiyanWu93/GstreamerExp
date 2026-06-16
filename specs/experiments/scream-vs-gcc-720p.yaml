@@ -8,7 +8,7 @@ description: |
   did not bind on the cap.
 reps: 10
 varies:
-  - congestion_control.algorithm
+  - streams[0].congestion_control.algorithm
 configurations:
   - id: 11
     label: SCReAM

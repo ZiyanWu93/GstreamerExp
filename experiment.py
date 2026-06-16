@@ -26,6 +26,7 @@ see correlated noise. Round-robin distributes the noise.
 from __future__ import annotations
 
 import argparse
+import copy
 import datetime as _dt
 import json
 import subprocess
@@ -44,10 +45,15 @@ CONFIGURATIONS_DIR = PROJECT_ROOT / "specs" / "configurations"
 
 # Paths that may differ between configurations in the same experiment
 # without affecting comparison validity. `meta.*` is documentation.
-# Anything else that differs must be in the experiment spec's `varies`
-# list.
+# `hooks.*` is DERIVED output: resolve_includes compiles each stream's
+# `network:` ref into per-(peer, dport) tc lanes, so the compiled script
+# embeds each config's stream ports and legitimately differs config to
+# config. The authored difference that matters — the `network:` ref
+# itself — is compared on the RAW (pre-resolve) doc instead (see below),
+# so ignoring the compiled hooks loses no signal. Anything else that
+# differs must be in the experiment spec's `varies` list.
 _COMPARE_IGNORE = {"meta.name", "meta.description"}
-_COMPARE_IGNORE_PREFIXES = ("meta.flags",)
+_COMPARE_IGNORE_PREFIXES = ("meta.flags", "hooks")
 
 
 def _resolve_spec_path(arg: str) -> Path:
@@ -126,22 +132,25 @@ def _load_and_validate_spec(spec_path: Path) -> dict:
             sys.exit(f"{where}: configurations[{i}] duplicate id {cid!r}")
         seen_ids.add(cid)
 
-    # Resolve each configuration to its canonical form (video/network refs
-    # inlined, schema-validated) and confirm the differences across configs
-    # are all in the `varies` allow-list.
-    resolved: list = []
+    # Resolve+validate each configuration for correctness, but compare the
+    # RAW (pre-resolve) authored docs: resolve_includes mutates the doc in
+    # place (popping the per-stream `video:`/`network:` refs and compiling
+    # port-bearing `hooks`), and the authored `streams[i].network` ref is
+    # the difference that matters — not the compiled tc script. So deep-copy
+    # the raw doc before resolving, then flatten the raw copies.
+    raw_docs: list = []
     for c in cfgs:
         cid = c["id"]
         cfg_path = CONFIGURATIONS_DIR / f"{cid}.yaml"
         if not cfg_path.is_file():
             sys.exit(f"{where}: configuration {cid!r} not found at {cfg_path}")
         doc = yaml.safe_load(cfg_path.read_text()) or {}
+        raw_docs.append(copy.deepcopy(doc))
         doc = resolve_includes(doc, PROJECT_ROOT, cfg_path)
         validate_doc(doc, cfg_path)
-        resolved.append(doc)
 
     varies = set(spec["varies"])
-    flats = [_flatten(d) for d in resolved]
+    flats = [_flatten(d) for d in raw_docs]
     all_paths = set().union(*flats)
     diffs: list = []
     for path in sorted(all_paths):
@@ -192,7 +201,10 @@ def _network_record_for_config(config_id: str) -> dict | None:
     if not cfg_path.is_file():
         return None
     cfg = yaml.safe_load(cfg_path.read_text()) or {}
-    net_ref = cfg.get("network")
+    # The network ref is now per-stream; experiment records are built from
+    # single-stream experiment configs, so read stream 0's ref.
+    streams = cfg.get("streams") or []
+    net_ref = streams[0].get("network") if streams else None
     if not net_ref:
         return None
     net_path = PROJECT_ROOT / "specs" / "networks" / f"{net_ref}.yaml"

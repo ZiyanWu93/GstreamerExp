@@ -1,12 +1,9 @@
 meta:
   name: h10_loss_0.25pct
-  description: "H10 cell \u2014 0.25% uniform loss on fixed 5 Mbps / 20 ms, VP8 +\
-    \ SCReAM loose 4000 kbps ceiling, realmotion-avi. Loss-boundary sweep, recovery\
-    \ off."
+  description: H10 cell — 0.25% uniform loss on fixed 5 Mbps / 20 ms, VP8 + SCReAM
+    loose 4000 kbps ceiling, realmotion-avi. Loss-boundary sweep, recovery off.
   flags:
   - scream
-video: realmotion-avi
-network: fixed-5mbps-20ms-loss0p25pct
 scenario:
   actors:
     camera: {}
@@ -21,20 +18,28 @@ scenario:
   - frame_latency
   - decoder_errors
   - decoded_psnr
-codec: vp8
-encoder:
-  bitrate_kbps: 1500
-  keyframe_interval_frames: 60
-congestion_control:
-  algorithm: scream
-  init_bitrate_kbps: 1500
-  min_bitrate_kbps: 200
-  max_bitrate_kbps: 4000
-sink:
-  backend: fake
-  sync: false
-recovery:
-  nack: false
-  pli: false
-  fec: false
-latency_budget_ms: 0
+sync:
+  mode: shared_epoch
+  termination: all
+streams:
+- name: main
+  priority: 0
+  video: realmotion-avi
+  codec: vp8
+  encoder:
+    bitrate_kbps: 1500
+    keyframe_interval_frames: 60
+  congestion_control:
+    algorithm: scream
+    init_bitrate_kbps: 1500
+    min_bitrate_kbps: 200
+    max_bitrate_kbps: 4000
+  sink:
+    backend: fake
+    sync: false
+  recovery:
+    nack: false
+    pli: false
+    fec: false
+  latency_budget_ms: 0
+  network: fixed-5mbps-20ms-loss0p25pct

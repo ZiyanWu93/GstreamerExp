@@ -1,14 +1,19 @@
 meta:
   name: distributed_gcc_norecovery_budget0_fluc_fast
-  description: "Distributed (aum\u2192veda) GCC at 720p30 over\n`fluctuating-fast-5mbps-300kbps`.\
-    \ Recovery: none. Budget: 0.\nMinimal H1\u2194H4 cross-experiment comparison:\
-    \ same 2-arm SCReAM vs\nGCC setup that H1 used on this network, with H4's late_drops\n\
-    metric included so we get receiver-side delivered frames.\n"
+  description: 'Distributed (aum→veda) GCC at 720p30 over
+
+    `fluctuating-fast-5mbps-300kbps`. Recovery: none. Budget: 0.
+
+    Minimal H1↔H4 cross-experiment comparison: same 2-arm SCReAM vs
+
+    GCC setup that H1 used on this network, with H4''s late_drops
+
+    metric included so we get receiver-side delivered frames.
+
+    '
   flags:
   - sudo
   - gcc
-video: ball-720p30
-network: fluctuating-fast-5mbps-300kbps
 scenario:
   actors:
     camera: {}
@@ -23,20 +28,28 @@ scenario:
   - encoded_bitrate
   - decoder_errors
   - late_drops
-codec: vp8
-encoder:
-  bitrate_kbps: 1500
-  keyframe_interval_frames: 60
-congestion_control:
-  algorithm: gcc
-  init_bitrate_kbps: 1500
-  min_bitrate_kbps: 200
-  max_bitrate_kbps: 4000
-sink:
-  backend: fake
-  sync: false
-recovery:
-  nack: false
-  pli: false
-  fec: false
-latency_budget_ms: 0
+sync:
+  mode: shared_epoch
+  termination: all
+streams:
+- name: main
+  priority: 0
+  video: ball-720p30
+  codec: vp8
+  encoder:
+    bitrate_kbps: 1500
+    keyframe_interval_frames: 60
+  congestion_control:
+    algorithm: gcc
+    init_bitrate_kbps: 1500
+    min_bitrate_kbps: 200
+    max_bitrate_kbps: 4000
+  sink:
+    backend: fake
+    sync: false
+  recovery:
+    nack: false
+    pli: false
+    fec: false
+  latency_budget_ms: 0
+  network: fluctuating-fast-5mbps-300kbps

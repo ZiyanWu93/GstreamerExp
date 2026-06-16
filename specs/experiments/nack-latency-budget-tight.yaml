@@ -11,9 +11,9 @@ description: |
   points across all (CC × NACK) combinations.
 reps: 5
 varies:
-  - congestion_control.algorithm
-  - recovery.nack
-  - recovery.rtx_buffer_ms
+  - streams[0].congestion_control.algorithm
+  - streams[0].recovery.nack
+  - streams[0].recovery.rtx_buffer_ms
 configurations:
   - id: 37
     label: SCReAM no-NACK budget=50

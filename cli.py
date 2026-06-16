@@ -91,13 +91,16 @@ def run_configuration(config_arg: str, *,
     doc = yaml.safe_load(config_path.read_text())
     doc = resolve_includes(doc, PROJECT_ROOT, config_path)
     validate_doc(doc, config_path)
-    camera_dict, viewer_dict = project_to_roles(doc, config_id)
+    camera_dicts, viewer_dicts = project_to_roles(doc, config_id)
+    n = len(camera_dicts)
 
     # Validation guarantees every required key is present — no .get
     # defaults below this line; missing keys would have failed earlier.
     meta = doc.get("meta") or {}
     scenario = doc["scenario"]
     hooks = doc.get("hooks") or {}
+    streams_meta = [{"name": st["name"], "priority": st["priority"]}
+                    for st in doc["streams"]]
 
     setup_delay = float(scenario["setup_delay_seconds"])
     drain_delay = float(scenario["drain_delay_seconds"])
@@ -137,31 +140,39 @@ def run_configuration(config_arg: str, *,
     # (the directory containing the gstexp/ package, i.e. cwd) — no need
     # to pass the worker file path explicitly.
     base_cmd = [sys.executable, "-u", "-m", "gstexp.worker"] + metric_args
-    camera_result = run_dir / "camera.json"
-    viewer_result = run_dir / "viewer.json"
     child_env = scream_env(PROJECT_ROOT)
 
-    # project_to_roles owns its own host injection (reads scenario.actors
-    # internally) — its output is fully formed.
-
-    effective_camera = run_dir / "_camera_spec.json"
-    effective_viewer = run_dir / "_viewer_spec.json"
-    effective_camera.write_text(json.dumps(camera_dict, indent=2))
-    effective_viewer.write_text(json.dumps(viewer_dict, indent=2))
+    # Per-stream effective specs + result paths. project_to_roles owns its
+    # own host/port injection, so each dict is fully formed. The worker
+    # sees ONE single-stream spec per process; results land in
+    # camera_<i>.json / viewer_<i>.json so per-stream outputs stay separate.
+    camera_specs, viewer_specs = [], []
+    camera_results, viewer_results = [], []
+    for i in range(n):
+        cspec = run_dir / f"_camera_spec_{i}.json"
+        vspec = run_dir / f"_viewer_spec_{i}.json"
+        cspec.write_text(json.dumps(camera_dicts[i], indent=2))
+        vspec.write_text(json.dumps(viewer_dicts[i], indent=2))
+        camera_specs.append(cspec)
+        viewer_specs.append(vspec)
+        camera_results.append(run_dir / f"camera_{i}.json")
+        viewer_results.append(run_dir / f"viewer_{i}.json")
 
     print(f"[scenario] config: {config_id} ({meta.get('name', '')})")
     print(f"[scenario] run:    {run_dir}")
+    print(f"[scenario] streams: {n} "
+          f"({', '.join(s['name'] for s in streams_meta)})")
     if view_display:
         print(f"[scenario] expo:   view_display={view_display}")
 
     if distributed:
         run_distributed(
             project_root=PROJECT_ROOT,
-            effective_camera_local=effective_camera,
-            effective_viewer_local=effective_viewer,
+            camera_specs=camera_specs,
+            viewer_specs=viewer_specs,
             run_dir=run_dir,
-            camera_result=camera_result,
-            viewer_result=viewer_result,
+            camera_results=camera_results,
+            viewer_results=viewer_results,
             camera_host=camera_ssh_host,
             viewer_host=viewer_ssh_host,
             remote_project_root=remote_project_root,
@@ -177,10 +188,10 @@ def run_configuration(config_arg: str, *,
     else:
         run_local(
             project_root=PROJECT_ROOT,
-            camera_cfg=effective_camera,
-            viewer_cfg=effective_viewer,
-            camera_result=camera_result,
-            viewer_result=viewer_result,
+            camera_specs=camera_specs,
+            viewer_specs=viewer_specs,
+            camera_results=camera_results,
+            viewer_results=viewer_results,
             base_cmd=base_cmd,
             child_env=child_env,
             wrap_camera=wrap_camera,
@@ -194,15 +205,16 @@ def run_configuration(config_arg: str, *,
             view_xauthority=view_xauthority,
         )
 
-    camera_data = read_result(camera_result)
-    viewer_data = read_result(viewer_result)
     skew_file = run_dir / "_clock_skew.json"
     camera_skew = viewer_skew = 0.0
     if skew_file.exists():
         skew = json.loads(skew_file.read_text())
         camera_skew = skew.get("camera_skew_s", 0.0)
         viewer_skew = skew.get("viewer_skew_s", 0.0)
-    summary = build_summary(camera_data, viewer_data,
+
+    camera_data = [read_result(p) for p in camera_results]
+    viewer_data = [read_result(p) for p in viewer_results]
+    summary = build_summary(streams_meta, camera_data, viewer_data,
                             camera_skew=camera_skew,
                             viewer_skew=viewer_skew)
     (run_dir / "summary.json").write_text(json.dumps(summary, indent=2))

@@ -271,6 +271,7 @@ class Egress:
     rtcp_port: int                         # always port+1 today; injected
     host: str                              # destination (peer's IP); injected from scenario.actors.viewer.host
     bind_host: str                         # local bind for RTCP listener; injected from scenario.actors.camera.host
+    stream_id: int                         # this stream's index in streams[]; injected by project_to_roles
 
 
 # --- congestion control ----------------------------------------------------
@@ -395,6 +396,7 @@ class Ingress:
     rtcp_port: int                         # always port+1 today; injected
     host: str                              # local bind; injected from scenario.actors.viewer.host
     peer_host: str                         # where to send RTCP back; injected from scenario.actors.camera.host
+    stream_id: int                         # this stream's index in streams[]; injected by project_to_roles
 
 
 @dataclass

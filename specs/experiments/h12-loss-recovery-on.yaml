@@ -4,7 +4,7 @@ description: "H12 \u2014 SCReAM loss sweep with recovery ON (NACK/RTX), the H10 
   \ 1, 2} % as H10; only recovery differs. Three\nreps each.\n"
 reps: 3
 varies:
-- network
+- streams[0].network
 - hooks.pre_run
 configurations:
 - id: 319

@@ -1,12 +1,11 @@
 meta:
   name: distributed_gcc_5g_rb_nack0_budget0
-  description: 'Distributed (aum->veda) GCC at 720p30 over `mahimahi-5g-rb-100ms`. Video uses
-    915 frames to cover the full ~30.5s trace. Recovery: none. Latency budget: 0 ms.'
+  description: 'Distributed (aum->veda) GCC at 720p30 over `mahimahi-5g-rb-100ms`.
+    Video uses 915 frames to cover the full ~30.5s trace. Recovery: none. Latency
+    budget: 0 ms.'
   flags:
   - sudo
   - gcc
-video: ball-720p30-30s
-network: mahimahi-5g-rb-100ms
 scenario:
   actors:
     camera: {}
@@ -21,20 +20,28 @@ scenario:
   - encoded_bitrate
   - decoder_errors
   - late_drops
-codec: vp8
-encoder:
-  bitrate_kbps: 1500
-  keyframe_interval_frames: 60
-congestion_control:
-  algorithm: gcc
-  init_bitrate_kbps: 1500
-  min_bitrate_kbps: 200
-  max_bitrate_kbps: 4000
-sink:
-  backend: fake
-  sync: false
-recovery:
-  nack: false
-  pli: false
-  fec: false
-latency_budget_ms: 0
+sync:
+  mode: shared_epoch
+  termination: all
+streams:
+- name: main
+  priority: 0
+  video: ball-720p30-30s
+  codec: vp8
+  encoder:
+    bitrate_kbps: 1500
+    keyframe_interval_frames: 60
+  congestion_control:
+    algorithm: gcc
+    init_bitrate_kbps: 1500
+    min_bitrate_kbps: 200
+    max_bitrate_kbps: 4000
+  sink:
+    backend: fake
+    sync: false
+  recovery:
+    nack: false
+    pli: false
+    fec: false
+  latency_budget_ms: 0
+  network: mahimahi-5g-rb-100ms
