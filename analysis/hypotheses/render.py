@@ -113,11 +113,19 @@ def _claim_structure(report: dict[str, Any]) -> tuple[str | None, list[str]]:
     return cs.get("conclusion"), list(cs.get("subclaims") or [])
 
 
+def _as_text(x: Any) -> str:
+    """A finding written with a ': ' parses as a YAML mapping ({k: v}); rejoin
+    it back into the intended sentence so it renders as prose, not a dict."""
+    if isinstance(x, dict):
+        return "; ".join(f"{k}: {v}" for k, v in x.items())
+    return str(x)
+
+
 def _conclusions(spec: dict[str, Any]) -> tuple[list[str], list[str]]:
     conclusions = spec.get("conclusions") or {}
     return (
-        list(conclusions.get("established") or []),
-        list(conclusions.get("limits") or []),
+        [_as_text(x) for x in (conclusions.get("established") or [])],
+        [_as_text(x) for x in (conclusions.get("limits") or [])],
     )
 
 

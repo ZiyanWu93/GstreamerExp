@@ -133,9 +133,9 @@
 
 <p class="meta"><strong>Findings</strong></p>
 <ul>
-<li>{'Inconclusive': 'netem jitter collapses delivery immediately with recovery off, but the data is too sparse to pin a boundary. At 0 ms jitter the viewer gets 97% of frames; at 5 ms it gets about 5%, and the higher-jitter cells deliver near zero and intermittently fail (9 of 18 runs returned no frames, leaving most jitter levels with a single successful rep).'}</li>
-<li>{'The mechanism is reordering, not corruption. At 5 ms jitter the delivered frames show no decoder errors (33 of 600 frames, zero depay/decoder warnings)': "packets are not damaged, they arrive too out-of-order for the receiver jitter buffer and are dropped. netem's `delay 20ms 5ms` gives each packet an independent random delay, which reorders aggressively; real network jitter usually preserves order better."}</li>
-<li>{'Consistent with the loss finding (H10)': 'without recovery, the RTP path is fragile to anything that disturbs packet arrival. But the netem reorder model likely overstates real jitter, and with half the runs failing the curve is not trustworthy. A clean jitter boundary needs a reorder-controlled jitter model (rate-paced or correlated delay) or recovery on; both are good follow-ups.'}</li>
+<li>Inconclusive: netem jitter collapses delivery immediately with recovery off, but the data is too sparse to pin a boundary. At 0 ms jitter the viewer gets 97% of frames; at 5 ms it gets about 5%, and the higher-jitter cells deliver near zero and intermittently fail (9 of 18 runs returned no frames, leaving most jitter levels with a single successful rep).</li>
+<li>The mechanism is reordering, not corruption. At 5 ms jitter the delivered frames show no decoder errors (33 of 600 frames, zero depay/decoder warnings): packets are not damaged, they arrive too out-of-order for the receiver jitter buffer and are dropped. netem's `delay 20ms 5ms` gives each packet an independent random delay, which reorders aggressively; real network jitter usually preserves order better.</li>
+<li>Consistent with the loss finding (H10): without recovery, the RTP path is fragile to anything that disturbs packet arrival. But the netem reorder model likely overstates real jitter, and with half the runs failing the curve is not trustworthy. A clean jitter boundary needs a reorder-controlled jitter model (rate-paced or correlated delay) or recovery on; both are good follow-ups.</li>
 </ul>
 
 
@@ -144,8 +144,8 @@
 <li>Recovery is off (nack/pli/fec false), matching H6-H10. With NACK/RTX on, late-but-recoverable packets could be retransmitted and the boundary would move.</li>
 <li>netem jitter uses a uniform distribution around a 20 ms base delay; a normal or pareto distribution would reorder differently at the same nominal jitter.</li>
 <li>The receiver jitter buffer size (rtpjitterbuffer latency) sets where absorption ends; this measures the system as configured, not a tuned buffer.</li>
-<li>{'A re-run with a 200 ms receiver budget was tried to rule out a wait-budget cause (the budget-0 setting that neutered NACK in H12). It did not help': '50 ms jitter still delivered 0 frames, in fact worse, because latency_budget_ms is a frame deadline (drop-if-later), not a reorder buffer. So the collapse is the netem reordering itself, not the budget. A clean jitter result needs a reorder-controlled netem model (rate-paced or correlated delay) or an explicitly enlarged rtpjitterbuffer; both are real investigations, not config tweaks.'}</li>
-<li>{'Single arm (only scream|gcc exist). Workload-specific (realmotion-avi, 1280x1024 MJPEG, 10 fps, 60 s), 4000 kbps ceiling. 3 reps per cell. Boundary signal is frame delivery': 'usable line 80%, collapse below 50%.'}</li>
+<li>A re-run with a 200 ms receiver budget was tried to rule out a wait-budget cause (the budget-0 setting that neutered NACK in H12). It did not help: 50 ms jitter still delivered 0 frames, in fact worse, because latency_budget_ms is a frame deadline (drop-if-later), not a reorder buffer. So the collapse is the netem reordering itself, not the budget. A clean jitter result needs a reorder-controlled netem model (rate-paced or correlated delay) or an explicitly enlarged rtpjitterbuffer; both are real investigations, not config tweaks.</li>
+<li>Single arm (only scream|gcc exist). Workload-specific (realmotion-avi, 1280x1024 MJPEG, 10 fps, 60 s), 4000 kbps ceiling. 3 reps per cell. Boundary signal is frame delivery: usable line 80%, collapse below 50%.</li>
 </ul>
 
 

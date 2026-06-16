@@ -44,8 +44,16 @@ VERDICT_ROWS = [
 ]
 
 
+def as_text(x) -> str:
+    """A finding written with a ': ' parses as a YAML mapping ({k: v}); rejoin
+    it back into the intended sentence so it renders as prose, not a dict."""
+    if isinstance(x, dict):
+        return "; ".join(f"{k}: {v}" for k, v in x.items())
+    return str(x)
+
+
 def esc(x) -> str:
-    return html.escape(str(x), quote=True)
+    return html.escape(as_text(x), quote=True)
 
 
 def fmt(v) -> str:

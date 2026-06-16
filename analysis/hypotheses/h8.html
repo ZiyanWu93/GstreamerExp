@@ -131,7 +131,7 @@
 <ul>
 <li>A faster ramp does not recover quality on the capacity-step link. Decoded PSNR is highest at the slowest ramp (mul_increase 0.02 gives 38.8 dB) and declines as the ramp gets more aggressive, bottoming at 0.2 (36.6 dB) and recovering only partially to 37.5 dB at 0.5. It never rises above the slow-ramp baseline, so the prediction that PSNR rises with the ramp is refuted.</li>
 <li>The fixed-link control behaved as predicted. With no capacity change, ramp speed barely moves PSNR (39.3 to 39.7 dB, swing 0.46 dB). That the effect appears only on the capacity-step link (swing 2.20 dB) confirms it is a real network-dependent response, not a workload artifact. The 5G trace is also non-rising (32.2 down to 30.2 dB, swing 2.03 dB).</li>
-<li>{'Two SCReAM knobs now fail to be quality levers for this workload': 'the queue-delay-target (H6, H7) and the multiplicative-increase ramp (H8). If anything a more aggressive ramp slightly hurts on the capacity-step link, consistent with overshoot causing queue buildup and loss so frames arrive stale through the 300 kbps trough. The conservative slow ramp wins.'}</li>
+<li>Two SCReAM knobs now fail to be quality levers for this workload: the queue-delay-target (H6, H7) and the multiplicative-increase ramp (H8). If anything a more aggressive ramp slightly hurts on the capacity-step link, consistent with overshoot causing queue buildup and loss so frames arrive stale through the 300 kbps trough. The conservative slow ramp wins.</li>
 </ul>
 
 

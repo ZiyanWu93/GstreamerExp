@@ -130,8 +130,8 @@
 <p class="meta"><strong>Findings</strong></p>
 <ul>
 <li>SCReAM's delay-based control degenerates as base delay grows. On a fixed 5 Mbps link with no loss, decoded PSNR falls from 39.9 dB at 20 ms one-way delay to 34.9 dB (50 ms), 34.1 dB (100 ms), 29.5 dB (200 ms), and 24.3 dB at 400 ms, crossing the 25 dB usable floor between 200 and 400 ms. A degeneration boundary clearly exists inside the tested range.</li>
-<li>{'Quality and delivery fall together at high delay. p95 frame latency climbs from tens of ms to 720 ms at 800 ms one-way delay (partly the added netem delay itself, partly queue buildup as the feedback loop slows), and frame delivery collapses': 'the viewer received only 229 of 600 frames at 800 ms versus about 587 at 20 ms. The 800 ms PSNR (25.5 dB) reads slightly above 400 ms only because so few frames survive to be scored.'}</li>
-<li>{'The practical operating limit for this workload is roughly 200 ms one-way delay (about 400 ms RTT)': 'below it SCReAM keeps video usable, beyond it quality and delivery drop off. This is the first of the three boundary axes; loss and jitter are next.'}</li>
+<li>Quality and delivery fall together at high delay. p95 frame latency climbs from tens of ms to 720 ms at 800 ms one-way delay (partly the added netem delay itself, partly queue buildup as the feedback loop slows), and frame delivery collapses: the viewer received only 229 of 600 frames at 800 ms versus about 587 at 20 ms. The 800 ms PSNR (25.5 dB) reads slightly above 400 ms only because so few frames survive to be scored.</li>
+<li>The practical operating limit for this workload is roughly 200 ms one-way delay (about 400 ms RTT): below it SCReAM keeps video usable, beyond it quality and delivery drop off. This is the first of the three boundary axes; loss and jitter are next.</li>
 </ul>
 
 
