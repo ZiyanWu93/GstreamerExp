@@ -1714,13 +1714,22 @@ stop_session(session_id)           → ack</pre>
       metadata plus a source timestamp pinned to a real capture clock.
     </li>
     <li class="done">
-      <strong>Today.</strong> Synthetic (<code>videotestsrc</code>) and
-      file-backed (<code>filesrc</code>) implementations under one
-      assembly point in <code>gstexp/camera.py</code>.
+      <strong>Today.</strong> Synthetic (<code>videotestsrc</code>),
+      file-backed (<code>filesrc</code>), and a camera backend
+      (Spinnaker/PySpin prep) under one assembly point in
+      <code>gstexp/camera.py</code> — now driving <em>N</em> streams per
+      run, not a hardcoded single source.
+    </li>
+    <li class="done">
+      <strong>Camera scaffold.</strong> The camera <code>Source</code>
+      contract is in: fake mode (a recorded clip through the real
+      conversion tail) runs and is verified live; the <code>appsrc</code> +
+      conversion chain a real sensor will feed is built and exercised.
     </li>
     <li class="todo">
-      <strong>Tomorrow.</strong> A PySpin / V4L2 / camera-SDK bridge
-      that fills the same struct via <code>appsrc</code>.
+      <strong>Tomorrow (hardware).</strong> The real PySpin acquisition
+      thread (<code>mode: real</code>) — the one explicit hardware seam.
+      V4L2 / other SDKs slot into the same backend.
     </li>
     <li>
       <strong>Contract must cover</strong> the things only real hardware
@@ -1789,13 +1798,19 @@ stop_session(session_id)           → ack</pre>
       exposes an offset estimate, and stamps every metric record so
       latencies stay honest across two real clocks.
     </li>
-    <li class="todo">
-      <strong>Today (to add).</strong> An NTP-derived estimate plus a
-      UDP exchange similar to UMN's <code>TREQ / TRES</code>.
+    <li class="done">
+      <strong>Today.</strong> A per-host clock-skew estimate
+      (controller↔host SSH measurement) plus a shared-epoch start barrier
+      and a <code>sync_error</code> metric: all of a run's cameras release
+      together (same-host skew cancels exactly in max−min), so cross-stream
+      presentation skew is measured and minimized — ~400→1&nbsp;ms median on
+      homogeneous streams.
     </li>
     <li class="todo">
-      <strong>Tomorrow.</strong> A PTP-aware implementation when the
-      deployment supports it.
+      <strong>Tomorrow (cross-host absolute time).</strong> Map wall-clock
+      to capture-time across two hosts — an NTP / <code>TREQ&nbsp;/&nbsp;TRES</code>
+      exchange, then PTP (<code>sync.mode: ptp</code>) — so glass-to-glass
+      stays defensible once camera and viewer are on different clocks.
     </li>
     <li>
       <strong>Why it matters.</strong> Without this, glass-to-glass
@@ -1813,9 +1828,16 @@ stop_session(session_id)           → ack</pre>
       extensions: absolute capture timestamp, source frame id, optional
       geo (lat / lon / RTK status).
     </li>
+    <li class="done">
+      <strong>Seam in place.</strong> The camera <code>Source</code>
+      attaches a frame-clock <code>GstReferenceTimestampMeta</code>
+      (a synthetic timestamp today) — the precursor a real capture
+      timestamp will fill, with read-back already used by the sync path.
+    </li>
     <li class="todo">
-      <strong>Today (to add).</strong> Wire the carry path through
-      camera, SCReAM / GCC, and viewer even when fields are zeros.
+      <strong>Today (to add).</strong> Carry it through camera,
+      SCReAM / GCC, and viewer as an RTP header extension, even when
+      fields are zeros.
     </li>
     <li class="todo">
       <strong>Tomorrow.</strong> Real GPS and camera-HW values
@@ -1840,8 +1862,10 @@ stop_session(session_id)           → ack</pre>
     </li>
     <li class="done">
       <strong>Today.</strong> The validated spec system in
-      <code>gstexp/validation.py</code> covers most of the config and
-      the report.
+      <code>gstexp/validation.py</code> covers most of the config and the
+      report, and the runner now orchestrates a full <em>N</em>-stream run:
+      2<em>N</em> workers, per-stream spec/result files, and a wait-all
+      teardown where a wedged stream fails alone.
     </li>
     <li class="todo">
       <strong>Tomorrow.</strong> A runtime <code>Session</code> object
@@ -1885,15 +1909,21 @@ stop_session(session_id)           → ack</pre>
     <h3 style="margin-top: 0;">Phase 1 · no hardware needed</h3>
     <p class="small" style="margin: 0 0 8px 0;">Do now.</p>
     <ul>
-      <li>Land contracts <strong>1, 2, 3, 5</strong>.</li>
-      <li>Refactor the pipeline so one stream is <code>N = 1</code>,
-        not hardcoded.</li>
-      <li>Adaptive resolution as a CC actuator, wired to SCReAM's
-        <code>current-max-bitrate</code> and GCC's
+      <li class="todo">Land contracts <strong>1, 2, 3, 5</strong>
+        (Source: camera scaffold done; RTPMeta: frame-clock seam done;
+        Encoder, Sink: open).</li>
+      <li class="done">Refactor the pipeline so one stream is <em>N</em>,
+        not hardcoded — the multi-stream spine shipped (2<em>N</em>
+        workers, per-stream shaped lane + metrics + verdict).</li>
+      <li class="done">Cross-stream sync — shared-epoch start barrier +
+        <code>sync_error</code> (this is part of contract 4, landed ahead
+        of its phase).</li>
+      <li class="todo">Adaptive resolution as a CC actuator, wired to
+        SCReAM's <code>current-max-bitrate</code> and GCC's
         <code>estimated-bitrate</code>. Falls out of the encoder
-        abstraction.</li>
-      <li>Partial-frame decode at the receiver.</li>
-      <li>Dual-end forensic record (falls out of the sink abstraction).</li>
+        abstraction. <em>— next flagship.</em></li>
+      <li class="todo">Partial-frame decode at the receiver.</li>
+      <li class="todo">Dual-end forensic record (falls out of the sink abstraction).</li>
     </ul>
     <p class="small">
       <strong>Outcome:</strong> honest claims about SCReAM / GCC across
@@ -1961,15 +1991,25 @@ stop_session(session_id)           → ack</pre>
   work that does not belong to any one contract (loss recovery,
   security, multi-stream, audio, operations).
 </p>
+<p class="small">
+  How to read it: status is binary — a capability is either
+  <span class="done">in place</span> or <span class="todo">to add</span>.
+  Partial work is split into a done line plus a to-add line, so every
+  green item is something that actually runs today, not a direction.
+  Current as of 2026-06 (multi-stream + cross-stream sync + camera-source
+  scaffold landed; adaptive resolution is the next near-term item — see
+  the ordered list in <code>docs/TODO.md</code>).
+</p>
 
 <div class="feature-block" id="todo-source">
   <h3>1 · Source <span class="small">→ <a href="#contract-source">§6.1 / Source</a></span></h3>
   <ul>
     <li class="done">Synthetic source (<code>videotestsrc</code>)</li>
     <li class="done">File-backed source (<code>filesrc</code> → <code>decodebin</code>)</li>
-    <li class="todo">Real cameras: PySpin / V4L2 / camera-SDK bridge into <code>appsrc</code></li>
-    <li class="todo">Camera hardware-timestamp metadata as a <code>GstMeta</code> on the buffer</li>
-    <li class="todo">Multi-camera rigs (teleop typically 3–6 streams)</li>
+    <li class="done">Camera source backend (Spinnaker/PySpin prep): registered + validated; fake mode (recorded clip through the real conversion tail) runs and is verified live on aum/veda</li>
+    <li class="todo">Real PySpin acquisition (<code>mode: real</code>) into <code>appsrc</code> — the one hardware seam; V4L2 / other SDKs reuse the same backend</li>
+    <li class="done">Camera frame-clock metadata seam: <code>GstReferenceTimestampMeta</code> on the buffer (synthetic timestamp today; the real HW value drops in with the camera)</li>
+    <li class="done">Multi-camera rigs (teleop typically 3–6 streams) — <code>streams:</code> list, 2N workers, per-stream lane/metrics (see config 400)</li>
     <li class="todo">Source robustness: dropped frames, exposure jitter, hot-unplug, partial reads</li>
     <li class="todo">Camera calibration intrinsics / extrinsics passthrough</li>
   </ul>
@@ -2024,16 +2064,17 @@ stop_session(session_id)           → ack</pre>
   <ul>
     <li class="todo">NTP-derived offset estimate</li>
     <li class="todo">UDP <code>TREQ / TRES</code>-style exchange as fallback</li>
-    <li class="todo">PTP-aware implementation for production</li>
-    <li class="todo">Offset stamped on every metric record so latencies stay honest across two hosts</li>
+    <li class="todo">PTP-aware implementation for production (<code>sync.mode: ptp</code> seam)</li>
+    <li class="done">Per-host clock-skew offset measured (controller↔host) and subtracted from latency deltas so they stay honest</li>
     <li class="todo">Glass-to-glass latency derived from the RTP-extension capture timestamp plus <code>ClockSync</code> offset</li>
-    <li class="todo">Cross-stream synchronization (camera <code>N</code>'s frame at time <code>T</code> arrives with the same <code>T</code> across all cameras), RTCP SR-based</li>
+    <li class="done">Cross-stream synchronization (camera <code>N</code>'s frame at time <code>T</code> arrives with the same <code>T</code>) — shared-epoch start barrier + <code>sync_error</code> metric; same-host, so the skew artifact cancels exactly (RTCP-SR / cross-host absolute is the PTP follow-up)</li>
   </ul>
 </div>
 
 <div class="feature-block" id="todo-rtpmeta">
   <h3>5 · RTPMeta <span class="small">→ <a href="#contract-rtpmeta">§6.1 / RTPMeta</a></span></h3>
   <ul>
+    <li class="done">Frame-clock <code>GstReferenceTimestampMeta</code> attached on the source buffer (synthetic timestamp today) — the precursor the RTP-extension carriage and real capture values reuse</li>
     <li class="todo">Absolute capture timestamp as an RTP header extension (RFC 6051-style)</li>
     <li class="todo">Source frame id as an RTP header extension</li>
     <li class="todo">Optional geo (lat / lon / RTK status) as an RTP header extension</li>
@@ -2047,9 +2088,10 @@ stop_session(session_id)           → ack</pre>
   <ul>
     <li class="done">Validated spec system (<code>gstexp/validation.py</code>) covers config and report</li>
     <li class="done">Hypothesis framework with pass / fail verifiers (H1–H5)</li>
+    <li class="done"><em>N</em>-stream run orchestration: 2<em>N</em> workers, per-stream spec/result files, wait-all teardown (a wedged stream fails alone)</li>
+    <li class="done">Latency-budget enforcement — <code>LateDrops</code> metric: a frame older than <code>latency_budget_ms</code> at convert.src is dropped and counted (budget 0 disables)</li>
     <li class="todo">Runtime <code>Session</code> object with <code>start / run / stop / replay</code> lifecycle</li>
     <li class="todo">Status surface (JSON or WebSocket): current bitrate, RTT, loss, frame counters, health</li>
-    <li class="todo">Latency-budget enforcement (drop frames when budget exceeded; do not queue)</li>
     <li class="todo">Operator-side jitter buffer with explicit depth and policy</li>
   </ul>
 </div>
@@ -2074,10 +2116,10 @@ stop_session(session_id)           → ack</pre>
     <li class="done">Loss recovery: PLI (<code>do-lost</code> on <code>rtpjitterbuffer</code> → AVPF feedback)</li>
     <li class="done">Loss recovery: ULPFEC (<code>rtpulpfecenc</code> + <code>rtpstorage</code> + <code>rtpulpfecdec</code>)</li>
     <li class="done">Declarative network impairment: <code>tc tbf</code> + <code>netem</code> (uniform iid or Gilbert-Elliott bursty loss)</li>
-    <li class="todo">Multi-stream refactor: one pipeline, <code>N</code> parallel chains under one <code>rtpbin</code> (see <a href="#arch-multistream">§1.5</a>)</li>
-    <li class="todo">Multi-stream priority-ordered degradation ladder (third controller arm alongside SCReAM / GCC)</li>
+    <li class="done">Multi-stream: <code>N</code> independent worker processes per role (each its own <code>CameraPipeline</code>/<code>ViewerPipeline</code>, port pair, and shaped tc lane), spawned + supervised as 2<code>N</code> workers — chosen over N-chains-under-one-<code>rtpbin</code> to reuse the single-stream pipelines verbatim (revises <a href="#arch-multistream">§1.5</a>)</li>
+    <li class="todo">Multi-stream priority-ordered degradation ladder (the <code>streams[].priority</code> field is in the schema; the time-varying ladder is unbuilt)</li>
     <li class="todo">SRTP / DTLS encryption (declared in spec model with wire-in stub)</li>
-    <li class="todo">Per-stream priority / DSCP marking</li>
+    <li class="todo">Per-stream priority / DSCP marking (priority field exists; DSCP not yet wired)</li>
     <li class="todo">Redundant transport / multi-path (LTE + 5G failover)</li>
     <li class="todo">Operations: structured health probe, graceful shutdown, version metadata threaded through every metric</li>
     <li class="todo">Decoder error concealment / freeze-on-bad-frame strategy</li>
