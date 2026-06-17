@@ -100,6 +100,16 @@ def _load_decoder(d: dict) -> Decoder:
 from gstexp.metrics import make_metrics
 
 
+def _seconds_until(start_at, now: float) -> float:
+    """Seconds to wait before releasing the pipeline to hit a shared start
+    epoch. 0 when no epoch is set or it has already passed (in which case
+    the camera releases immediately — still aligned with its siblings, who
+    compute the same already-passed target)."""
+    if not start_at:
+        return 0.0
+    return max(0.0, float(start_at) - now)
+
+
 def main():
     parser = argparse.ArgumentParser(description="Pipeline worker")
     parser.add_argument("spec", help="Camera or viewer JSON")
@@ -115,6 +125,13 @@ def main():
                              "a tee + autovideosink branch alongside the measurement "
                              "sink. autovideosink reads DISPLAY from the process "
                              "environment; the runner (expo.py) sets that.")
+    parser.add_argument("--start-at", type=float, default=None,
+                        help="Camera only: shared-epoch start barrier. A target "
+                             "wall-clock time IN THIS HOST'S CLOCK; the camera "
+                             "waits until then to go PLAYING so all of a run's "
+                             "cameras (same host, same clock) release their first "
+                             "frame together. The controller derives it from one "
+                             "epoch + the measured host skew.")
     args = parser.parse_args()
 
     if args.pid_file:
@@ -231,6 +248,18 @@ def main():
 
     GLib.timeout_add(100, lambda: True)   # keep Python signals responsive
 
+    if role == "camera" and args.start_at:
+        # Shared-epoch start barrier (see --start-at): preroll to PAUSED,
+        # then release to PLAYING at the shared instant so all of this run's
+        # cameras (same host, same clock) emit their first frame together.
+        # Prerolling first keeps the PLAYING->first-frame latency uniform
+        # across streams, so the barrier aligns the actual send, not just
+        # the set_state() call.
+        gst_pipeline.set_state(Gst.State.PAUSED)
+        gst_pipeline.get_state(5 * Gst.SECOND)        # block until prerolled
+        wait_s = _seconds_until(args.start_at, time.time())
+        if wait_s:
+            time.sleep(wait_s)
     started = time.time()
     gst_pipeline.set_state(Gst.State.PLAYING)
     try:

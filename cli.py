@@ -104,6 +104,8 @@ def run_configuration(config_arg: str, *,
     streams_meta = [{"name": st["name"], "priority": st["priority"],
                      "fps": st["source"]["fps"]}
                     for st in doc["streams"]]
+    # shared_epoch mode arms the camera start barrier (sync.mode is required).
+    start_barrier = doc["sync"]["mode"] == "shared_epoch"
 
     setup_delay = float(scenario["setup_delay_seconds"])
     drain_delay = float(scenario["drain_delay_seconds"])
@@ -187,6 +189,7 @@ def run_configuration(config_arg: str, *,
             during_hooks=during_hooks,
             post_hooks=post_hooks,
             metric_args=metric_args,
+            start_barrier=start_barrier,
         )
     else:
         run_local(
@@ -206,6 +209,7 @@ def run_configuration(config_arg: str, *,
             post_hooks=post_hooks,
             view_display=view_display,
             view_xauthority=view_xauthority,
+            start_barrier=start_barrier,
         )
 
     skew_file = run_dir / "_clock_skew.json"

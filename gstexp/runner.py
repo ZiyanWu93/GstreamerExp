@@ -59,6 +59,13 @@ _SKEW_CACHE_TTL = 300.0   # seconds; skew is stable enough over this window
 # wedged ones into the ExitStack cleanup path.
 _WORKER_WAIT_TIMEOUT_S = 90.0
 
+# Lead time for the shared-epoch start barrier (sync.mode == shared_epoch):
+# how far in the future to set the cameras' common release instant, leaving
+# room for all of them to spawn and preroll to PAUSED before it. Generous —
+# a camera that isn't ready in time releases immediately (still aligned with
+# any sibling in the same boat), it just doesn't gain the barrier.
+_BARRIER_LEAD_S = 4.0
+
 
 def _worker_payload_rsync_args(project_root: Path, host: str,
                                remote_project_root: str) -> list[str]:
@@ -386,7 +393,7 @@ def run_distributed(
     view_display, view_xauthority,
     setup_delay: float, drain_delay: float,
     pre_hooks: list, during_hooks: list, post_hooks: list,
-    metric_args: list,
+    metric_args: list, start_barrier: bool = False,
 ) -> None:
     """Controller/worker runner for N streams: sync payload, spawn 2N
     workers via SSH (N cameras on one host, N viewers on the other),
@@ -507,6 +514,20 @@ def run_distributed(
 
             time.sleep(setup_delay)
 
+            # Shared-epoch start barrier: one release instant for ALL
+            # cameras. They share the camera host's clock, so converting the
+            # controller epoch by camera_skew makes them emit their first
+            # frame together (relative alignment is exact regardless of skew
+            # accuracy — same skew for all; skew just keeps the target a
+            # valid near-future camera-local time). Viewers are already up.
+            camera_args = extra_args
+            if start_barrier:
+                camera_start_at = time.time() + _BARRIER_LEAD_S + camera_skew
+                camera_args = f"{extra_args} --start-at {camera_start_at:.6f}".strip()
+                print(f"[scenario] start barrier: cameras release at "
+                      f"camera-local {camera_start_at:.3f} (+{_BARRIER_LEAD_S}s)",
+                      flush=True)
+
             # Cameras: spawn all N, same registration shape.
             print(f"[controller] starting {n} camera worker(s) on {camera_host}",
                   flush=True)
@@ -514,7 +535,7 @@ def run_distributed(
             for i in range(n):
                 cp = _ssh_popen(camera_host, _ssh_worker_cmd(
                     _remote('camera', i, 'spec.json'), _remote('camera', i, 'json'),
-                    _remote('camera', i, 'pid'), camera_env_str, extra_args))
+                    _remote('camera', i, 'pid'), camera_env_str, camera_args))
                 camera_procs.append(cp)
                 stack.callback(_fetch_and_cleanup_remote, camera_host, run_id,
                                _remote('camera', i, 'json'), camera_results[i])
@@ -560,7 +581,7 @@ def run_local(
     wrap_camera: list, wrap_viewer: list,
     setup_delay: float, drain_delay: float,
     pre_hooks: list, during_hooks: list, post_hooks: list,
-    view_display=None, view_xauthority=None,
+    view_display=None, view_xauthority=None, start_barrier: bool = False,
 ) -> None:
     """Local runner: spawn 2N workers as child processes on this host —
     N viewers, then (after setup_delay) N cameras. One single-stream spec
@@ -616,12 +637,19 @@ def run_local(
                                spec_path=viewer_specs[i], label=f"viewer[{i}]")
 
             time.sleep(setup_delay)
+            # Shared-epoch start barrier: same host, so no skew correction —
+            # all cameras release at one local instant.
+            barrier_args = []
+            if start_barrier:
+                camera_start_at = time.time() + _BARRIER_LEAD_S
+                barrier_args = ["--start-at", f"{camera_start_at:.6f}"]
             print(f"[scenario] starting {n} camera(s)", flush=True)
             camera_procs = []
             for i in range(n):
                 cp = subprocess.Popen(
                     _build_cmd(wrap_camera, child_env, str(camera_specs[i]),
-                               "--result-out", str(camera_results[i])),
+                               "--result-out", str(camera_results[i]),
+                               *barrier_args),
                     env=child_env,
                 )
                 camera_procs.append(cp)

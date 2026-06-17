@@ -35,5 +35,21 @@ class TestWorkerPayloadSync(unittest.TestCase):
         self.assertNotIn("/scream/", joined)
 
 
+class TestStartBarrierHelper(unittest.TestCase):
+    """_seconds_until backs the shared-epoch start barrier: the camera waits
+    this long before PLAYING so a run's cameras (same host clock) release
+    together."""
+
+    def test_seconds_until(self):
+        try:
+            from gstexp.worker import _seconds_until
+        except Exception as e:                       # worker imports gi/Gst
+            self.skipTest(f"worker import needs GStreamer: {e}")
+        self.assertEqual(_seconds_until(None, 100.0), 0.0)   # no epoch
+        self.assertEqual(_seconds_until(0, 100.0), 0.0)      # falsy epoch
+        self.assertEqual(_seconds_until(105.0, 100.0), 5.0)  # future -> wait
+        self.assertEqual(_seconds_until(95.0, 100.0), 0.0)   # past -> immediate
+
+
 if __name__ == "__main__":
     unittest.main()
