@@ -218,12 +218,12 @@ class TestSourceBackend(unittest.TestCase):
         }
 
     def test_unknown_source_backend_rejected(self):
-        # `camera` (real v4l2-style hardware capture) is the next un-
-        # implemented backend — preserves the rejection-pathway test
-        # now that `file` works.
-        _stream0(self.doc)["source"]["backend"] = "camera"
+        # `v4l2` (direct kernel capture) is the next un-implemented backend —
+        # preserves the rejection-pathway test now that `camera`
+        # (Spinnaker/PySpin) works.
+        _stream0(self.doc)["source"]["backend"] = "v4l2"
         del _stream0(self.doc)["source"]["synthetic"]
-        with assert_validation_fails_with(self, "source.backend `camera` is not implemented"):
+        with assert_validation_fails_with(self, "source.backend `v4l2` is not implemented"):
             _resolve_and_validate(self.doc)
 
     def test_wrong_source_subblock_rejected(self):
@@ -264,6 +264,44 @@ class TestSourceBackend(unittest.TestCase):
         # is not checked for existence (it's a path on a different host).
         self._switch_to_file({"path": "/tmp/x.mp4", "loop": False})
         _resolve_and_validate(self.doc)   # must not raise
+
+    def _switch_to_camera(self, sub):
+        source = _stream0(self.doc)["source"]
+        del source["synthetic"]
+        source["backend"] = "camera"
+        source["camera"] = sub
+
+    def test_camera_fake_clip_well_formed_passes(self):
+        # Hardware-free fake mode fed by a recorded clip — the runnable path.
+        self._switch_to_camera({"mode": "fake", "pixel_format": "mono8",
+                                "fake_clip": "/data/realmotion.avi"})
+        _resolve_and_validate(self.doc)   # must not raise
+
+    def test_camera_real_mode_well_formed_passes(self):
+        self._switch_to_camera({"mode": "real", "pixel_format": "bayer_rggb",
+                                "serial": "21290932", "exposure_us": 5000})
+        _resolve_and_validate(self.doc)   # must not raise
+
+    def test_camera_missing_pixel_format_rejected(self):
+        self._switch_to_camera({"mode": "fake"})
+        with assert_validation_fails_with(self, "source.camera: missing key(s) ['pixel_format']"):
+            _resolve_and_validate(self.doc)
+
+    def test_camera_bad_mode_rejected(self):
+        self._switch_to_camera({"mode": "live", "pixel_format": "mono8"})
+        with assert_validation_fails_with(self, "source.camera.mode must be one of"):
+            _resolve_and_validate(self.doc)
+
+    def test_camera_bad_pixel_format_rejected(self):
+        self._switch_to_camera({"mode": "fake", "pixel_format": "yuv420"})
+        with assert_validation_fails_with(self, "source.camera.pixel_format must be one of"):
+            _resolve_and_validate(self.doc)
+
+    def test_camera_unknown_knob_rejected(self):
+        self._switch_to_camera({"mode": "fake", "pixel_format": "mono8",
+                                "bogus": 1})
+        with assert_validation_fails_with(self, "source.camera: unknown key"):
+            _resolve_and_validate(self.doc)
 
 
 class TestSinkConditionalRules(unittest.TestCase):
@@ -509,6 +547,22 @@ class TestDecodedPsnrConstraints(unittest.TestCase):
         _stream0(self.doc)["source"]["clock_overlay"] = True
         with assert_validation_fails_with(
                 self, "decoded_psnr metric requires clock_overlay == false"):
+            _resolve_and_validate(self.doc)
+
+    def test_decoded_psnr_rejects_camera(self):
+        # A live camera is not byte-reproducible on the viewer, so PSNR
+        # (which scores against a reproduced source) must be forbidden for
+        # the camera backend — by design, not omission.
+        self.doc["scenario"]["metrics"].append("decoded_psnr")
+        _stream0(self.doc)["source"] = {
+            "backend": "camera",
+            "width": 1280, "height": 1024, "fps": 10,
+            "num_frames": 600, "clock_overlay": False,
+            "camera": {"mode": "fake", "pixel_format": "mono8",
+                       "fake_clip": "/data/realmotion.avi"},
+        }
+        with assert_validation_fails_with(
+                self, "decoded_psnr metric requires source.backend in"):
             _resolve_and_validate(self.doc)
 
     def test_projection_omits_ground_truth_when_metric_off(self):

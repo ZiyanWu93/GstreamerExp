@@ -1,0 +1,47 @@
+meta:
+  name: camera_fake_smoke
+  description: >
+    Hardware-free smoke for the new `camera` source backend (Spinnaker
+    prep). A single fake-mode camera stream fed by the recorded
+    realmotion-avi clip, proving the camera backend integrates end-to-end
+    (build → negotiate I420 → VP8 → RTP) with no physical camera. Flip the
+    stream's video ref to a mode:real camera spec when the Spinnaker camera
+    arrives. No decoded_psnr (a live camera source isn't reproducible).
+  flags:
+  - scream
+scenario:
+  actors:
+    camera: {}
+    viewer: {}
+  setup_delay_seconds: 3.0
+  drain_delay_seconds: 1.0
+  metrics:
+  - frame_count
+  - frame_latency
+  - wire_bytes
+  - encoded_bitrate
+  - encoder_target_kbps
+sync:
+  mode: shared_epoch
+  termination: all
+streams:
+- name: cam
+  priority: 0
+  video: camera-fake-realmotion
+  codec: vp8
+  encoder:
+    bitrate_kbps: 1500
+    keyframe_interval_frames: 60
+  congestion_control:
+    algorithm: scream
+    init_bitrate_kbps: 1500
+    min_bitrate_kbps: 200
+    max_bitrate_kbps: 4000
+  sink:
+    backend: fake
+    sync: false
+  recovery:
+    nack: false
+    pli: false
+    fec: false
+  latency_budget_ms: 0

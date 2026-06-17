@@ -1,0 +1,30 @@
+name: camera-fake-realmotion
+description: |
+  Hardware-free CameraSource stand-in for the Spinnaker/PySpin integration
+  prep (no physical camera yet). backend: camera, mode: fake — decodes the
+  recorded realmotion-avi clip (REAL content; honors the recorded-video
+  rule) and runs it through the camera conversion tail (videoconvert →
+  videoscale → videorate → I420), so the new `camera` source backend is
+  exercised end-to-end without a camera or the Spinnaker SDK.
+
+  pixel_format documents the native format the real sensor will emit
+  (bayer_rggb — a typical color machine-vision sensor); in fake_clip mode
+  the clip is decoded directly, so the bayer2rgb step is NOT applied here —
+  that path is covered by tests/test_camera_source.py. When the camera
+  arrives, flip mode: real, drop fake_clip, and the SAME tail accepts the
+  live frames.
+
+  fake_clip points at the clip on the CAMERA host (aum), same path as
+  realmotion-avi. decoded_psnr is NOT usable with a camera source (a live
+  sensor isn't byte-reproducible) — the validator rejects that combination.
+source:
+  backend: camera
+  width: 1280
+  height: 1024
+  fps: 10
+  num_frames: 600
+  clock_overlay: false
+  camera:
+    mode: fake
+    pixel_format: bayer_rggb
+    fake_clip: /home/ziyan/teleop_clips/realmotion.avi

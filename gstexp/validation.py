@@ -82,20 +82,30 @@ _BLOCK_SCHEMAS = {
 # class in pipeline_config (SyntheticSource today). The validator
 # rejects unknown values rather than letting them slip through to a
 # confusing GStreamer "no element <foo>" error at pipeline-build time.
-_IMPLEMENTED_SOURCE_BACKENDS = {"synthetic", "file"}
+_IMPLEMENTED_SOURCE_BACKENDS = {"synthetic", "file", "camera"}
 
 # Source has shared fields (apply to every backend) plus a discriminator
 # and an optional sub-block per backend with backend-specific knobs.
 # Mirror the congestion_control / codec discriminator pattern.
 _SOURCE_REQUIRED = {"backend", "width", "height", "fps",
                     "num_frames", "clock_overlay"}
-_SOURCE_OPTIONAL_BLOCKS = {"synthetic", "file"}     # one entry per real backend
+_SOURCE_OPTIONAL_BLOCKS = {"synthetic", "file", "camera"}  # one per real backend
 
 # Per-backend allowed knob sets. When a new backend lands, register its
 # sub-block keys here AND in the _IMPLEMENTED_SOURCE_BACKENDS registry
 # AND in pipeline_config (new dataclass) AND in worker.py (loader).
 _SYNTHETIC_KNOBS = {"pattern"}
 _FILE_KNOBS = {"path", "loop"}
+# Camera (Spinnaker/PySpin) backend. mode + pixel_format are required; the
+# rest carry dataclass defaults so they're optional in the sub-block.
+# Pixel formats mirror pipeline_config._CAMERA_NATIVE_CAPS (kept here as a
+# literal so validation stays free of the gi/Gst import).
+_CAMERA_REQUIRED = {"mode", "pixel_format"}
+_CAMERA_OPTIONAL = {"serial", "fake_clip", "exposure_us", "gain_db"}
+_CAMERA_KNOBS = _CAMERA_REQUIRED | _CAMERA_OPTIONAL
+_CAMERA_MODES = {"fake", "real"}
+_CAMERA_PIXEL_FORMATS = {"bayer_rggb", "bayer_grbg", "bayer_gbrg",
+                         "bayer_bggr", "mono8", "rgb", "yuy2"}
 _TOP_LEVEL_REQUIRED = {"meta", "scenario", "streams", "sync"}
 _TOP_LEVEL_OPTIONAL = {"hooks"}
 _TOP_LEVEL_KEYS = _TOP_LEVEL_REQUIRED | _TOP_LEVEL_OPTIONAL
@@ -824,6 +834,32 @@ def _validate_source(source, fail) -> None:
         # We deliberately don't check that the path EXISTS — it's a path
         # on the camera host, not the controller. The pipeline fails
         # loudly at run time if the file is missing or unreadable.
+    elif backend == "camera":
+        missing_sub = _CAMERA_REQUIRED - set(sub)
+        if missing_sub:
+            fail(f"source.camera: missing key(s) {sorted(missing_sub)}")
+        unknown_sub = set(sub) - _CAMERA_KNOBS
+        if unknown_sub:
+            fail(f"source.camera: unknown key(s) {sorted(unknown_sub)}; "
+                 f"expected {sorted(_CAMERA_KNOBS)}")
+        if sub["mode"] not in _CAMERA_MODES:
+            fail(f"source.camera.mode must be one of {sorted(_CAMERA_MODES)}, "
+                 f"got {sub['mode']!r}")
+        if sub["pixel_format"] not in _CAMERA_PIXEL_FORMATS:
+            fail(f"source.camera.pixel_format must be one of "
+                 f"{sorted(_CAMERA_PIXEL_FORMATS)}, got {sub['pixel_format']!r}")
+        # fake_clip: a recorded clip is the runnable fake-mode workload; an
+        # empty string selects the synthetic converter test path. Both are
+        # strings — only the type is enforced here (path existence is a
+        # camera-host runtime concern, like FileSource.path).
+        if "fake_clip" in sub and not isinstance(sub["fake_clip"], str):
+            fail("source.camera.fake_clip must be a string")
+        if "serial" in sub and not isinstance(sub["serial"], str):
+            fail("source.camera.serial must be a string")
+        for k in ("exposure_us", "gain_db"):
+            if k in sub and (isinstance(sub[k], bool)
+                             or not isinstance(sub[k], (int, float))):
+                fail(f"source.camera.{k} must be a number")
 
 
 def _validate_recovery(rec, fail) -> None:

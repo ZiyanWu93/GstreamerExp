@@ -32,8 +32,8 @@ from gi.repository import Gst, GLib
 from gstexp.camera import CameraPipeline
 from gstexp.viewer import ViewerPipeline
 from gstexp.pipeline_config import (
-    Camera, CameraRecovery, Decoder, Depacketizer, Egress, Encoder,
-    FileSource, GccCameraConfig, GccViewerConfig, Ingress, Packetizer,
+    Camera, CameraRecovery, CameraSource, Decoder, Depacketizer, Egress,
+    Encoder, FileSource, GccCameraConfig, GccViewerConfig, Ingress, Packetizer,
     ScreamCameraConfig, ScreamViewerConfig, Sink, Source, SyntheticSource,
     Viewer, ViewerRecovery, Vp8Codec,
 )
@@ -47,7 +47,8 @@ _CODECS = {"vp8": Vp8Codec}
 # Source backend registry: maps the spec's `source.backend` string to
 # the SourceBackend class. Keep in lock-step with
 # validation._IMPLEMENTED_SOURCE_BACKENDS.
-_SOURCE_BACKENDS = {"synthetic": SyntheticSource, "file": FileSource}
+_SOURCE_BACKENDS = {"synthetic": SyntheticSource, "file": FileSource,
+                    "camera": CameraSource}
 
 
 def _load_codec(name: str):

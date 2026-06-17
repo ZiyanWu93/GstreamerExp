@@ -212,8 +212,154 @@ class FileSource:
         return sync
 
 
+# Reference-timestamp caps for the camera's hardware frame clock. A real
+# Spinnaker camera exposes a per-frame GenICam ChunkTimestamp; we carry it
+# as a GstReferenceTimestampMeta under these caps so the cross-stream sync
+# path (and the future sync.mode: ptp seam) can read the capture instant
+# without disturbing the buffer PTS. In fake mode the synthetic stand-in
+# stamps the buffer PTS, so the read-back path is exercised without a camera.
+CAMERA_FRAMECLOCK_CAPS = "timestamp/x-camera-frameclock"
+
+# Native sensor pixel formats → the GStreamer caps the source emits before
+# the conversion chain normalizes to the I420 that camera.py's src_caps
+# demands. Bayer formats route through bayer2rgb first.
+_CAMERA_NATIVE_CAPS = {
+    "bayer_rggb": "video/x-bayer,format=rggb",
+    "bayer_grbg": "video/x-bayer,format=grbg",
+    "bayer_gbrg": "video/x-bayer,format=gbrg",
+    "bayer_bggr": "video/x-bayer,format=bggr",
+    "mono8":      "video/x-raw,format=GRAY8",
+    "rgb":        "video/x-raw,format=RGB",
+    "yuy2":       "video/x-raw,format=YUY2",
+}
+
+
+@dataclass
+class CameraSource:
+    """Machine-vision camera source (Teledyne/FLIR Spinnaker, via PySpin).
+
+    Two modes share ONE conversion tail (so the hardware-free path exercises
+    the same negotiation the real camera will):
+
+        <native source> → [bayer2rgb if bayer] → videoconvert
+                         → videoscale → videorate → tail
+
+    The tail's raw video is coerced to I420 at width/height/fps by the
+    src_caps capsfilter in camera.py — so this builder owns ONLY the
+    native-format → raw conversion, never the final caps.
+
+    mode='real'  : a Gst `appsrc` fed by a PySpin acquisition thread pushing
+                   the camera's native frames. This is the HARDWARE step
+                   (no camera on hand yet); build() raises NotImplementedError
+                   so the seam is explicit. The conversion tail it will feed
+                   is already implemented + tested via fake mode.
+    mode='fake'  : hardware-free dev/CI.
+                   - fake_clip set → decode the recorded workload clip (REAL
+                     content) and run it through the tail. This is the
+                     runnable smoke path (honors the recorded-video rule —
+                     no synthetic pattern as a workload).
+                   - fake_clip='' → a `videotestsrc` shaped to `pixel_format`,
+                     used ONLY by the conversion-element unit test to exercise
+                     bayer2rgb / native-format negotiation. Never a workload.
+
+    Like FileSource, `num_frames` is NOT capped here (worker.py's encoder-src
+    probe owns the cap), and a live sensor has no `loop`.
+    """
+
+    mode: str                                  # 'fake' (hardware-free) | 'real' (PySpin)
+    pixel_format: str                          # native sensor format (see _CAMERA_NATIVE_CAPS)
+    serial: str = ""                           # real: device serial ('' = first enumerated)
+    fake_clip: str = ""                        # fake: recorded clip path; '' = synthetic pattern (tests only)
+    exposure_us: Optional[float] = None        # real: GenICam ExposureTime
+    gain_db: Optional[float] = None            # real: GenICam Gain
+
+    def _conversion_tail(self, pipeline, *, is_bayer: bool, pace: bool):
+        """The shared native→raw conversion chain. Returns (head, tail):
+        head is the element the source links into, tail is what build()
+        returns downstream. `pace` adds a clocksync for non-live sources."""
+        chain = []
+        if is_bayer:
+            chain.append(Gst.ElementFactory.make("bayer2rgb", "src_bayer2rgb"))
+        chain += [
+            Gst.ElementFactory.make("videoconvert", "src_convert"),
+            Gst.ElementFactory.make("videoscale", "src_scale"),
+            Gst.ElementFactory.make("videorate", "src_rate"),
+        ]
+        if pace:
+            # filesrc isn't live; pace to wall-clock so the encoder/CC see
+            # real timing (same rationale as FileSource's clocksync).
+            chain.append(Gst.ElementFactory.make("clocksync", "src_clocksync"))
+        for el in chain:
+            pipeline.add(el)
+        for u, d in zip(chain, chain[1:]):
+            u.link(d)
+        self._stamp_frameclock(chain[-1])
+        return chain[0], chain[-1]
+
+    def _stamp_frameclock(self, tail):
+        """Attach a GstReferenceTimestampMeta carrying the camera frame
+        clock. Fake mode stamps the buffer PTS (a synthetic stand-in for the
+        GenICam ChunkTimestamp) so the read-back path is exercised without a
+        camera; real mode (Phase 9) stamps the chunk timestamp at capture."""
+        caps = Gst.Caps.from_string(CAMERA_FRAMECLOCK_CAPS)
+
+        def _probe(_pad, info):
+            buf = info.get_buffer()
+            if buf is not None and buf.pts != Gst.CLOCK_TIME_NONE:
+                buf.add_reference_timestamp_meta(caps, buf.pts, Gst.CLOCK_TIME_NONE)
+            return Gst.PadProbeReturn.OK
+
+        tail.get_static_pad("src").add_probe(Gst.PadProbeType.BUFFER, _probe)
+
+    def build(self, pipeline, num_frames: int):
+        if self.mode == "real":
+            raise NotImplementedError(
+                "CameraSource mode='real' (PySpin acquisition into appsrc) is "
+                "the hardware integration step — no camera on hand yet. The "
+                "conversion tail it will feed is implemented and exercised by "
+                "mode='fake'; wire the appsrc + PySpin thread when the camera "
+                "arrives.")
+        if self.mode != "fake":
+            raise ValueError(f"CameraSource.mode must be 'fake' or 'real', "
+                             f"got {self.mode!r}")
+
+        if self.fake_clip:
+            # Recorded clip (REAL content) → decoded → conversion tail. The
+            # clip is not raw Bayer, so no bayer2rgb; pace it like FileSource.
+            filesrc = Gst.ElementFactory.make("filesrc", "src_filesrc")
+            filesrc.set_property("location", self.fake_clip)
+            decode = Gst.ElementFactory.make("decodebin", "src_decode")
+            pipeline.add(filesrc)
+            pipeline.add(decode)
+            filesrc.link(decode)
+            head, tail = self._conversion_tail(pipeline, is_bayer=False, pace=True)
+
+            def _on_pad_added(_decode, pad):
+                caps = pad.get_current_caps() or pad.query_caps(None)
+                if caps.get_structure(0).get_name().startswith("video/"):
+                    pad.link(head.get_static_pad("sink"))
+            decode.connect("pad-added", _on_pad_added)
+            return tail
+
+        # fake_clip == '' → synthetic native-format pattern (unit tests only).
+        src = Gst.ElementFactory.make("videotestsrc", "src_testsrc")
+        src.set_property("is-live", True)
+        if num_frames > 0:
+            src.set_property("num-buffers", num_frames)
+        native = Gst.ElementFactory.make("capsfilter", "src_native_caps")
+        native.set_property("caps", Gst.Caps.from_string(
+            _CAMERA_NATIVE_CAPS[self.pixel_format]))
+        pipeline.add(src)
+        pipeline.add(native)
+        src.link(native)
+        head, tail = self._conversion_tail(
+            pipeline, is_bayer=self.pixel_format.startswith("bayer"), pace=False)
+        native.link(head)
+        return tail
+
+
 # Source backend union — extend as more land.
-SourceBackend = Union[SyntheticSource, FileSource]
+SourceBackend = Union[SyntheticSource, FileSource, CameraSource]
 
 
 # --- camera stages ---------------------------------------------------------
