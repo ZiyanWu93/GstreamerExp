@@ -1,0 +1,51 @@
+meta:
+  name: teleop_3cam_nonet_diag
+  description: >
+    Diagnostic: 3 identical SCReAM streams, NO per-stream network (so no tc
+    on the sender) and no recovery. Isolates viewer-side concurrency from
+    the multi-lane tc compiler — if these three viewers decode but config
+    400's don't, the multi-lane tc is the culprit; if they also stall, it's
+    receiver concurrency.
+  flags:
+  - scream
+scenario:
+  actors:
+    camera: {}
+    viewer: {}
+  setup_delay_seconds: 3.0
+  drain_delay_seconds: 1.0
+  metrics:
+  - frame_count
+  - frame_latency
+  - wire_bytes
+sync:
+  mode: shared_epoch
+  termination: all
+streams:
+- name: a
+  priority: 0
+  video: realmotion-avi
+  codec: vp8
+  encoder: {bitrate_kbps: 1500, keyframe_interval_frames: 60}
+  congestion_control: {algorithm: scream, init_bitrate_kbps: 1500, min_bitrate_kbps: 200, max_bitrate_kbps: 4000}
+  sink: {backend: fake, sync: false}
+  recovery: {nack: false, pli: false, fec: false}
+  latency_budget_ms: 0
+- name: b
+  priority: 1
+  video: realmotion-avi
+  codec: vp8
+  encoder: {bitrate_kbps: 1500, keyframe_interval_frames: 60}
+  congestion_control: {algorithm: scream, init_bitrate_kbps: 1500, min_bitrate_kbps: 200, max_bitrate_kbps: 4000}
+  sink: {backend: fake, sync: false}
+  recovery: {nack: false, pli: false, fec: false}
+  latency_budget_ms: 0
+- name: c
+  priority: 2
+  video: realmotion-avi
+  codec: vp8
+  encoder: {bitrate_kbps: 1500, keyframe_interval_frames: 60}
+  congestion_control: {algorithm: scream, init_bitrate_kbps: 1500, min_bitrate_kbps: 200, max_bitrate_kbps: 4000}
+  sink: {backend: fake, sync: false}
+  recovery: {nack: false, pli: false, fec: false}
+  latency_budget_ms: 0

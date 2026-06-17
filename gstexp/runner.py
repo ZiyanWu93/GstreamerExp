@@ -346,10 +346,17 @@ def _fetch_and_cleanup_remote(host: str, run_id: str,
         )
     except Exception:
         pass
+    # Remove ONLY this stream's remote tmp files (result + pid + spec),
+    # derived from the result path. Globbing gstexp-<run_id>-*.pid here
+    # would delete sibling streams' pid files before their own kill/fetch
+    # runs — in a multi-stream run that strands the not-yet-torn-down
+    # viewers: their `kill -TERM $(cat pidfile)` finds nothing, so they
+    # never get the clean signal that makes them write their result, and
+    # only the first-torn-down stream survives.
+    base = remote_result[:-len(".json")] if remote_result.endswith(".json") else remote_result
     try:
         _ssh(host,
-             f"rm -f {remote_result} /tmp/gstexp-{run_id}-*.pid "
-             f"/tmp/gstexp-{run_id}-*-spec.json",
+             f"rm -f {remote_result} {base}.pid {base}.spec.json",
              check=False, capture_output=True, timeout=15)
     except Exception:
         pass
