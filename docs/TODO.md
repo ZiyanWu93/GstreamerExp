@@ -15,7 +15,7 @@ operator-control return path:
 
 ## Capture
 - [ ] Real video from vehicle cameras (replace `videotestsrc`)
-- [ ] Multi-camera support (front / rear / sides; teleop typically ≥3 streams)
+- [x] Multi-camera support (front / rear / sides; teleop typically ≥3 streams) — configurations carry a `streams:` list; a run spawns 2N workers (N cameras on one host, N viewers on the other), each stream with its own encoder/CC/recovery, port pair, and shaped tc lane. See specs/configurations/400.yaml (3-cam teleop).
 - [ ] Hardware encoder on the vehicle side (V4L2 / NVENC / VAAPI)
 - [ ] Camera timestamp / frame-clock metadata (for sensor fusion, AR overlays, replay)
 - [ ] Camera calibration intrinsics/extrinsics passthrough
@@ -38,7 +38,7 @@ operator-control return path:
 - [ ] Real display sink (replace `fakesink` with `glimagesink` / direct framebuffer / HMD)
 - [ ] Display sync (VSYNC alignment so frames present without tearing)
 - [ ] Per-camera composited view (mosaic / picture-in-picture)
-- [ ] Multi-stream synchronization across cameras (so they show the same instant)
+- [x] Multi-stream synchronization across cameras (so they show the same instant) — shared-epoch start barrier (sync.mode: shared_epoch) releases all cameras' first frame together (homogeneous streams measured at 0.9 ms median inter-stream skew, down from ~400 ms), plus a `sync_error` metric that reports residual inter-stream presentation skew. Measured same-host so the clock-skew artifact cancels exactly. (PTP-disciplined absolute capture timestamps remain a deferred seam — sync.mode: ptp.)
 
 ## Latency
 - [ ] Glass-to-glass latency measurement (capture → display) — the headline metric for teleop
@@ -61,7 +61,7 @@ operator-control return path:
 
 ## Synchronization
 - [ ] Vehicle wall-clock timestamps in RTP headers (NTP / PTP-aligned)
-- [ ] Cross-stream sync (camera N's frame at time T arrives with the same T across all cameras)
+- [x] Cross-stream sync (camera N's frame at time T arrives with the same T across all cameras) — shared-epoch start barrier aligns the cameras' release (same-host, so relative alignment is exact); the `sync_error` metric measures the residual. On heterogeneous paths the residual is genuine per-path delivery skew (e.g. SCReAM-clean vs GCC-50ms arriving up to ~350 ms apart), which is a real teleop finding, not start jitter.
 
 ## Resilience to loss
 - [ ] Decoder error concealment / freeze-on-bad-frame strategy
