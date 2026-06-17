@@ -13,6 +13,47 @@ against a reproduced source is the working quality metric.
 What's missing for an actual teleoperation video setup, ignoring the
 operator-control return path:
 
+## Near-term implementable roadmap (Goal 1, no hardware)
+
+Ordered software work that needs NO new hardware and verifies on aum/veda —
+the granular view of index.html §6.2 Phase 1–2 ("do now / product surface").
+Shipped items are checked; the rest are ranked by goal leverage. (The
+full functional gap list, incl. hardware-gated items, is the sections below.)
+
+Shipped:
+- [x] Multi-stream spine — one stream is N, not hardcoded (§6.2 P1).
+- [x] Cross-stream sync — shared-epoch start barrier + `sync_error` metric.
+- [x] Camera Source contract scaffold (Spinnaker/PySpin prep) — fake mode
+      runnable + verified; real (PySpin) mode is the explicit hardware seam.
+
+Next, ranked by leverage:
+1. [ ] **Adaptive resolution** — CC-driven `vp8enc` + source-capsfilter
+       renegotiation (§6.2 P1). Flagship: advances the build track AND
+       sharpens the SCReAM characterization (Goal 2) at once.
+2. [ ] End-to-end capture→render latency metric (a glass-to-glass proxy
+       on the existing 8-probe stage_latency; true glass-to-glass needs
+       the hardware ends).
+3. [ ] Decoder error concealment / freeze-on-bad-frame (= §6.2 P1
+       partial-frame decode) — also resolves the H10/H13 VP8 desync.
+4. [ ] Per-stream priority / DSCP marking — activates the `streams[].priority`
+       field already in the schema (the priority-degradation ladder).
+5. [ ] Compositor mosaic (operator multi-camera view).
+6. [ ] SRTP/DTLS encryption + operator auth (§6.2 P2 spec stub + wire-in).
+7. [ ] Scene-change → forced keyframe + I-frame interval tuned to recovery
+       time (ties to H13).
+8. [ ] SSIM / VMAF quality metrics (extend the decoded_psnr pattern).
+9. [ ] Dual-end forensic recording + lossless local copy (§6.2 P1).
+10. [ ] Audit-grade frame-loss accounting; RTP-header-extension timestamp
+        carriage (synthetic now via the frame-clock meta seam, real with
+        the camera).
+11. [ ] Operator jitter-buffer depth/policy as a spec knob (currently
+        hardcoded in viewer.py).
+
+Hardware/host/UI-gated (NOT near-term): real camera acquisition (PySpin
+real mode), HW encoders (NVENC/VAAPI), real display sink/VSYNC/HMD, LTE+5G
+multipath, ambient audio, HDR capture, calibration passthrough, operator-UI
+quality indicator.
+
 ## Capture
 - [ ] Real video from vehicle cameras (replace `videotestsrc`)
 - [x] Multi-camera support (front / rear / sides; teleop typically ≥3 streams) — configurations carry a `streams:` list; a run spawns 2N workers (N cameras on one host, N viewers on the other), each stream with its own encoder/CC/recovery, port pair, and shaped tc lane. See specs/configurations/400.yaml (3-cam teleop).
@@ -43,7 +84,7 @@ operator-control return path:
 ## Latency
 - [ ] Glass-to-glass latency measurement (capture → display) — the headline metric for teleop
 - [x] Per-stage latency attribution — `stage_latency` metric, 8 probes (encoder.sink/src, pay.src, udpsink.sink, udpsrc.src, depay.src, decoder.sink/src, convert.src) joined by RTP timestamp; `analysis/dimensions/latency.py` surfaces per-stage durations
-- [ ] Latency-budget enforcement (drop frames when budget exceeded, don't queue)
+- [x] Latency-budget enforcement (drop frames when budget exceeded, don't queue) — `LateDrops` metric (gstexp/metrics.py): a frame older than `latency_budget_ms` at convert.src is dropped and counted; budget 0 disables
 - [ ] Operator-side jitter buffer with explicit depth and policy
 
 ## Quality
