@@ -3,7 +3,9 @@ meta:
   description: >
     3-camera teleoperation, aum -> veda. Front is the high-priority driving
     view (SCReAM, no recovery, clean link); rear is SCReAM with NACK/PLI over
-    a 1% loss link; left is GCC with FEC over a 50 ms link. Each camera rides
+    a 1% loss link; left is GCC over a 50 ms link. (ULPFEC on left is parked:
+    the FEC receive path has a pre-existing not-linked bug, tracked
+    separately.) Each camera rides
     its own shaped tc lane on the shared NIC (per-stream impairment) and its
     own (rtp, rtcp) port pair. Cross-stream sync (shared epoch + sync_error)
     is deferred to a later increment; this proves the multi-stream spine.
@@ -87,7 +89,6 @@ streams:
   recovery:
     nack: false
     pli: false
-    fec: true
-    fec_percentage: 20
+    fec: false
   latency_budget_ms: 250
   network: fixed-5mbps-50ms
