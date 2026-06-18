@@ -16,12 +16,16 @@ different bandwidth-estimation algorithms.
 
 from __future__ import annotations
 
+import time
+
 import gi
 gi.require_version("Gst", "1.0")
 gi.require_version("GstRtp", "1.0")
-from gi.repository import Gst, GstRtp
+gi.require_version("GstVideo", "1.0")
+from gi.repository import GLib, Gst, GstRtp, GstVideo
 
 from gstexp.pipeline_config import Camera, Codec, GccCameraConfig, ScreamCameraConfig
+from gstexp.resolution_control import ResolutionController
 
 
 # TWCC ("transport-wide congestion control") RTP header extension URI.
@@ -57,18 +61,84 @@ def _make_rtpulpfecenc(codec: Codec, percentage: int):
     return enc
 
 
-def _on_bitrate_notify(screamtx, _pspec, encoder, codec):
+class _ResolutionAdapter:
+    """Bridges the CC bitrate-notify to runtime resolution switching.
+
+    The bitrate-notify fires on a streaming thread; the ResolutionController
+    decision runs inline there (pure Python, safe), but the actual capsfilter
+    change + forced keyframe are marshaled onto the GLib main loop via
+    idle_add. Mutating the capsfilter caps from the app/main-loop thread is the
+    standard dynamic-resolution pattern (capsfilter applies the new caps to the
+    next buffer); doing it inline on the notify thread can stall the pipeline,
+    and doing it from inside a pad probe on res_caps' own pad re-enters
+    negotiation on that pad and crashes this GStreamer binding. VP8 carries
+    frame dimensions only in the keyframe header (RFC 6386 §9.1) and re-inits
+    on an input-resolution change, so the caps switch itself yields a keyframe;
+    the explicit force-key-unit is belt-and-suspenders.
+
+    Threading: on_rate is driven by exactly one CC notify per camera (SCReAM
+    current-max-bitrate OR GCC estimated-bitrate), i.e. a single producer
+    thread, so the _pending check-then-set needs no lock. Do not fan rate
+    notifies in from multiple element threads without adding one.
+    """
+
+    def __init__(self, controller, res_caps, encoder):
+        self._ctrl = controller
+        self._res_caps = res_caps
+        self._encoder = encoder
+        self._kf_count = 0
+        self._pending = False     # one in-flight switch at a time
+
+    def on_rate(self, rate_kbps):
+        dims = self._ctrl.update(rate_kbps, time.monotonic())
+        if dims is None or self._pending:
+            return
+        self._pending = True
+        # Marshal off the (possibly streaming) caller thread onto the main
+        # loop; the worker's GLib.MainLoop services this between frames. Note
+        # we pass no dims — _apply_switch reads the controller's live tier.
+        GLib.idle_add(self._apply_switch)
+
+    def _apply_switch(self):
+        # Apply the controller's CURRENT committed tier, not a tier captured
+        # when this idle was scheduled. update() commits its tier change before
+        # on_rate inspects _pending, so if the rate moved the controller again
+        # while this callback was queued (e.g. a stalled main loop), reading
+        # current_dims() here catches up to the truth in one switch instead of
+        # leaving the encoded resolution a tier behind the controller's idx.
+        try:
+            w, h = self._ctrl.current_dims()
+            self._res_caps.set_property("caps", Gst.Caps.from_string(
+                f"video/x-raw,width={w},height={h}"))
+            self._kf_count += 1
+            self._encoder.get_static_pad("sink").send_event(
+                GstVideo.video_event_new_downstream_force_key_unit(
+                    Gst.CLOCK_TIME_NONE, Gst.CLOCK_TIME_NONE,
+                    Gst.CLOCK_TIME_NONE, True, self._kf_count))
+        except Exception as e:
+            # A switch racing pipeline teardown must not crash the main loop.
+            print(f"[adapter] resolution switch skipped: {e}", flush=True)
+        finally:
+            self._pending = False
+        return GLib.SOURCE_REMOVE
+
+
+def _on_bitrate_notify(screamtx, _pspec, encoder, codec, adapter=None):
     # SCReAM reports current-max-bitrate in kbps; convert to bps for the encoder.
     rate_kbps = screamtx.get_property("current-max-bitrate")
     if rate_kbps > 0:
         codec.set_encoder_target_bps(encoder, int(rate_kbps) * 1000)
+        if adapter is not None:
+            adapter.on_rate(float(rate_kbps))
 
 
-def _on_gcc_bitrate_notify(gccbwe, _pspec, encoder, codec):
+def _on_gcc_bitrate_notify(gccbwe, _pspec, encoder, codec, adapter=None):
     # rtpgccbwe reports estimated-bitrate in bps directly.
     rate_bps = gccbwe.get_property("estimated-bitrate")
     if rate_bps > 0:
         codec.set_encoder_target_bps(encoder, int(rate_bps))
+        if adapter is not None:
+            adapter.on_rate(rate_bps / 1000.0)
 
 
 def _build_scream_params(cc: ScreamCameraConfig) -> str:
@@ -129,12 +199,24 @@ class CameraPipeline:
         # The capsfilter enforces dimensions independent of backend.
         src = spec.source.backend.build(pipeline, spec.source.num_frames)
 
+        # Adaptive resolution (encoder.resolution_ladder) makes the encode
+        # resolution a CC-driven actuator. When OFF (None) the head chain is
+        # exactly today's: src_caps pins width/height, no res_scale/res_caps,
+        # no controller — byte-for-byte the prior behavior.
+        ladder = spec.encoder.resolution_ladder
+        adaptive = ladder is not None
+
         src_caps = Gst.ElementFactory.make("capsfilter", "src_caps")
-        src_caps.set_property("caps", Gst.Caps.from_string(
-            f"video/x-raw,format=I420,"
-            f"width={spec.source.width},height={spec.source.height},"
-            f"framerate={spec.source.fps}/1"
-        ))
+        if adaptive:
+            # MUST NOT pin width/height here — res_caps downstream owns the
+            # switchable dimensions, and an upstream fixed-caps width/height
+            # would swallow the RECONFIGURE event and silently stall switches.
+            src_caps_str = f"video/x-raw,format=I420,framerate={spec.source.fps}/1"
+        else:
+            src_caps_str = (f"video/x-raw,format=I420,"
+                            f"width={spec.source.width},height={spec.source.height},"
+                            f"framerate={spec.source.fps}/1")
+        src_caps.set_property("caps", Gst.Caps.from_string(src_caps_str))
 
         # optional clock overlay: burns HH:MM:SS into raw frames before encode
         overlay = None
@@ -154,19 +236,43 @@ class CameraPipeline:
                                 spec.encoder.keyframe_interval_frames)
         pay = Gst.ElementFactory.make(codec.payloader_factory, "pay")
 
-        # head chain (raw video processing): src -> caps -> [overlay?] -> enc -> pay
+        # head chain (raw video processing):
+        #   src -> src_caps -> [overlay?] -> [res_scale -> res_caps]? -> enc -> pay
         head = [src, src_caps]
         if overlay is not None:
             head.append(overlay)
+
+        adapter = None
+        if adaptive:
+            # videoscale + a switchable capsfilter own the encode resolution:
+            # the controller picks the tier, the adapter applies it at a frame
+            # boundary. res_scale must sit directly upstream of res_caps.
+            res_scale = Gst.ElementFactory.make("videoscale", "res_scale")
+            res_caps = Gst.ElementFactory.make("capsfilter", "res_caps")
+            controller = ResolutionController(ladder, spec.source.width,
+                                              spec.source.height)
+            top_w, top_h = controller.dims(0)   # top tier == source resolution
+            res_caps.set_property("caps", Gst.Caps.from_string(
+                f"video/x-raw,width={top_w},height={top_h}"))
+            head.extend([res_scale, res_caps])
+            # throttle keyframe storms (each switch forces one); pairs with the
+            # controller's min_switch_interval.
+            try:
+                enc.set_property("min-force-key-unit-interval",
+                                 int(ladder.min_switch_interval_s * Gst.SECOND))
+            except Exception:
+                pass
+            adapter = _ResolutionAdapter(controller, res_caps, enc)
+
         head.extend([enc, pay])
 
         cc = spec.congestion_control
         if cc is None:
             return self._assemble_bare(pipeline, head)
         if isinstance(cc, ScreamCameraConfig):
-            return self._assemble_scream(pipeline, head)
+            return self._assemble_scream(pipeline, head, adapter)
         if isinstance(cc, GccCameraConfig):
-            return self._assemble_gcc(pipeline, head)
+            return self._assemble_gcc(pipeline, head, adapter)
         raise TypeError(f"unsupported congestion-control type: {type(cc).__name__}")
 
     def _assemble_bare(self, pipeline, head_elements):
@@ -184,7 +290,7 @@ class CameraPipeline:
             u.link(d)
         return pipeline
 
-    def _assemble_scream(self, pipeline, head_elements):
+    def _assemble_scream(self, pipeline, head_elements, adapter=None):
         """Insert screamtx + RTCP loop through rtpbin.
 
         head_elements is the linear raw-video chain ending in
@@ -202,7 +308,7 @@ class CameraPipeline:
         screamtx.set_property("params", _build_scream_params(cc))
         encoder = next(e for e in head_elements if e.get_name() == "encoder")
         screamtx.connect("notify::current-max-bitrate",
-                         _on_bitrate_notify, encoder, codec)
+                         _on_bitrate_notify, encoder, codec, adapter)
         queue2 = Gst.ElementFactory.make("queue", "queue2")
 
         rtpbin = Gst.ElementFactory.make("rtpbin", "rtpbin")
@@ -292,7 +398,7 @@ class CameraPipeline:
 
         return pipeline
 
-    def _assemble_gcc(self, pipeline, head_elements):
+    def _assemble_gcc(self, pipeline, head_elements, adapter=None):
         """Insert rtpgccbwe + TWCC feedback loop through rtpbin.
 
         Pipeline topology:
@@ -343,7 +449,7 @@ class CameraPipeline:
         if cc.estimator is not None:
             gccbwe.set_property("estimator", cc.estimator)
         gccbwe.connect("notify::estimated-bitrate",
-                       _on_gcc_bitrate_notify, encoder, codec)
+                       _on_gcc_bitrate_notify, encoder, codec, adapter)
 
         rtpbin = Gst.ElementFactory.make("rtpbin", "rtpbin")
         # AVPF profile (3) enables RTCP feedback packets — required for

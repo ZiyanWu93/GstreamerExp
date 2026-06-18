@@ -1,0 +1,37 @@
+name: adaptive-step-5m-1200k
+description: |
+  Capacity step built to exercise CC-driven adaptive resolution (config 405)
+  without overrunning the fake-mode camera. A single sustained intermediate
+  bottleneck — long enough (30 s) for SCReAM to settle, moderate enough
+  (1200 kbps) that 512p VP8 fits comfortably so the encoder stops
+  backpressuring the wall-clock-paced source once the controller steps down:
+
+    t=0..15s  : 5 Mbps,    20 ms              (clean — SCReAM high, tier 1024)
+    t=15..45s : 1200 kbps, 50 ms              (settles in the 512p band → step down)
+    t=45..60s : 5 Mbps,    20 ms              (recovery — SCReAM climbs, step back up)
+
+  Paired with config 405's ladder (floors 2500/700/0): leaving the bottleneck
+  SCReAM crosses 2500 within a couple of seconds, so the controller downshifts
+  early (1024 -> 512) and the encoder load drops to match the pipe. Set the
+  interface via `network_env: { NIC: <ifname> }` (per-actor). The lane is
+  rate-limited by tbf on the sender NIC, filtered to the stream's RTP port.
+camera_steps:
+- duration: 15
+  rate_kbps: 5000
+  delay_ms: 20
+  loss:
+    model: none
+  label: "5 Mbps · 20 ms · clean"
+- duration: 30
+  rate_kbps: 1200
+  delay_ms: 50
+  loss:
+    model: none
+  label: "1200 kbps · 50 ms · sustained (512p band)"
+- duration: 15
+  rate_kbps: 5000
+  delay_ms: 20
+  loss:
+    model: none
+  label: "5 Mbps · 20 ms · recovery"
+viewer_steps: []

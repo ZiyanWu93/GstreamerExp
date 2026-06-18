@@ -588,5 +588,99 @@ class TestDecodedPsnrConstraints(unittest.TestCase):
         self.assertEqual(viewer["ground_truth"]["fps"], 15)
 
 
+def _valid_ladder(top_height=480):
+    """A structurally valid ladder anchored to a 480p source (BASE_DOC's
+    ball-480p15 video). Tests mutate one field to exercise each rule."""
+    return {
+        "tiers": [
+            {"height": top_height, "min_rate_kbps": 1000},
+            {"height": top_height // 2, "min_rate_kbps": 0},
+        ],
+        "hysteresis_up_hold_s": 4.0,
+        "hysteresis_down_hold_s": 0.5,
+        "min_switch_interval_s": 2.0,
+        "ewma_alpha": 0.3,
+    }
+
+
+class TestResolutionLadderValidation(unittest.TestCase):
+    """encoder.resolution_ladder — CC-driven adaptive resolution. BASE_DOC's
+    stream is scream + ball-480p15 (480p), so a 480-anchored ladder is valid."""
+
+    def setUp(self):
+        self.doc = deepcopy(BASE_DOC)
+
+    def test_valid_ladder_passes(self):
+        _stream0(self.doc)["encoder"]["resolution_ladder"] = _valid_ladder()
+        _resolve_and_validate(self.doc)            # should not raise
+
+    def test_top_height_must_equal_source_height(self):
+        lad = _valid_ladder()
+        lad["tiers"][0]["height"] = 720            # source is 480
+        _stream0(self.doc)["encoder"]["resolution_ladder"] = lad
+        with assert_validation_fails_with(self, "exceeds source.height"):
+            _resolve_and_validate(self.doc)
+
+    def test_lowest_floor_must_be_zero(self):
+        lad = _valid_ladder()
+        lad["tiers"][-1]["min_rate_kbps"] = 100
+        _stream0(self.doc)["encoder"]["resolution_ladder"] = lad
+        with assert_validation_fails_with(
+                self, "lowest tier's min_rate_kbps must be 0"):
+            _resolve_and_validate(self.doc)
+
+    def test_heights_must_strictly_descend(self):
+        lad = _valid_ladder()
+        lad["tiers"][1]["height"] = 480            # equal to top, not descending
+        _stream0(self.doc)["encoder"]["resolution_ladder"] = lad
+        with assert_validation_fails_with(
+                self, "height must be strictly"):
+            _resolve_and_validate(self.doc)
+
+    def test_top_floor_must_fit_cc_ceiling(self):
+        lad = _valid_ladder()
+        lad["tiers"][0]["min_rate_kbps"] = 9000    # cc.max is 4000
+        _stream0(self.doc)["encoder"]["resolution_ladder"] = lad
+        with assert_validation_fails_with(self, "is unreachable"):
+            _resolve_and_validate(self.doc)
+
+    def test_ladder_requires_congestion_control(self):
+        st = _stream0(self.doc)
+        st.pop("congestion_control", None)
+        st["encoder"]["resolution_ladder"] = _valid_ladder()
+        with assert_validation_fails_with(
+                self, "requires congestion_control"):
+            _resolve_and_validate(self.doc)
+
+    def test_decoded_psnr_incompatible_with_ladder(self):
+        # A laddered stream's decode size varies at runtime, so it can't be
+        # paired against the fixed-resolution reproduced source.
+        st = _stream0(self.doc)
+        st.pop("video", None)
+        st["source"] = {
+            "backend": "synthetic", "width": 640, "height": 480, "fps": 15,
+            "num_frames": 150, "clock_overlay": False,
+            "synthetic": {"pattern": "ball"},
+        }
+        st["encoder"]["resolution_ladder"] = _valid_ladder()
+        self.doc["scenario"]["metrics"].append("decoded_psnr")
+        with assert_validation_fails_with(
+                self, "decoded_psnr is incompatible with"):
+            _resolve_and_validate(self.doc)
+
+    def test_encoder_resolution_metric_requires_a_ladder(self):
+        # Requesting the metric with no laddered stream would silently produce
+        # an empty series.
+        self.doc["scenario"]["metrics"].append("encoder_resolution")
+        with assert_validation_fails_with(
+                self, "encoder_resolution requires at least one stream"):
+            _resolve_and_validate(self.doc)
+
+    def test_encoder_resolution_metric_ok_with_a_ladder(self):
+        _stream0(self.doc)["encoder"]["resolution_ladder"] = _valid_ladder()
+        self.doc["scenario"]["metrics"].append("encoder_resolution")
+        _resolve_and_validate(self.doc)            # should not raise
+
+
 if __name__ == "__main__":
     unittest.main()

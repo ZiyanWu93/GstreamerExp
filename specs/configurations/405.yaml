@@ -1,0 +1,79 @@
+meta:
+  name: adaptive_resolution_demo
+  description: >
+    CC-driven adaptive resolution, aum -> veda, over fluctuating-5mbps-300kbps
+    (5 Mbps clean -> 300 kbps + 2% loss trough at t=7..13s -> 5 Mbps recovery).
+    A single camera-fake-realmotion stream (1280x1024 @ 10 fps) carries a
+    3-tier ladder: 1024p above 1000 kbps, 512p above 400, 384p at the floor.
+    As SCReAM backs off into the trough the encoder steps down to a clean
+    lower resolution instead of pumping a blocky full-res frame; as the link
+    recovers it steps back up (slow, hysteretic). Pair with config 406 (the
+    fixed-1024p twin, ladder absent) for the A/B.
+
+    Verification rides on the encoder_resolution metric (tier steps tracking
+    the capacity step) + decoder_errors (no spike at switch instants).
+    decoded_psnr is unavailable here (a camera source isn't byte-reproducible,
+    and a varying decode size can't pair against a fixed-resolution truth) —
+    the quality comparison is a documented follow-up needing upscale-to-
+    reference PSNR.
+  flags:
+  - sudo
+  - scream
+scenario:
+  actors:
+    camera: {}
+    viewer: {}
+  setup_delay_seconds: 3.0
+  drain_delay_seconds: 1.0
+  metrics:
+  - frame_count
+  - encoder_target_kbps
+  - encoder_resolution
+  - wire_bytes
+  - encoded_bitrate
+  - frame_latency
+  - decoder_errors
+sync:
+  mode: shared_epoch
+  termination: all
+streams:
+- name: cam
+  priority: 0
+  video: camera-fake-realmotion
+  codec: vp8
+  encoder:
+    bitrate_kbps: 1500
+    keyframe_interval_frames: 60
+    resolution_ladder:
+      # Floors are the rate below which a tier's quality stops being worth its
+      # pixel budget: 1024p needs ~2.5 Mbps for clean VP8, 512p ~700 kbps,
+      # 384p down to the floor. Tuned high on top so the controller leaves
+      # 1024p as soon as SCReAM dips out of the 1024p-quality band (early
+      # downshift), which keeps the encoder from pumping full-res frames into
+      # a shrinking pipe — the source paces to wall-clock, so a late downshift
+      # backpressures the fake camera instead of dropping frames.
+      tiers:
+      - height: 1024
+        min_rate_kbps: 2500
+      - height: 512
+        min_rate_kbps: 700
+      - height: 384
+        min_rate_kbps: 0
+      hysteresis_up_hold_s: 4.0
+      hysteresis_down_hold_s: 0.5
+      min_switch_interval_s: 2.0
+      ewma_alpha: 0.3
+  congestion_control:
+    algorithm: scream
+    init_bitrate_kbps: 1500
+    min_bitrate_kbps: 200
+    max_bitrate_kbps: 4000
+  sink:
+    backend: fake
+    sync: false
+  recovery:
+    nack: false
+    pli: false
+    fec: false
+  latency_budget_ms: 0
+  network: adaptive-step-5m-1200k

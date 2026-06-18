@@ -72,7 +72,7 @@ _VALID_GCC_ESTIMATORS = {"kalman", "linear-regression"}
 _VALID_SINK_BACKENDS = {"fake", "file"}
 
 _BLOCK_SCHEMAS = {
-    "encoder":   ({"bitrate_kbps", "keyframe_interval_frames"}, set()),
+    "encoder":   ({"bitrate_kbps", "keyframe_interval_frames"}, {"resolution_ladder"}),
     "sink":      ({"backend", "sync"}, {"path"}),
     # `source` is validated by _validate_source — backend-discriminated.
     # `congestion_control` is validated by _validate_cc — algorithm-discriminated.
@@ -106,6 +106,15 @@ _CAMERA_KNOBS = _CAMERA_REQUIRED | _CAMERA_OPTIONAL
 _CAMERA_MODES = {"fake", "real"}
 _CAMERA_PIXEL_FORMATS = {"bayer_rggb", "bayer_grbg", "bayer_gbrg",
                          "bayer_bggr", "mono8", "rgb", "yuy2"}
+
+# Optional encoder.resolution_ladder block (CC-driven adaptive resolution).
+# All keys required when present — no silent defaults; _validate_resolution_ladder
+# enforces the ordering/anchoring constraints.
+_RESOLUTION_LADDER_KEYS = {"tiers", "hysteresis_up_hold_s",
+                           "hysteresis_down_hold_s", "min_switch_interval_s",
+                           "ewma_alpha"}
+_RESOLUTION_TIER_KEYS = {"height", "min_rate_kbps"}
+
 _TOP_LEVEL_REQUIRED = {"meta", "scenario", "streams", "sync"}
 _TOP_LEVEL_OPTIONAL = {"hooks"}
 _TOP_LEVEL_KEYS = _TOP_LEVEL_REQUIRED | _TOP_LEVEL_OPTIONAL
@@ -171,6 +180,7 @@ _VALID_METRICS = {
     "decoder_errors",
     "decoded_psnr",
     "late_drops",
+    "encoder_resolution",
 }
 
 
@@ -652,6 +662,17 @@ def validate_doc(doc: dict, config_path: Path) -> None:
         fail(f"streams: duplicate name(s) {dupes}; each stream needs a "
              f"unique name")
 
+    # encoder_resolution samples the adaptive-resolution capsfilter (res_caps),
+    # which only exists on a stream that carries an encoder.resolution_ladder.
+    # Requesting it with no laddered stream yields an empty series — forbid it
+    # so the metric never silently no-ops (no-silent-defaults).
+    if "encoder_resolution" in metrics and not any(
+            (st.get("encoder") or {}).get("resolution_ladder") is not None
+            for st in streams):
+        fail("scenario.metrics: encoder_resolution requires at least one "
+             "stream with an encoder.resolution_ladder (it samples the "
+             "adaptive-resolution capsfilter, which a fixed stream lacks)")
+
 
 def _validate_sync(sync, fail) -> None:
     """Validate the `sync:` block — the cross-stream synchronization
@@ -738,6 +759,11 @@ def _validate_stream(idx: int, st: dict, metrics: list, fail) -> None:
     _validate_source(st["source"], sfail)
     _validate_recovery(st["recovery"], sfail)
 
+    ladder = st["encoder"].get("resolution_ladder")
+    if ladder is not None:
+        _validate_resolution_ladder(ladder, st["source"],
+                                    st.get("congestion_control"), sfail)
+
     # latency_budget_ms — viewer-side per-frame freshness budget. 0
     # disables enforcement; a positive int caps frame age in ms (frames
     # older than the budget at convert.src are dropped and counted by the
@@ -766,6 +792,13 @@ def _validate_stream(idx: int, st: dict, metrics: list, fail) -> None:
             sfail("source: decoded_psnr with backend=='file' requires "
                   "file.loop == false (camera/viewer seek-on-EOS aren't "
                   "synchronized)")
+        if (st.get("encoder") or {}).get("resolution_ladder") is not None:
+            sfail("encoder: decoded_psnr is incompatible with "
+                  "resolution_ladder — adaptive resolution makes the decoded "
+                  "frame size vary at runtime, but the metric reproduces the "
+                  "source at one fixed resolution, so frames can't be paired "
+                  "for a Y-plane comparison. Measure resolution adaptation "
+                  "with the encoder_resolution metric instead.")
 
 
 def _validate_source(source, fail) -> None:
@@ -860,6 +893,85 @@ def _validate_source(source, fail) -> None:
             if k in sub and (isinstance(sub[k], bool)
                              or not isinstance(sub[k], (int, float))):
                 fail(f"source.camera.{k} must be a number")
+
+
+def _validate_resolution_ladder(ladder, source, cc, fail) -> None:
+    """Validate an encoder.resolution_ladder (CC-driven adaptive resolution).
+    No silent defaults — every key required; ordering, even-dimension, and
+    anchoring constraints are all enforced at load so the controller can
+    trust the ladder."""
+    if not isinstance(ladder, dict):
+        fail("encoder.resolution_ladder must be a mapping")
+    missing = _RESOLUTION_LADDER_KEYS - set(ladder)
+    if missing:
+        fail(f"encoder.resolution_ladder: missing key(s) {sorted(missing)}")
+    unknown = set(ladder) - _RESOLUTION_LADDER_KEYS
+    if unknown:
+        fail(f"encoder.resolution_ladder: unknown key(s) {sorted(unknown)}; "
+             f"expected {sorted(_RESOLUTION_LADDER_KEYS)}")
+
+    for k in ("hysteresis_up_hold_s", "hysteresis_down_hold_s",
+              "min_switch_interval_s"):
+        v = ladder[k]
+        if isinstance(v, bool) or not isinstance(v, (int, float)) or v <= 0:
+            fail(f"encoder.resolution_ladder.{k} must be a positive number")
+    a = ladder["ewma_alpha"]
+    if isinstance(a, bool) or not isinstance(a, (int, float)) or not (0 < a <= 1):
+        fail("encoder.resolution_ladder.ewma_alpha must be a number in (0, 1]")
+
+    tiers = ladder["tiers"]
+    if not isinstance(tiers, list) or len(tiers) < 2:
+        fail("encoder.resolution_ladder.tiers must be a list of >= 2 tiers "
+             "(a single tier is just fixed resolution — omit the ladder)")
+    src_h = source["height"]
+    for i, t in enumerate(tiers):
+        if not isinstance(t, dict):
+            fail(f"encoder.resolution_ladder.tiers[{i}] must be a mapping")
+        tmiss = _RESOLUTION_TIER_KEYS - set(t)
+        if tmiss:
+            fail(f"encoder.resolution_ladder.tiers[{i}]: missing key(s) {sorted(tmiss)}")
+        tunk = set(t) - _RESOLUTION_TIER_KEYS
+        if tunk:
+            fail(f"encoder.resolution_ladder.tiers[{i}]: unknown key(s) {sorted(tunk)}; "
+                 f"expected {sorted(_RESOLUTION_TIER_KEYS)}")
+        h, r = t["height"], t["min_rate_kbps"]
+        if isinstance(h, bool) or not isinstance(h, int) or h <= 0 or h % 2 != 0:
+            fail(f"encoder.resolution_ladder.tiers[{i}].height must be a "
+                 f"positive even integer")
+        if h > src_h:
+            fail(f"encoder.resolution_ladder.tiers[{i}].height {h} exceeds "
+                 f"source.height {src_h} — the ladder caps at capture "
+                 f"resolution, never upsamples")
+        if isinstance(r, bool) or not isinstance(r, int) or r < 0:
+            fail(f"encoder.resolution_ladder.tiers[{i}].min_rate_kbps must be a "
+                 f"non-negative integer")
+
+    heights = [t["height"] for t in tiers]
+    rates = [t["min_rate_kbps"] for t in tiers]
+    if heights != sorted(set(heights), reverse=True):
+        fail("encoder.resolution_ladder.tiers: height must be strictly "
+             "descending (high → low)")
+    if rates != sorted(set(rates), reverse=True):
+        fail("encoder.resolution_ladder.tiers: min_rate_kbps must be strictly "
+             "descending")
+    if heights[0] != src_h:
+        fail(f"encoder.resolution_ladder.tiers[0].height ({heights[0]}) must "
+             f"equal source.height ({src_h}) — the top tier is the capture "
+             f"resolution")
+    if rates[-1] != 0:
+        fail("encoder.resolution_ladder: the lowest tier's min_rate_kbps must "
+             "be 0 (a floor the controller can always reach)")
+
+    # Cross-block: the ladder needs a CC rate signal, and the top tier must
+    # be reachable within the CC bitrate ceiling.
+    if cc is None:
+        fail("encoder.resolution_ladder requires congestion_control (the rate "
+             "signal that drives resolution switching)")
+    cc_max = cc.get("max_bitrate_kbps")
+    if isinstance(cc_max, int) and rates[0] > cc_max:
+        fail(f"encoder.resolution_ladder.tiers[0].min_rate_kbps ({rates[0]}) "
+             f"exceeds congestion_control.max_bitrate_kbps ({cc_max}) — the top "
+             f"tier is unreachable")
 
 
 def _validate_recovery(rec, fail) -> None:
@@ -1092,13 +1204,19 @@ def _project_stream(idx: int, st: dict, config_id: str,
     port = _port_for_stream(config_id, idx)
     rtcp_port = port + 1
 
+    encoder = {
+        "codec": codec,
+        "bitrate_kbps": enc["bitrate_kbps"],
+        "keyframe_interval_frames": enc["keyframe_interval_frames"],
+    }
+    # Adaptive resolution is a camera-side encode policy; copy it verbatim
+    # into the camera dict only (the viewer never sees it).
+    if enc.get("resolution_ladder") is not None:
+        encoder["resolution_ladder"] = enc["resolution_ladder"]
+
     camera = {
         "source": dict(source),
-        "encoder": {
-            "codec": codec,
-            "bitrate_kbps": enc["bitrate_kbps"],
-            "keyframe_interval_frames": enc["keyframe_interval_frames"],
-        },
+        "encoder": encoder,
         "packetizer": {"protocol": "rtp"},
         "egress": {
             "transport": "udp",

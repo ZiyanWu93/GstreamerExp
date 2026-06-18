@@ -306,6 +306,16 @@ class CameraSource:
         def _probe(_pad, info):
             buf = info.get_buffer()
             if buf is not None and buf.pts != Gst.CLOCK_TIME_NONE:
+                # NOTE: add_reference_timestamp_meta() asserts that the buffer
+                # is writable. When this source feeds the adaptive head chain
+                # (videoscale + capsfilter downstream hold a ref), the buffer
+                # is shared here, so the add no-ops with a non-fatal CRITICAL
+                # and the frame travels unstamped. That only affects the
+                # multi-stream sync_error metric (which reads this meta on the
+                # viewer); single-stream runs are unaffected. A writable-safe
+                # stamp needs a buffer-replacement path this pygst binding
+                # doesn't expose (no make_writable/is_writable, and assigning
+                # info.data raises) — tracked as a follow-up.
                 buf.add_reference_timestamp_meta(caps, buf.pts, Gst.CLOCK_TIME_NONE)
             return Gst.PadProbeReturn.OK
 
@@ -388,6 +398,32 @@ class Source:
 
 
 @dataclass
+class ResolutionTier:
+    """One rung of the adaptive-resolution ladder: encode at this raster
+    height (width derived from the source aspect ratio, rounded even) while
+    the smoothed rate sits at or above min_rate_kbps."""
+
+    height: int
+    min_rate_kbps: int
+
+
+@dataclass
+class ResolutionLadder:
+    """CC-driven adaptive-resolution policy on the Encoder. When the Encoder's
+    resolution_ladder is None, adaptive resolution is OFF — the stream stays
+    at the source dimensions (today's behavior). Tiers are ordered high→low;
+    the per-stream controller picks the highest tier whose rate floor the
+    smoothed rate clears, with asymmetric hold times + a minimum switch
+    interval to avoid flapping. Every field is required — no silent defaults."""
+
+    tiers: list[ResolutionTier]            # height-descending; lowest tier's min_rate_kbps == 0
+    hysteresis_up_hold_s: float            # dwell above a higher tier's floor before upshifting (slow)
+    hysteresis_down_hold_s: float          # dwell below the current tier's floor before downshifting (fast)
+    min_switch_interval_s: float           # minimum time between switches (each costs a keyframe)
+    ewma_alpha: float                      # rate smoothing: ewma = alpha*rate + (1-alpha)*ewma
+
+
+@dataclass
 class Encoder:
     """How raw frames become a compressed bitstream.
 
@@ -399,6 +435,7 @@ class Encoder:
     codec: Codec                           # Vp8Codec today; widen Union when more land
     bitrate_kbps: int
     keyframe_interval_frames: int
+    resolution_ladder: Optional[ResolutionLadder] = None   # None = adaptive resolution off
 
 
 @dataclass

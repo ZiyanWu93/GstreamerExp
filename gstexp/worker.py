@@ -34,8 +34,8 @@ from gstexp.viewer import ViewerPipeline
 from gstexp.pipeline_config import (
     Camera, CameraRecovery, CameraSource, Decoder, Depacketizer, Egress,
     Encoder, FileSource, GccCameraConfig, GccViewerConfig, Ingress, Packetizer,
-    ScreamCameraConfig, ScreamViewerConfig, Sink, Source, SyntheticSource,
-    Viewer, ViewerRecovery, Vp8Codec,
+    ResolutionLadder, ResolutionTier, ScreamCameraConfig, ScreamViewerConfig,
+    Sink, Source, SyntheticSource, Viewer, ViewerRecovery, Vp8Codec,
 )
 
 
@@ -88,11 +88,25 @@ def _load_viewer_cc(cc):
     return cls(**cc)
 
 
+def _load_resolution_ladder(d):
+    if d is None:
+        return None
+    return ResolutionLadder(
+        tiers=[ResolutionTier(height=t["height"], min_rate_kbps=t["min_rate_kbps"])
+               for t in d["tiers"]],
+        hysteresis_up_hold_s=d["hysteresis_up_hold_s"],
+        hysteresis_down_hold_s=d["hysteresis_down_hold_s"],
+        min_switch_interval_s=d["min_switch_interval_s"],
+        ewma_alpha=d["ewma_alpha"],
+    )
+
+
 def _load_encoder(d: dict) -> Encoder:
     return Encoder(
         codec=_load_codec(d["codec"]),
         bitrate_kbps=d["bitrate_kbps"],
         keyframe_interval_frames=d["keyframe_interval_frames"],
+        resolution_ladder=_load_resolution_ladder(d.get("resolution_ladder")),
     )
 
 

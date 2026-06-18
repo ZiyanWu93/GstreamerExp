@@ -1,0 +1,55 @@
+meta:
+  name: adaptive_resolution_fixed_twin
+  description: >
+    Fixed-1024p twin of config 405 — identical camera-fake-realmotion stream,
+    SCReAM, and fluctuating-5mbps-300kbps network, with the resolution_ladder
+    absent. The encoder holds capture resolution (1024p) through the 300 kbps
+    trough, so SCReAM's backoff has to come entirely out of quantization — the
+    blocky-full-res pathology adaptive resolution is meant to avoid. Run
+    alongside 405 (same epoch, same trace) for the A/B: 405's
+    encoder_resolution series steps down/up while this one would (no res_caps
+    to sample); contrast encoded_bitrate / frame_latency at the trough.
+
+    No encoder_resolution metric here (the validator forbids it without a
+    ladder — there is no res_caps to sample).
+  flags:
+  - sudo
+  - scream
+scenario:
+  actors:
+    camera: {}
+    viewer: {}
+  setup_delay_seconds: 3.0
+  drain_delay_seconds: 1.0
+  metrics:
+  - frame_count
+  - encoder_target_kbps
+  - wire_bytes
+  - encoded_bitrate
+  - frame_latency
+  - decoder_errors
+sync:
+  mode: shared_epoch
+  termination: all
+streams:
+- name: cam
+  priority: 0
+  video: camera-fake-realmotion
+  codec: vp8
+  encoder:
+    bitrate_kbps: 1500
+    keyframe_interval_frames: 60
+  congestion_control:
+    algorithm: scream
+    init_bitrate_kbps: 1500
+    min_bitrate_kbps: 200
+    max_bitrate_kbps: 4000
+  sink:
+    backend: fake
+    sync: false
+  recovery:
+    nack: false
+    pli: false
+    fec: false
+  latency_budget_ms: 0
+  network: adaptive-step-5m-1200k

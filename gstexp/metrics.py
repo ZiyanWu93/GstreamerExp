@@ -163,6 +163,74 @@ class EncoderTargetKbps(Metric):
         }
 
 
+class EncoderResolution(Metric):
+    """Sample the encode resolution every second (camera only).
+
+    Reads the height flowing through the adaptive-resolution capsfilter
+    (`res_caps`): for an adaptive stream it tracks the tier the
+    ResolutionController has selected; for a fixed stream it is constant
+    (the source height). Pairs with encoder_target_kbps to show resolution
+    and bitrate adaptation together.
+    """
+    name = "encoder_resolution"
+    dimension = "adaptation"
+
+    def __init__(self):
+        self.samples: List[List[float]] = []   # [(elapsed_s, height_px), ...]
+        self._caps_el = None
+        self._pipeline = None
+
+    def attach(self, gst_pipeline, role):
+        if role != "camera":
+            return
+        # res_caps exists whenever the head chain is built (pinned when no
+        # ladder); absent only on older pipelines — then this metric no-ops.
+        self._caps_el = gst_pipeline.get_by_name("res_caps")
+        if self._caps_el is None:
+            return
+        self._pipeline = gst_pipeline
+        GLib.timeout_add(1000, self._sample)
+
+    def _current_height(self):
+        pad = self._caps_el.get_static_pad("src")
+        caps = pad.get_current_caps() if pad is not None else None
+        if caps is None or caps.get_size() == 0:
+            caps = self._caps_el.get_property("caps")   # fall back to requested
+        if caps is None or caps.get_size() == 0:
+            return None
+        ok, h = caps.get_structure(0).get_int("height")
+        return h if ok else None
+
+    def _sample(self):
+        if self._caps_el is None:
+            return False
+        h = self._current_height()
+        if h is not None:
+            elapsed = (
+                self._pipeline.get_pipeline_clock().get_time()
+                - self._pipeline.get_base_time()
+            ) / Gst.SECOND
+            self.samples.append([round(elapsed, 2), int(h)])
+        return True
+
+    def finalize(self):
+        if not self.samples:
+            return {}
+        heights = [h for _, h in self.samples]
+        switches = sum(1 for a, b in zip(heights, heights[1:]) if a != b)
+        return {
+            "samples": self.samples,
+            "summary": {
+                "first_height":     heights[0],
+                "last_height":      heights[-1],
+                "min_height":       min(heights),
+                "max_height":       max(heights),
+                "distinct_heights": sorted(set(heights)),
+                "switches":         switches,
+            },
+        }
+
+
 # ----- Per-frame end-to-end latency ----------------------------------------
 
 class FrameLatency(Metric):
@@ -1295,6 +1363,7 @@ METRIC_CLASSES = {
     DecoderErrors.name:     DecoderErrors,
     DecodedPsnr.name:       DecodedPsnr,
     LateDrops.name:         LateDrops,
+    EncoderResolution.name: EncoderResolution,
 }
 
 def make_metrics(names: List[str], spec: dict | None = None) -> List[Metric]:
