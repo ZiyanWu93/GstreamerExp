@@ -1152,10 +1152,11 @@
     <h3 style="margin-top: 0;"><code>gstexp camera</code></h3>
     <p class="small" style="margin: 0 0 8px 0;">on the vehicle host</p>
     <ul>
-      <li>One GStreamer pipeline assembling <code>N</code> parallel send
-        chains under a single <code>rtpbin</code> (see §1.5 for the
-        multi-stream choice).</li>
-      <li>Owns the camera-side clock domain.</li>
+      <li><code>N</code> independent send pipelines — one worker process
+        per camera, each with its own <code>rtpbin</code> (see §1.5 for
+        the multi-stream choice).</li>
+      <li>Owns the camera-side clock domain — one host, shared by all
+        cameras, which is what makes the shared-epoch sync barrier exact.</li>
       <li>Runs <code>ForensicSink</code> locally.</li>
       <li>Exposes a status surface used by the Session runtime.</li>
     </ul>
@@ -1219,8 +1220,8 @@
 <div class="panel pipeline-card" id="arch-pipeline-tx">
   <h3>Vehicle pipeline (camera)</h3>
   <p class="small">
-    One process. <code>N</code> parallel chains (one per camera) under
-    a single <code>rtpbin</code>. Diagram below shows one chain.
+    <code>N</code> worker processes, one per camera, each its own
+    single-stream pipeline + <code>rtpbin</code>. Diagram shows one.
   </p>
   <pre class="ascii">[<span class="hi">Source</span>]──→[<span class="hi">Encoder bin</span>]──→[<span class="hi">Pay + RTP header ext</span>]──┐
    ▲              ▲                  ▲                      │
@@ -1245,8 +1246,9 @@
 <div class="panel pipeline-card" id="arch-pipeline-rx">
   <h3>Operator pipeline (viewer)</h3>
   <p class="small">
-    One process. <code>N</code> parallel receive chains under one
-    <code>rtpbin</code>, composited at the end.
+    <code>N</code> worker processes, one per camera, each its own
+    single-stream receive pipeline + <code>rtpbin</code>; the operator
+    mosaic (<code>compositor</code>) is a separate, deferred render path.
   </p>
   <pre class="ascii">RTP ──→[<span class="net">udpsrc</span>]──→[<span class="net">DTLS-SRTP</span>]──→[<span class="hi">rtpbin</span>: jitter buf + <span class="rec">RTX</span> + <span class="rec">FEC</span>]──→[<span class="hi">Depay + RTP ext read</span>]
                                                   │
@@ -1323,13 +1325,16 @@ RTCP ◄──[<span class="net">udpsink</span>]──[<span class="cc">RTCP sen
 <h3 id="arch-multistream">1.5 Multi-stream architecture (a real call)</h3>
 
 <p>
-  Teleop typically runs three to six cameras. There are two clean ways
-  to model that, and the choice has real consequences.
+  Teleop typically runs three to six cameras. There were two clean ways
+  to model that, with real consequences. We built <strong>(B)</strong> —
+  which inverts the default this section first argued for; the box below
+  says why the obvious call flipped in practice.
 </p>
 
 <div class="grid2">
   <div class="panel">
-    <h3 style="margin-top: 0;">(A) One pipeline, N parallel chains</h3>
+    <h3 style="margin-top: 0;">(A) One pipeline, N parallel chains
+      <span class="small">— considered, not built</span></h3>
     <ul>
       <li>Single <code>rtpbin</code>, <code>N</code> SSRCs, shared
         clock, shared CC instance.</li>
@@ -1337,23 +1342,36 @@ RTCP ◄──[<span class="net">udpsink</span>]──[<span class="cc">RTCP sen
         above CC and adjusts per-stream encoder targets through the
         <code>Encoder</code> contract.</li>
       <li><strong>Pros.</strong> Single clock domain. CC sees aggregate
-        link state. Simpler config. Lower process overhead.</li>
+        link state. In-pipeline allocator. Lower process overhead.</li>
       <li><strong>Cons.</strong> One bad camera can stall the whole
-        pipeline. Crash-isolation is process-level only.</li>
+        pipeline; crash-isolation is process-level only. And for
+        <em>this</em> codebase it is the bigger rewrite, not the simpler
+        path: <code>viewer.py</code>/<code>camera.py</code> use fixed
+        singular element names and per-stream FIFO / RTP-timestamp joins
+        correct only within one stream — N chains under one
+        <code>rtpbin</code> means index-suffixing every element and
+        risking cross-stream FIFO contamination.</li>
     </ul>
   </div>
 
   <div class="panel">
-    <h3 style="margin-top: 0;">(B) N independent pipelines</h3>
+    <h3 style="margin-top: 0;">(B) N independent pipelines
+      <span class="small">— built</span></h3>
     <ul>
-      <li>Per-camera process or per-camera bin. Per-stream CC.</li>
-      <li>Needs a cross-pipeline allocator to coordinate priorities,
-        which is harder than (A)'s in-pipeline allocator.</li>
-      <li><strong>Pros.</strong> Crash-isolated. Hot-restart a single
-        camera without touching the others.</li>
-      <li><strong>Cons.</strong> N CC instances, all competing for the
-        same link, with no shared signal. UMN ships this shape and the
-        coordination layer it lacks shows up as the
+      <li>One worker process per stream per role, each its own
+        <code>CameraPipeline</code> / <code>ViewerPipeline</code> +
+        <code>rtpbin</code>, port pair, and shaped tc lane. Per-stream CC.</li>
+      <li>Reuses the single-stream pipelines <strong>verbatim</strong> —
+        each worker sees exactly one stream, so the fixed names and FIFO
+        joins stay correct; multiplicity lives in projection +
+        orchestration + a post-hoc reporting correlator.</li>
+      <li><strong>Pros.</strong> Crash-isolated (a wedged stream fails
+        alone). Per-stream heterogeneity — different codec / CC / recovery
+        / network per camera. Verbatim pipeline reuse.</li>
+      <li><strong>Cons.</strong> N CC instances on one link with no shared
+        signal — the coordination layer (priority-ordered degradation) is
+        deferred, with the <code>streams[].priority</code> field as its
+        prep. This is the gap UMN fills with a
         <code>BandwidthAllocator</code>.</li>
     </ul>
   </div>
@@ -1361,11 +1379,17 @@ RTCP ◄──[<span class="net">udpsink</span>]──[<span class="cc">RTCP sen
 
 <div class="accent">
   <p style="margin-top: 0;">
-    <strong>Default: (A).</strong> One pipeline, <code>N</code> chains,
-    one CC, allocator above it. Move to (B) only if cross-camera failure
-    isolation becomes a hard requirement — at which point the
-    <code>Encoder</code> contract and the policy-driven allocator are
-    already where they need to be for the split to land cleanly.
+    <strong>Chosen: (B).</strong> N independent worker processes,
+    per-stream CC. The deciding factor was <strong>reuse vs. rewrite</strong>
+    — (B) keeps the single-stream pipelines untouched, while (A) would
+    rewrite their element naming and frame-joining. (A)'s headline
+    advantage — a single clock domain for sync — turned out moot: the
+    cameras are co-located on one host, so a software
+    <strong>shared-epoch start barrier</strong> aligns their release and
+    the <code>sync_error</code> metric's max−min cancels the host-clock
+    skew exactly (~400 → 1 ms). What we still owe (B) is the cross-stream
+    allocator — the priority-ordered degradation ladder — which the
+    <code>streams[].priority</code> field is already shaped for.
   </p>
 </div>
 
