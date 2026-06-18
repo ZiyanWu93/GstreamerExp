@@ -275,13 +275,12 @@ class FrameLatency(Metric):
         if pad is None:
             return
 
-        def on_buffer(_pad, info):
-            buf = info.get_buffer()
+        def _record_if_marker(buf):
             if buf is None:
-                return Gst.PadProbeReturn.OK
+                return
             ok, rtp = GstRtp.RTPBuffer.map(buf, Gst.MapFlags.READ)
             if not ok:
-                return Gst.PadProbeReturn.OK
+                return
             try:
                 # marker=1 selects the last RTP packet of a video frame,
                 # so we record exactly once per frame on each side.
@@ -289,9 +288,23 @@ class FrameLatency(Metric):
                     self.samples.append([rtp.get_timestamp(), time.time()])
             finally:
                 rtp.unmap()
+
+        def on_data(_pad, info):
+            buf = info.get_buffer()
+            if buf is not None:
+                _record_if_marker(buf)
+            else:
+                # rtpvp8pay/udpsink often push a BufferList (all RTP packets of
+                # one frame in a single push); then get_buffer() is None and we
+                # must iterate, or the camera-side probe records nothing.
+                buf_list = info.get_buffer_list()
+                if buf_list is not None:
+                    for i in range(buf_list.length()):
+                        _record_if_marker(buf_list.get(i))
             return Gst.PadProbeReturn.OK
 
-        pad.add_probe(Gst.PadProbeType.BUFFER, on_buffer)
+        pad.add_probe(
+            Gst.PadProbeType.BUFFER | Gst.PadProbeType.BUFFER_LIST, on_data)
 
     def finalize(self):
         return {"samples": self.samples}

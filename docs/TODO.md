@@ -27,12 +27,18 @@ Shipped:
       runnable + verified; real (PySpin) mode is the explicit hardware seam.
 
 Next, ranked by leverage:
-1. [ ] **Adaptive resolution** — CC-driven `vp8enc` + source-capsfilter
-       renegotiation (§6.2 P1). Flagship: advances the build track AND
-       sharpens the SCReAM characterization (Goal 2) at once.
-2. [ ] End-to-end capture→render latency metric (a glass-to-glass proxy
-       on the existing 8-probe stage_latency; true glass-to-glass needs
-       the hardware ends).
+1. [x] **Adaptive resolution** — CC-driven `vp8enc` + source-capsfilter
+       renegotiation (§6.2 P1). Shipped: encoder.resolution_ladder +
+       ResolutionController (EWMA + asymmetric hysteresis) + runtime caps
+       switch (force-key-unit) + encoder_resolution metric. Switch path
+       verified live on veda (1024→512→384→1024, keyframe per switch); the
+       SCReAM-driven A/B (405 vs 406) is staged, pending the camera host.
+2. [x] End-to-end capture→render latency metric — `capture_render_latency`,
+       a glass-to-glass proxy derived from stage_latency (encoder_in →
+       render_in, RTP-ts join bridged across the payloader offset,
+       skew-corrected). Shown per-run alongside wire-to-wire frame_latency;
+       verified on a veda loopback run (g2g 5.0 ms vs wire 0.2 ms). True
+       glass-to-glass still needs the camera-sensor + display-present ends.
 3. [ ] Decoder error concealment / freeze-on-bad-frame (= §6.2 P1
        partial-frame decode) — also resolves the H10/H13 VP8 desync.
 4. [ ] Per-stream priority / DSCP marking — activates the `streams[].priority`
@@ -82,7 +88,7 @@ quality indicator.
 - [x] Multi-stream synchronization across cameras (so they show the same instant) — shared-epoch start barrier (sync.mode: shared_epoch) releases all cameras' first frame together (homogeneous streams measured at 0.9 ms median inter-stream skew, down from ~400 ms), plus a `sync_error` metric that reports residual inter-stream presentation skew. Measured same-host so the clock-skew artifact cancels exactly. (PTP-disciplined absolute capture timestamps remain a deferred seam — sync.mode: ptp.)
 
 ## Latency
-- [ ] Glass-to-glass latency measurement (capture → display) — the headline metric for teleop
+- [~] Glass-to-glass latency measurement (capture → display) — the headline metric for teleop. Software proxy landed: `capture_render_latency` in reporting.py spans encoder.sink (capture proxy) → convert.src (render proxy), derived from stage_latency (RTP-ts join across the payloader offset, skew-corrected), shown per-run beside wire-to-wire frame_latency. TRUE glass-to-glass (sensor exposure → display present) still needs the camera + display hardware ends.
 - [x] Per-stage latency attribution — `stage_latency` metric, 8 probes (encoder.sink/src, pay.src, udpsink.sink, udpsrc.src, depay.src, decoder.sink/src, convert.src) joined by RTP timestamp; `analysis/dimensions/latency.py` surfaces per-stage durations
 - [x] Latency-budget enforcement (drop frames when budget exceeded, don't queue) — `LateDrops` metric (gstexp/metrics.py): a frame older than `latency_budget_ms` at convert.src is dropped and counted; budget 0 disables
 - [ ] Operator-side jitter buffer with explicit depth and policy

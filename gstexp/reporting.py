@@ -27,27 +27,11 @@ def _metric_summary(role_data: dict, name: str) -> dict:
     return role_data.get("metrics", {}).get(name, {}).get("summary", {})
 
 
-def _correlate_latency(camera: dict, viewer: dict,
-                       camera_skew: float = 0.0,
-                       viewer_skew: float = 0.0) -> dict:
-    """Join camera + viewer frame_latency samples by RTP timestamp.
-
-    Each sample is [rtp_timestamp, host_wall_time]. Each side's wall
-    time is corrected by its host clock skew (host_clock - controller_clock);
-    deltas are then in the controller's timeframe and reflect actual
-    end-to-end latency."""
-    s_samples = camera.get("metrics", {}).get("frame_latency", {}).get("samples", [])
-    r_samples = viewer.get("metrics", {}).get("frame_latency", {}).get("samples", [])
-    if not s_samples or not r_samples:
-        return {}
-    s_by_ts = {ts: t - camera_skew for ts, t in s_samples}
-    r_by_ts = {ts: t - viewer_skew for ts, t in r_samples}
-    deltas = sorted(
-        (r_by_ts[ts] - s_by_ts[ts]) * 1000.0  # ms
-        for ts in r_by_ts if ts in s_by_ts
-    )
+def _latency_stats(deltas: list) -> dict:
+    """Percentile summary (ms) for a list of per-frame latency deltas."""
     if not deltas:
         return {}
+    deltas = sorted(deltas)
 
     def pct(p):
         return deltas[min(int(len(deltas) * p / 100), len(deltas) - 1)]
@@ -60,6 +44,82 @@ def _correlate_latency(camera: dict, viewer: dict,
         "p99_ms":        round(pct(99), 2),
         "max_ms":        round(deltas[-1], 2),
     }
+
+
+def _correlate_latency(camera: dict, viewer: dict,
+                       camera_skew: float = 0.0,
+                       viewer_skew: float = 0.0) -> dict:
+    """Join camera + viewer frame_latency samples by RTP timestamp.
+
+    Each sample is [rtp_timestamp, host_wall_time]. Each side's wall
+    time is corrected by its host clock skew (host_clock - controller_clock);
+    deltas are then in the controller's timeframe and reflect actual
+    end-to-end (wire-to-wire) latency."""
+    s_samples = camera.get("metrics", {}).get("frame_latency", {}).get("samples", [])
+    r_samples = viewer.get("metrics", {}).get("frame_latency", {}).get("samples", [])
+    if not s_samples or not r_samples:
+        return {}
+    s_by_ts = {ts: t - camera_skew for ts, t in s_samples}
+    r_by_ts = {ts: t - viewer_skew for ts, t in r_samples}
+    return _latency_stats([
+        (r_by_ts[ts] - s_by_ts[ts]) * 1000.0  # ms
+        for ts in r_by_ts if ts in s_by_ts
+    ])
+
+
+def _stage_samples(role_data: dict, stage: str) -> list:
+    """[(rtp_ts, wall_seconds), ...] for one stage_latency stage on one role,
+    in record order. stage_latency samples are [stage_name, rtp_ts, wall_s]."""
+    return [(s[1], s[2])
+            for s in role_data.get("metrics", {}).get("stage_latency", {}).get("samples", [])
+            if len(s) == 3 and s[0] == stage]
+
+
+_RTP_MASK = 0xFFFFFFFF
+
+
+def _payloader_rtp_offset(camera: dict) -> int:
+    """The constant `header_rtp - pts_derived_rtp` the payloader adds (RFC 3550
+    random RTP start). The camera records both per frame at pay.src: `pay_out`
+    carries the header RTP ts, `pay_out_pts` the PTS-derived ts for the same
+    frame (FIFO order, one each per frame). The offset is constant, so the
+    first paired frame fixes it; 0 if `pay_out_pts` is absent (then the offset
+    is 0 and the two RTP spaces already coincide)."""
+    hdr = _stage_samples(camera, "pay_out")
+    pts = _stage_samples(camera, "pay_out_pts")
+    if not hdr or not pts:
+        return 0
+    return (hdr[0][0] - pts[0][0]) & _RTP_MASK
+
+
+def _correlate_capture_render(camera: dict, viewer: dict,
+                              camera_skew: float = 0.0,
+                              viewer_skew: float = 0.0) -> dict:
+    """Glass-to-glass proxy: join the camera's encoder input (`encoder_in`,
+    the capture proxy) with the viewer's converter output (`render_in` ==
+    convert.src, the render proxy), skew-corrected. This is the headline teleop
+    latency — the full software span capture->render, a superset of the
+    wire-to-wire frame_latency (it adds the encode and the decode/convert
+    queueing).
+
+    `encoder_in` is keyed by the PTS-derived RTP ts while `render_in` is keyed
+    by the wire/header RTP ts; the payloader's constant random offset separates
+    the two spaces, so we translate the capture keys into the wire space before
+    joining (see _payloader_rtp_offset). Derived purely from the stage_latency
+    probes — no extra instrumentation — so present only when stage_latency is
+    enabled on both roles. True glass-to-glass also needs the camera-sensor and
+    display-present stages (the hardware ends); this is the closest proxy."""
+    cap = _stage_samples(camera, "encoder_in")
+    rnd = _stage_samples(viewer, "render_in")
+    if not cap or not rnd:
+        return {}
+    off = _payloader_rtp_offset(camera)
+    cap_by_wire = {((ts + off) & _RTP_MASK): t - camera_skew for ts, t in cap}
+    rnd_by_wire = {ts: t - viewer_skew for ts, t in rnd}
+    return _latency_stats([
+        (rnd_by_wire[ts] - cap_by_wire[ts]) * 1000.0  # ms
+        for ts in rnd_by_wire if ts in cap_by_wire
+    ])
 
 
 def _stream_block(camera: dict, viewer: dict,
@@ -120,6 +180,11 @@ def _stream_block(camera: dict, viewer: dict,
                                  viewer_skew=viewer_skew)
     if latency:
         block["latency"] = latency
+    g2g = _correlate_capture_render(camera, viewer,
+                                    camera_skew=camera_skew,
+                                    viewer_skew=viewer_skew)
+    if g2g:
+        block["capture_render_latency"] = g2g
     return block
 
 
@@ -265,7 +330,12 @@ def print_report(label: str, run_dir: Path, summary: dict) -> None:
             L = st["latency"]
             print(f"            latency median {L['median_ms']:.1f} ms  "
                   f"p95 {L['p95_ms']:.1f} ms  p99 {L['p99_ms']:.1f} ms  "
-                  f"max {L['max_ms']:.1f} ms  (n={L['samples_count']})")
+                  f"max {L['max_ms']:.1f} ms  (wire-to-wire, n={L['samples_count']})")
+        if "capture_render_latency" in st:
+            G = st["capture_render_latency"]
+            print(f"            g2g     median {G['median_ms']:.1f} ms  "
+                  f"p95 {G['p95_ms']:.1f} ms  p99 {G['p99_ms']:.1f} ms  "
+                  f"max {G['max_ms']:.1f} ms  (capture→render, n={G['samples_count']})")
         for e in st["errors"]:
             print(f"    ! {e}")
     if "sync_error" in summary:

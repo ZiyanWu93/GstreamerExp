@@ -1,0 +1,48 @@
+meta:
+  name: glass_to_glass_smoke
+  description: >
+    Loopback smoke for the capture->render (glass-to-glass) latency proxy.
+    Enables stage_latency so reporting derives the encoder_in -> render_in
+    span (the full software capture->render latency), shown alongside the
+    wire-to-wire frame_latency. Bare VP8/RTP/UDP over loopback, synthetic
+    source — runs on a single host (no aum), so it verifies the metric
+    end-to-end while only the camera host is reachable.
+scenario:
+  actors:
+    camera:
+      host: 127.0.0.1
+    viewer:
+      host: 127.0.0.1
+  setup_delay_seconds: 2.0
+  drain_delay_seconds: 1.0
+  metrics:
+  - frame_count
+  - frame_latency
+  - stage_latency
+sync:
+  mode: shared_epoch
+  termination: all
+streams:
+- name: main
+  priority: 0
+  source:
+    backend: synthetic
+    width: 640
+    height: 480
+    fps: 15
+    num_frames: 150
+    clock_overlay: false
+    synthetic:
+      pattern: smpte
+  codec: vp8
+  encoder:
+    bitrate_kbps: 1000
+    keyframe_interval_frames: 30
+  sink:
+    backend: fake
+    sync: false
+  recovery:
+    nack: false
+    pli: false
+    fec: false
+  latency_budget_ms: 0
