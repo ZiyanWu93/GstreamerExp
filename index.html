@@ -531,8 +531,7 @@
       <ul class="group">
         <li><a class="top" href="#goal1">6 · Goal 1 — Match UMN</a></li>
         <li><a class="sub" href="#roadmap-contracts">Capabilities (7 contracts)</a></li>
-        <li><a class="sub" href="#roadmap-phases">Phasing (P1–P4)</a></li>
-        <li><a class="sub" href="#todo-goal1">Status by contract</a></li>
+        <li><a class="sub" href="#todo-goal1">Status — function list</a></li>
         <li><a class="sub" href="#goal1-evidence">Evidence → H5</a></li>
       </ul>
       <ul class="group">
@@ -1680,15 +1679,14 @@ stop_session(session_id)           → ack</pre>
 
 <section class="page-section" data-section="goal1">
 <h2 id="goal1">6 · Goal 1 — Match UMN's stack</h2>
-<p>The engineering goal: cover the capabilities UMN's Teleop-Gopher-Streamer ships (real cameras, hardware encode, multi-stream, dual-end recording, an external control surface), while keeping what we do better (standards RTP/RTCP/SRTP/DTLS, reference SCReAM and GCC, the full recovery toolbox, measurement rigour). Below: the plan (capabilities + phasing), the current status by contract, and the evidence that we already beat UMN where it counts.</p>
+<p>The engineering goal: cover the capabilities UMN's Teleop-Gopher-Streamer ships (real cameras, hardware encode, multi-stream, dual-end recording, an external control surface), while keeping what we do better (standards RTP/RTCP/SRTP/DTLS, reference SCReAM and GCC, the full recovery toolbox, measurement rigour). Below: the capability contracts, the current status as a done / not-yet function list, and the evidence that we already beat UMN where it counts.</p>
 <h3 id="roadmap-contracts">6.1 Plan — capabilities (the seven contracts)</h3>
 
 <p>
   The capabilities that close Goal 1's gaps, grouped by seven contract
-  boundaries. Each contract is a tiny interface plus today's stub
+  boundaries. Each contract is a tiny interface plus its current stub
   implementation, and marks where the product diverges from the
-  testbed. Order is logical, not strictly priority — see §5.3 for the
-  phasing.
+  testbed. Order is logical, not strictly priority.
 </p>
 
 <h4 style="margin-top: 18px;">Quick reference — the seven contracts</h4>
@@ -1722,12 +1720,12 @@ stop_session(session_id)           → ack</pre>
 <p>
   See <a href="#arch">§1 system architecture</a> for the wider shape
   these contracts sit inside. The seven subgoals below give each
-  contract's gap list (today vs tomorrow) in detail.
+  contract's gap list (done vs not yet) in detail.
 </p>
 
 <div class="legend">
-  <span class="done">in place / today</span>
-  <span class="todo">to add / tomorrow</span>
+  <span class="done">done · in place</span>
+  <span class="todo">not yet · to add</span>
 </div>
 
 <div class="feature-block" id="contract-source">
@@ -1738,7 +1736,7 @@ stop_session(session_id)           → ack</pre>
       metadata plus a source timestamp pinned to a real capture clock.
     </li>
     <li class="done">
-      <strong>Today.</strong> Synthetic (<code>videotestsrc</code>),
+      <strong>Done.</strong> Synthetic (<code>videotestsrc</code>),
       file-backed (<code>filesrc</code>), and a camera backend
       (Spinnaker/PySpin prep) under one assembly point in
       <code>gstexp/camera.py</code> — now driving <em>N</em> streams per
@@ -1751,7 +1749,7 @@ stop_session(session_id)           → ack</pre>
       conversion chain a real sensor will feed is built and exercised.
     </li>
     <li class="todo">
-      <strong>Tomorrow (hardware).</strong> The real PySpin acquisition
+      <strong>Not yet (needs hardware).</strong> The real PySpin acquisition
       thread (<code>mode: real</code>) — the one explicit hardware seam.
       V4L2 / other SDKs slot into the same backend.
     </li>
@@ -1773,11 +1771,11 @@ stop_session(session_id)           → ack</pre>
       plus an "applied bitrate" notify channel the CC can hook.
     </li>
     <li class="done">
-      <strong>Today.</strong> <code>vp8enc</code> with
+      <strong>Done.</strong> <code>vp8enc</code> with
       <code>target-bitrate</code> as the single actuator.
     </li>
     <li class="todo">
-      <strong>Tomorrow.</strong> Software H.264 (<code>x264enc</code>)
+      <strong>Not yet.</strong> Software H.264 (<code>x264enc</code>)
       alongside VP8 today; hardware
       <code>vah264enc</code> / <code>nvh264enc</code> / <code>qsvh264enc</code>
       slot in through the same factory when the GPU lands.
@@ -1801,12 +1799,12 @@ stop_session(session_id)           → ack</pre>
       re-encode) on both endpoints.
     </li>
     <li class="done">
-      <strong>Today.</strong> Measurement (<code>fakesink</code> +
+      <strong>Done.</strong> Measurement (<code>fakesink</code> +
       probes) and basic display (<code>autovideosink</code> in expo
       specs).
     </li>
     <li class="todo">
-      <strong>Tomorrow.</strong> <code>glimagesink</code> for
+      <strong>Not yet.</strong> <code>glimagesink</code> for
       low-latency display, <code>compositor</code> for multi-stream
       mosaic, dual-end forensic record on both endpoints. The latter is
       near-direct.
@@ -1823,7 +1821,7 @@ stop_session(session_id)           → ack</pre>
       latencies stay honest across two real clocks.
     </li>
     <li class="done">
-      <strong>Today.</strong> A per-host clock-skew estimate
+      <strong>Done.</strong> A per-host clock-skew estimate
       (controller↔host SSH measurement) plus a shared-epoch start barrier
       and a <code>sync_error</code> metric: all of a run's cameras release
       together (same-host skew cancels exactly in max−min), so cross-stream
@@ -1831,7 +1829,7 @@ stop_session(session_id)           → ack</pre>
       homogeneous streams.
     </li>
     <li class="todo">
-      <strong>Tomorrow (cross-host absolute time).</strong> Map wall-clock
+      <strong>Not yet (cross-host absolute time).</strong> Map wall-clock
       to capture-time across two hosts — an NTP / <code>TREQ&nbsp;/&nbsp;TRES</code>
       exchange, then PTP (<code>sync.mode: ptp</code>) — so glass-to-glass
       stays defensible once camera and viewer are on different clocks.
@@ -1859,12 +1857,12 @@ stop_session(session_id)           → ack</pre>
       timestamp will fill, with read-back already used by the sync path.
     </li>
     <li class="todo">
-      <strong>Today (to add).</strong> Carry it through camera,
+      <strong>Not yet.</strong> Carry it through camera,
       SCReAM / GCC, and viewer as an RTP header extension, even when
       fields are zeros.
     </li>
     <li class="todo">
-      <strong>Tomorrow.</strong> Real GPS and camera-HW values
+      <strong>Not yet.</strong> Real GPS and camera-HW values
       populate the fields. No pipeline change at that point.
     </li>
     <li>
@@ -1885,14 +1883,14 @@ stop_session(session_id)           → ack</pre>
       and a final report.
     </li>
     <li class="done">
-      <strong>Today.</strong> The validated spec system in
+      <strong>Done.</strong> The validated spec system in
       <code>gstexp/validation.py</code> covers most of the config and the
       report, and the runner now orchestrates a full <em>N</em>-stream run:
       2<em>N</em> workers, per-stream spec/result files, and a wait-all
       teardown where a wedged stream fails alone.
     </li>
     <li class="todo">
-      <strong>Tomorrow.</strong> A runtime <code>Session</code> object
+      <strong>Not yet.</strong> A runtime <code>Session</code> object
       plus a small status surface (JSON / WebSocket): current bitrate,
       RTT, loss, frame counters, health.
     </li>
@@ -1908,7 +1906,7 @@ stop_session(session_id)           → ack</pre>
       push a policy update. A gRPC or Zenoh interface.
     </li>
     <li class="todo">
-      <strong>Today (to add).</strong> Define the protocol and stub
+      <strong>Not yet.</strong> Define the protocol and stub
       the endpoints. No external system needs to be live yet.
     </li>
     <li>
@@ -1920,94 +1918,7 @@ stop_session(session_id)           → ack</pre>
   </ul>
 </div>
 
-<h3 id="roadmap-phases">6.2 Plan — phasing (P1–P4)</h3>
-
-<p>
-  Four phases. The first two need no hardware. The third and fourth
-  are plug-ins, not refactors, because phases 1–2 left the contracts
-  open.
-</p>
-
-<div class="grid2">
-  <div class="panel" id="phase-1">
-    <h3 style="margin-top: 0;">Phase 1 · no hardware needed</h3>
-    <p class="small" style="margin: 0 0 8px 0;">Do now.</p>
-    <ul>
-      <li class="todo">Land contracts <strong>1, 2, 3, 5</strong>
-        (Source: camera scaffold done; RTPMeta: frame-clock seam done;
-        Encoder, Sink: open).</li>
-      <li class="done">Refactor the pipeline so one stream is <em>N</em>,
-        not hardcoded — the multi-stream spine shipped (2<em>N</em>
-        workers, per-stream shaped lane + metrics + verdict).</li>
-      <li class="done">Cross-stream sync — shared-epoch start barrier +
-        <code>sync_error</code> (this is part of contract 4, landed ahead
-        of its phase).</li>
-      <li class="todo">Adaptive resolution as a CC actuator, wired to
-        SCReAM's <code>current-max-bitrate</code> and GCC's
-        <code>estimated-bitrate</code>. Falls out of the encoder
-        abstraction. <em>— next flagship.</em></li>
-      <li class="todo">Partial-frame decode at the receiver.</li>
-      <li class="todo">Dual-end forensic record (falls out of the sink abstraction).</li>
-    </ul>
-    <p class="small">
-      <strong>Outcome:</strong> honest claims about SCReAM / GCC across
-      H.264 software, not just VP8. Most of the rigour the next paper
-      needs.
-    </p>
-  </div>
-
-  <div class="panel" id="phase-2">
-    <h3 style="margin-top: 0;">Phase 2 · product surface</h3>
-    <p class="small" style="margin: 0 0 8px 0;">Still no hardware.</p>
-    <ul>
-      <li>Land contracts <strong>4, 6</strong>.</li>
-      <li>Status endpoint and session lifecycle.</li>
-      <li>Declare SRTP / DTLS in the spec model with a wire-in stub.</li>
-      <li>Operations: structured health probe, graceful shutdown,
-        version metadata threaded through every metric.</li>
-    </ul>
-    <p class="small">
-      <strong>Outcome:</strong> a teleop partner can clone the repo and
-      stand it up as a daemon, even if camera and encoder are still
-      synthetic.
-    </p>
-  </div>
-
-  <div class="panel" id="phase-3">
-    <h3 style="margin-top: 0;">Phase 3 · when hardware arrives</h3>
-    <p class="small" style="margin: 0 0 8px 0;">Low effort, no refactor.</p>
-    <ul>
-      <li>Second <code>Source</code> implementation (real camera
-        bridge).</li>
-      <li>Hardware variant of <code>Encoder</code>.</li>
-      <li>Production <code>DisplaySink</code> (compositor mosaic for
-        multi-stream).</li>
-      <li>DTLS-SRTP wiring.</li>
-      <li>Multi-window layout config for the operator station.</li>
-    </ul>
-    <p class="small">
-      <strong>Outcome:</strong> each item is a plug-in, not a refactor.
-      Contracts from phase 1–2 absorb the change.
-    </p>
-  </div>
-
-  <div class="panel" id="phase-4">
-    <h3 style="margin-top: 0;">Phase 4 · teleop integration</h3>
-    <p class="small" style="margin: 0 0 8px 0;">When partners are real.</p>
-    <ul>
-      <li>Land contract <strong>7</strong>.</li>
-      <li>External vehicle / RAN / trajectory systems integrate through
-        it.</li>
-      <li>Those subsystems do not live in this repo.</li>
-    </ul>
-    <p class="small">
-      <strong>Outcome:</strong> the streamer ships as a focused product.
-      The control protocol is the only thing partners need to learn.
-    </p>
-  </div>
-</div>
-
-<h3 id="todo-goal1">6.3 Status — by contract</h3>
+<h3 id="todo-goal1">6.2 Status — function list (done · not yet)</h3>
 
 <p>
   Eight blocks. Seven mirror the contracts in
@@ -2017,12 +1928,12 @@ stop_session(session_id)           → ack</pre>
 </p>
 <p class="small">
   How to read it: status is binary — a capability is either
-  <span class="done">in place</span> or <span class="todo">to add</span>.
-  Partial work is split into a done line plus a to-add line, so every
-  green item is something that actually runs today, not a direction.
+  <span class="done">done</span> or <span class="todo">not yet</span>.
+  Partial work splits into a done line plus a not-yet line, so every
+  green item is something that actually runs, not a direction.
   Current as of 2026-06 (multi-stream + cross-stream sync + camera-source
-  scaffold landed; adaptive resolution is the next near-term item — see
-  the ordered list in <code>docs/TODO.md</code>).
+  scaffold + adaptive resolution + the capture→render latency proxy landed;
+  see the ordered list in <code>docs/TODO.md</code>).
 </p>
 
 <div class="feature-block" id="todo-source">
@@ -2031,11 +1942,11 @@ stop_session(session_id)           → ack</pre>
     <li class="done">Synthetic source (<code>videotestsrc</code>)</li>
     <li class="done">File-backed source (<code>filesrc</code> → <code>decodebin</code>)</li>
     <li class="done">Camera source backend (Spinnaker/PySpin prep): registered + validated; fake mode (recorded clip through the real conversion tail) runs and is verified live on aum/veda</li>
-    <li class="todo">Real PySpin acquisition (<code>mode: real</code>) into <code>appsrc</code> — the one hardware seam; V4L2 / other SDKs reuse the same backend</li>
+    <li class="todo">Real PySpin acquisition (<code>mode: real</code>) into <code>appsrc</code> — the one hardware seam; V4L2 / other SDKs reuse the same backend <span class="small">(needs hardware)</span></li>
     <li class="done">Camera frame-clock metadata seam: <code>GstReferenceTimestampMeta</code> on the buffer (synthetic timestamp today; the real HW value drops in with the camera)</li>
     <li class="done">Multi-camera rigs (teleop typically 3–6 streams) — <code>streams:</code> list, 2N workers, per-stream lane/metrics (see config 400)</li>
-    <li class="todo">Source robustness: dropped frames, exposure jitter, hot-unplug, partial reads</li>
-    <li class="todo">Camera calibration intrinsics / extrinsics passthrough</li>
+    <li class="todo">Source robustness: dropped frames, exposure jitter, hot-unplug, partial reads <span class="small">(needs hardware)</span></li>
+    <li class="todo">Camera calibration intrinsics / extrinsics passthrough <span class="small">(needs hardware)</span></li>
   </ul>
 </div>
 
@@ -2045,18 +1956,20 @@ stop_session(session_id)           → ack</pre>
     <li class="done"><code>vp8enc</code> with <code>target-bitrate</code> as the single actuator</li>
     <li class="todo">Software H.264 (<code>x264enc</code>, low-latency baseline)</li>
     <li class="todo">Software H.265 / AV1 (<code>x265enc</code>, <code>svtav1enc</code>)</li>
-    <li class="todo">Hardware NVENC / QSV / VAAPI paths (<code>nvh264enc</code>, <code>qsvh264enc</code>, <code>vah264enc</code>)</li>
+    <li class="todo">Hardware NVENC / QSV / VAAPI paths (<code>nvh264enc</code>, <code>qsvh264enc</code>, <code>vah264enc</code>) <span class="small">(needs hardware)</span></li>
     <li class="todo">Silent-fallback detection (stderr-sniff at codec open, fail loudly when GPU is misconfigured)</li>
-    <li class="todo">
-      Adaptive resolution as a CC actuator. Drop 720p → 480p → 360p at
-      well-defined thresholds, driven by SCReAM's
+    <li class="done">
+      Adaptive resolution as a CC actuator. <code>encoder.resolution_ladder</code>
+      + a hysteretic <code>ResolutionController</code> (EWMA, asymmetric hold)
+      switch <code>vp8enc</code> at a frame boundary — driven by SCReAM's
       <code>current-max-bitrate</code> notify and GCC's
-      <code>estimated-bitrate</code> event. Pre-build scalers, switch
-      at frame boundary.
+      <code>estimated-bitrate</code> event — each switch forcing a keyframe.
+      Switch path verified live (1024→512→384→1024, keyframe per switch); the
+      SCReAM-driven A/B (configs 405 vs 406) is staged, pending the camera host.
     </li>
     <li class="todo">Region-of-interest / variable quality across the frame</li>
     <li class="todo">Scene-change detection and forced-keyframe-on-cut</li>
-    <li class="todo">HDR / wide-color-gamut preservation</li>
+    <li class="todo">HDR / wide-color-gamut preservation <span class="small">(needs hardware)</span></li>
     <li class="todo">I-frame frequency tuned to recovery time, not just bitrate efficiency</li>
   </ul>
 </div>
@@ -2072,9 +1985,9 @@ stop_session(session_id)           → ack</pre>
       vs reproduced source)
     </li>
     <li class="done"><code>autovideosink</code> for expo specs</li>
-    <li class="todo"><code>DisplaySink</code>: <code>glimagesink</code> / framebuffer / HMD with VSYNC alignment</li>
+    <li class="todo"><code>DisplaySink</code>: <code>glimagesink</code> / framebuffer / HMD with VSYNC alignment <span class="small">(needs hardware)</span></li>
     <li class="todo"><code>Compositor</code> mosaic for multi-stream layout</li>
-    <li class="todo">Per-camera window-layout config (multi-window, multi-monitor)</li>
+    <li class="todo">Per-camera window-layout config (multi-window, multi-monitor) <span class="small">(needs hardware)</span></li>
     <li class="todo"><code>ForensicSink</code>: <code>tee</code> → <code>filesink</code> of encoded bytes on both endpoints, no re-encode, codec/framerate sidecar</li>
     <li class="todo">Partial-frame decode at receiver (hand decoder the contiguous prefix when tail is missing)</li>
     <li class="todo">Audit-grade frame-loss accounting (complete / partial / dropped classification)</li>
@@ -2090,7 +2003,8 @@ stop_session(session_id)           → ack</pre>
     <li class="todo">UDP <code>TREQ / TRES</code>-style exchange as fallback</li>
     <li class="todo">PTP-aware implementation for production (<code>sync.mode: ptp</code> seam)</li>
     <li class="done">Per-host clock-skew offset measured (controller↔host) and subtracted from latency deltas so they stay honest</li>
-    <li class="todo">Glass-to-glass latency derived from the RTP-extension capture timestamp plus <code>ClockSync</code> offset</li>
+    <li class="done">Capture→render latency proxy (<code>capture_render_latency</code>) — the full software span <code>encoder.sink</code> → <code>convert.src</code>, derived from <code>stage_latency</code> (RTP-ts join bridged across the payloader offset, skew-corrected), shown per-run beside wire-to-wire <code>frame_latency</code></li>
+    <li class="todo">True glass-to-glass (sensor exposure → display present) from the RTP-extension capture timestamp plus <code>ClockSync</code> offset — needs the camera + display hardware ends</li>
     <li class="done">Cross-stream synchronization (camera <code>N</code>'s frame at time <code>T</code> arrives with the same <code>T</code>) — shared-epoch start barrier + <code>sync_error</code> metric; same-host, so the skew artifact cancels exactly (RTCP-SR / cross-host absolute is the PTP follow-up)</li>
   </ul>
 </div>
@@ -2144,14 +2058,14 @@ stop_session(session_id)           → ack</pre>
     <li class="todo">Multi-stream priority-ordered degradation ladder (the <code>streams[].priority</code> field is in the schema; the time-varying ladder is unbuilt)</li>
     <li class="todo">SRTP / DTLS encryption (declared in spec model with wire-in stub)</li>
     <li class="todo">Per-stream priority / DSCP marking (priority field exists; DSCP not yet wired)</li>
-    <li class="todo">Redundant transport / multi-path (LTE + 5G failover)</li>
+    <li class="todo">Redundant transport / multi-path (LTE + 5G failover) <span class="small">(needs hardware)</span></li>
     <li class="todo">Operations: structured health probe, graceful shutdown, version metadata threaded through every metric</li>
     <li class="todo">Decoder error concealment / freeze-on-bad-frame strategy</li>
     <li class="todo"><strong>Out of Goal 1 scope:</strong> ambient audio path from the vehicle. Not enumerated under the seven contracts because audio is a separate Source / Encoder / Sink lineage. Revisit if and when the goal expands.</li>
   </ul>
 </div>
 
-<h3 id="goal1-evidence">6.4 Evidence</h3>
+<h3 id="goal1-evidence">6.3 Evidence</h3>
 <p>The headline result for Goal 1 — our SCReAM is more mature than UMN's reimplementation, and the cause is isolated to a wiring gap, not the algorithm.</p>
 <div class="hypo-grid"><a class="hypo-card linked" id="hypo-h5-goal1" href="#hypo-h5">
     <div class="id">H5</div>
