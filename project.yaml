@@ -1,0 +1,140 @@
+id: gstexp
+title: GstreamerExp
+project_contract: workspace
+management_status: managed
+summary: >
+  Real-time GStreamer video pipeline experiment testbed with declarative specs,
+  falsifiable hypotheses, local runners, generated reports, and a static
+  project site.
+project_profile:
+  objective:
+    statement: >
+      Build and characterize a real-time GStreamer video pipeline so claims
+      about congestion control, recovery, quality, latency, adaptation, and
+      stability can be tested from preserved run records.
+    source_scope_question:
+      source_basis:
+        - README.md
+        - docs/DESIGN.md
+        - docs/HYPOTHESES.md
+        - specs
+      scope: >
+        Local and distributed GStreamer VP8/RTP/UDP experiments driven by
+        declarative video, network, configuration, experiment, and hypothesis
+        specs. The project does not claim universal video or cellular behavior
+        beyond the tested workloads, networks, codecs, and hosts.
+      questions:
+        - How does the pipeline behave under controlled network stress?
+        - Which claims about SCReAM, GCC, recovery, and workload sensitivity survive verifier-backed experiments?
+        - Which metrics expose throughput, quality, latency, adaptation, and stability without conflating them?
+    success_criteria:
+      - Each durable claim has a hypothesis spec and verifier.
+      - Run records preserve enough data to regenerate reports.
+      - New behavior-affecting fields are declared in specs and validated at load.
+  operating_principles:
+    - Pipeline first, experiments second.
+    - Insights are functions of data, not frozen text.
+    - Declarative specs are validated at load time.
+    - Required behavior has no silent fallback.
+    - A comparison is fair before it is conclusive.
+    - Reproducibility matters more than convenience.
+  domain_model:
+    summary: >
+      The domain model is a layered experiment DSL: videos, networks,
+      configurations, experiments, hypotheses, metrics, and reports compose
+      into runnable and verifiable pipeline studies.
+    artifact_paths:
+      - specs
+      - gstexp
+      - docs/DESIGN.md
+      - docs/HYPOTHESES.md
+    constructs:
+      - video spec
+      - network spec
+      - configuration spec
+      - experiment spec
+      - hypothesis spec
+      - metric dimension
+      - run record
+  application_model:
+    summary: >
+      The project is operated through local CLI runners, experiment runners,
+      generated reports, notebooks, and a static project site. Entelesis links
+      and validates it but does not mount it as an Entelesis runtime app.
+    entrypoints:
+      - index.html
+      - features.html
+      - python3 cli.py
+      - python3 experiment.py
+  evaluation_model:
+    summary: >
+      Every metric and research question fits one fixed evaluation framework:
+      throughput, quality, latency, adaptation, and stability.
+    dimensions:
+      - throughput
+      - quality
+      - latency
+      - adaptation
+      - stability
+    baseline: >
+      Controlled specs in git, preserved run records under runs/, and verifier
+      scripts that re-derive claim verdicts from those records.
+    success_criteria:
+      - Metrics declare their evaluation dimension.
+      - Verifiers separate measured findings from inferred explanations.
+      - Reports can be regenerated from specs and run records.
+  evidence_model:
+    claim_records:
+      - docs/HYPOTHESES.md
+      - specs/hypotheses
+    run_records:
+      - runs
+      - runs/experiments
+    analysis_artifacts:
+      - analysis
+      - analysis/hypotheses
+    reports:
+      - analysis/hypotheses/results
+repository:
+  url: https://github.com/ZiyanWu93/GstreamerExp
+project_site:
+  entry: index.html
+  server_id: gstexp
+  port: 8799
+roadmap:
+  document_paths:
+    - docs/TODO.md
+validation_profile:
+  declaration_checks:
+    - python3 cli.py --list
+    - pytest tests/test_specs_validate.py
+  readiness_checks:
+    - python3 cli.py 1
+  regression_checks:
+    - pytest
+capabilities:
+  project_site:
+    state: supported
+    paths:
+      - index.html
+  local_specs:
+    state: supported
+    paths:
+      - specs
+  local_runtime:
+    state: delegated
+    commands:
+      - python3 cli.py
+      - python3 experiment.py
+  local_analysis:
+    state: supported
+    paths:
+      - analysis
+  roadmap:
+    state: supported
+    paths:
+      - docs/TODO.md
+  entelesis_runtime_mount:
+    state: not_applicable
+management_plan:
+  next_action: Keep the manifest and site aligned with experiment specs, reports, and roadmap state.

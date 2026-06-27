@@ -1,5 +1,7 @@
 # Local machine config — copy hosts.example.yaml and edit.
 hosts.yaml
+.DS_Store
+.venv/
 
 # SCReAM source tree — cloned by setup_remote.sh on first install.
 # Not part of this repo (it has its own upstream at
